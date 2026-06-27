@@ -1,0 +1,18 @@
+{
+  "name": "pcp-skill",
+  "version": "1.0.0",
+  "description": "Project Constitution Protocol custom agent skill repository",
+  "type": "module",
+  "main": "skills/pcp/scripts/pcp.js",
+  "scripts": {
+    "test": "node --test tests/pcp_skill.test.js"
+  },
+  "keywords": [
+    "pcp",
+    "constitution",
+    "agentic-coding",
+    "context-hygiene"
+  ],
+  "author": "The Sovereign Architect",
+  "license": "MIT"
+}
