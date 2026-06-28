@@ -7,7 +7,7 @@ When the PCP skill is activated and the sandbox (`.pcp/`) does not exist, execut
 Run the CLI command:
 
 ```bash
-node skills/pcp/scripts/pcp.js init
+node pcp/scripts/pcp.js init
 ```
 
 This creates:

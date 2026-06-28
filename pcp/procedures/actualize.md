@@ -3,7 +3,7 @@
 When the `pcp` skill is activated (step 2 of the Invocation Contract), or when the agent needs to synchronize the constitution after minting entries or modifying code, run:
 
 ```bash
-node skills/pcp/scripts/pcp.js actualize
+node pcp/scripts/pcp.js actualize
 ```
 
 ## What it does
