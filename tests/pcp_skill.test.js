@@ -19,6 +19,8 @@ test('PCP Skill Automation Suite', async (t) => {
   // Setup before tests
   await cleanPlayground();
   await fs.mkdir(playgroundDir, { recursive: true });
+  // Create a .git marker so findProjectRoot resolves to the playground
+  await fs.mkdir(path.join(playgroundDir, '.git'), { recursive: true });
 
   await t.test('1. init command scaffolds .pcp sandbox and .gitignore', async () => {
     // Run pcp init
@@ -106,14 +108,16 @@ def run_helper_action():
     const { stdout } = await execAsync(`node "${scriptPath}" actualize`, { cwd: playgroundDir });
     assert.match(stdout, /PCP validation successful: 0 breaches detected/);
 
-    // 4. Verify MAP.json content
+    // 4. Verify MAP.json content (token-compressed: no raw content stored)
     const mapContent = JSON.parse(await fs.readFile(path.join(playgroundDir, '.pcp', 'MAP.json'), 'utf-8'));
     assert.ok(mapContent['d-a1b2']);
     assert.equal(mapContent['d-a1b2'].title, 'Use Native ESM');
-    assert.ok(mapContent['d-a1b2'].content.includes('We enforce ES module files usage.'));
+    assert.equal(mapContent['d-a1b2'].populated, true);
+    assert.equal(mapContent['d-a1b2'].content, undefined, 'MAP.json must not store raw content');
 
     assert.ok(mapContent['c-c3d4']);
     assert.equal(mapContent['c-c3d4'].title, 'Local Lock Quirks');
+    assert.equal(mapContent['c-c3d4'].populated, true);
 
     // 5. Verify INVENTORY.md signatures
     const inventoryContent = await fs.readFile(path.join(playgroundDir, '.pcp', 'INVENTORY.md'), 'utf-8');

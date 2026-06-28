@@ -246,37 +246,37 @@ async function scanExistingShortcodes(root) {
   return codes;
 }
 
-// Utility to recursively find files matching extensions
+// Utility to recursively find files matching extensions (parallelized)
 async function scanFiles(dir, extensions, excludeDirs = ['.git', 'node_modules', 'dist', 'build', 'tests', 'test', '__tests__']) {
-  const results = [];
-  async function recursiveScan(currentDir) {
-    let list;
-    try {
-      list = await fs.readdir(currentDir);
-    } catch {
-      return;
-    }
-    for (const file of list) {
-      const fullPath = path.join(currentDir, file);
-      let stat;
-      try {
-        stat = await fs.stat(fullPath);
-      } catch {
-        continue;
+  let entries;
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+
+  const files = [];
+  const subdirPromises = [];
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (!excludeDirs.includes(entry.name)) {
+        subdirPromises.push(scanFiles(fullPath, extensions, excludeDirs));
       }
-      if (stat.isDirectory()) {
-        if (excludeDirs.includes(file)) continue;
-        await recursiveScan(fullPath);
-      } else {
-        const ext = path.extname(file).toLowerCase();
-        if (extensions.includes(ext)) {
-          results.push(fullPath);
-        }
+    } else if (entry.isFile()) {
+      const ext = path.extname(entry.name).toLowerCase();
+      if (extensions.includes(ext)) {
+        files.push(fullPath);
       }
     }
   }
-  await recursiveScan(dir);
-  return results;
+
+  const subdirResults = await Promise.all(subdirPromises);
+  for (const batch of subdirResults) {
+    files.push(...batch);
+  }
+  return files;
 }
 
 // 3. Compile context & check traces (actualize)
@@ -308,6 +308,7 @@ async function handleActualize(root) {
 }
 
 // Helper to compile MAP.json from markdown files in .pcp/
+// Token-compressed: validates content at compile-time, stores only structural metadata
 async function compileShortcodeMap(pcpDir) {
   const map = {};
   const mapErrors = [];
@@ -320,13 +321,15 @@ async function compileShortcodeMap(pcpDir) {
   }
 
   const mdFiles = list.filter(f => f.endsWith('.md'));
+  // Track raw content per code for compile-time validation only
+  const contentAccumulator = {};
+
   for (const f of mdFiles) {
     const filePath = path.join(pcpDir, f);
     const content = await fs.readFile(filePath, 'utf-8');
     const lines = content.split('\n');
     
     let currentCode = null;
-    let currentCodeData = null;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -334,8 +337,7 @@ async function compileShortcodeMap(pcpDir) {
       
       if (match) {
         if (currentCode) {
-          // Finalize previous content block
-          map[currentCode] = currentCodeData;
+          contentAccumulator[currentCode] = contentAccumulator[currentCode].trim();
         }
 
         const rawCode = match[1].toLowerCase();
@@ -346,26 +348,28 @@ async function compileShortcodeMap(pcpDir) {
         }
 
         currentCode = rawCode;
-        currentCodeData = {
+        map[rawCode] = {
           file: path.relative(path.dirname(pcpDir), filePath),
           line: i + 1,
-          title: title,
-          content: ''
+          title: title
         };
+        contentAccumulator[rawCode] = '';
       } else if (currentCode) {
-        // Append line content
-        currentCodeData.content += (currentCodeData.content ? '\n' : '') + line;
+        contentAccumulator[currentCode] += (contentAccumulator[currentCode] ? '\n' : '') + line;
       }
     }
     
     if (currentCode) {
-      map[currentCode] = currentCodeData;
+      contentAccumulator[currentCode] = contentAccumulator[currentCode].trim();
     }
   }
 
-  // Sanitize content blocks
+  // Compile-time validation: flag empty or placeholder content blocks
   for (const code of Object.keys(map)) {
-    map[code].content = map[code].content.trim();
+    const raw = (contentAccumulator[code] || '').trim();
+    const stripped = raw.replace(/[\s\-\*]/g, '').toLowerCase();
+    const isPlaceholder = stripped.includes('adddetailed') || stripped.includes('adddescription') || stripped.includes('here') || stripped.length < 5;
+    map[code].populated = !isPlaceholder;
   }
 
   return { map, mapErrors };
@@ -497,13 +501,14 @@ Auto-generated interface declarations surface table. Check here to avoid duplica
 }
 
 // Helper to scan code for inline traces (@pcp:x-xxxx) and validate against MAP.json
+// Content validation is already performed at compile-time in compileShortcodeMap;
+// this function only checks structural existence and the pre-computed `populated` flag.
 async function validateTraceConnections(root, map) {
   const errors = [];
-  // Scan all source directories for code files
   const files = await scanFiles(root, ['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.md']);
   
   for (const file of files) {
-    if (file.includes('.pcp/')) continue; // Skip mapped target index folder itself
+    if (file.includes('.pcp/')) continue;
 
     const content = await fs.readFile(file, 'utf-8');
     const relativePath = path.relative(root, file);
@@ -519,13 +524,8 @@ async function validateTraceConnections(root, map) {
 
         if (!definition) {
           errors.push(`Dead Connection: Reference @pcp:${traceCode} found in ${relativePath}:${i + 1} does not map to any markdown header definition in .pcp/`);
-        } else {
-          // Check if markdown content is empty or contains placeholders only
-          const text = definition.content.replace(/[\s\-\*]/g, '').toLowerCase();
-          const isPlaceholder = text.includes('adddetailed') || text.includes('adddescription') || text.includes('here') || text.length < 5;
-          if (isPlaceholder) {
-            errors.push(`Dead Connection: Reference @pcp:${traceCode} in ${relativePath}:${i + 1} points to an empty/unpopulated documentation block in ${definition.file}:${definition.line}`);
-          }
+        } else if (!definition.populated) {
+          errors.push(`Dead Connection: Reference @pcp:${traceCode} in ${relativePath}:${i + 1} points to an empty/unpopulated documentation block in ${definition.file}:${definition.line}`);
         }
       }
     }
