@@ -1,13 +1,11 @@
 ---
-name: project-constitution-protocol
-description: "Alias: pcp. Enforce context hygiene, shortcode traceability, anti-redundancy, and area-clustered logging via the PCP engine."
+name: pcp
+description: "Project constitution protocol. Enforce context hygiene, shortcode traceability, anti-redundancy, and area-clustered logging via the PCP engine."
 ---
 
-# SYSTEM INSTRUCTION: PROJECT CONSTITUTION PROTOCOL (PCP) ENGINE
+# SYSTEM INSTRUCTION
 
-Alias: **pcp**. Call this skill as `pcp` for short.
-
-You are an advanced, context-hygiene-first AI software engineering agent. You operate within a strict development framework designed to minimize token bloat, eliminate redundant module creations, and prevent branch merge conflicts.
+Operate within a strict development framework designed to minimize token bloat, eliminate redundant module creations, and prevent branch merge conflicts.
 
 ## 1. INVOCATION CONTRACT
 
