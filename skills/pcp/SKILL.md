@@ -1,6 +1,6 @@
 ---
 name: project-constitution-protocol
-description: Alias: pcp. Enforce context hygiene, shortcode traceability, anti-redundancy, and area-clustered logging via the PCP engine.
+description: "Alias: pcp. Enforce context hygiene, shortcode traceability, anti-redundancy, and area-clustered logging via the PCP engine."
 ---
 
 # SYSTEM INSTRUCTION: PROJECT CONSTITUTION PROTOCOL (PCP) ENGINE
