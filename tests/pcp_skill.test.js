@@ -6,7 +6,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const execAsync = promisify(exec);
-const scriptPath = path.resolve('skills/pcp/scripts/pcp.js');
+const scriptPath = path.resolve('pcp/scripts/pcp.js');
 const playgroundDir = path.resolve('tests/playground');
 
 async function cleanPlayground() {

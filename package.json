@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Project Constitution Protocol custom agent skill repository",
   "type": "module",
-  "main": "skills/pcp/scripts/pcp.js",
+  "main": "pcp/scripts/pcp.js",
   "scripts": {
     "test": "node --test tests/pcp_skill.test.js"
   },

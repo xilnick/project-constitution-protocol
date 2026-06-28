@@ -3,10 +3,10 @@
 **Alias: `pcp`**. A context-hygiene-first, light-weight requirements tracking and tracing framework designed specifically for AI-driven software development. It eliminates token bloat, prevents code redundancy in parallel multi-agent workspaces, and enforces cryptographic shortcode traceability with area-based clustering.
 
 ## Repository Layout
-- `skills/pcp/SKILL.md`: The agent instruction skill file (slim core — references procedure files for verbose detail).
-- `skills/pcp/scripts/pcp.js`: Zero-dependency, ESM Node.js runner implementing the protocol automation.
-- `skills/pcp/procedures/`: Lazy-loaded procedure docs for init, actualize, and prune. Read on demand, not loaded into context by default.
-- `skills/pcp/examples/CONSTITUTION_TEMPLATE.md`: Standard boilerplates for decisions, caveats, and requirements.
+- `pcp/SKILL.md`: The agent instruction skill file (slim core — references procedure files for verbose detail).
+- `pcp/scripts/pcp.js`: Zero-dependency, ESM Node.js runner implementing the protocol automation.
+- `pcp/procedures/`: Lazy-loaded procedure docs for init, actualize, and prune. Read on demand, not loaded into context by default.
+- `pcp/examples/CONSTITUTION_TEMPLATE.md`: Standard boilerplates for decisions, caveats, and requirements.
 
 ---
 
@@ -34,7 +34,7 @@ This registers `pcp` as an available skill. No manual directory copy required.
 ### 2. Sandbox Initialization
 When the `pcp` skill is first activated in a workspace it runs `pcp init` automatically. To initialise manually:
 ```bash
-node skills/pcp/scripts/pcp.js init
+node pcp/scripts/pcp.js init
 ```
 This scaffolds the sandbox:
 - `.pcp/`: The container for specifications.
@@ -70,8 +70,8 @@ Sub-areas are chosen semantically from the codebase's logical modules:
 
 ### Minting to an area
 ```bash
-node skills/pcp/scripts/pcp.js mint r --cluster billing --sub invoices
-node skills/pcp/scripts/pcp.js mint r --cluster auth          # auto-routes sub from git diff, or lands in _misc
+node pcp/scripts/pcp.js mint r --cluster billing --sub invoices
+node pcp/scripts/pcp.js mint r --cluster auth          # auto-routes sub from git diff, or lands in _misc
 ```
 
 ---
@@ -86,22 +86,22 @@ INDEX.md stays as a single file (the orientation entry point) and is kept lean b
 
 ## CLI Maintenance Subcommands
 
-All constitution lifecycle operations are CLI subcommands on `node skills/pcp/scripts/pcp.js`. The agent invokes them programmatically when the `pcp` skill activates. `pcp` is the single skill entrypoint — there are no separate slash commands.
+All constitution lifecycle operations are CLI subcommands on `node pcp/scripts/pcp.js`. The agent invokes them programmatically when the `pcp` skill activates. `pcp` is the single skill entrypoint — there are no separate slash commands.
 
-Detailed procedures for `init`, `actualize`, and `prune` live in `skills/pcp/procedures/` and are loaded on demand (not baked into the always-loaded skill context).
+Detailed procedures for `init`, `actualize`, and `prune` live in `pcp/procedures/` and are loaded on demand (not baked into the always-loaded skill context).
 
 ### Bootstrap: `pcp init`
 Scaffold the `.pcp/` sandbox. Run automatically on first skill activation, or manually:
 ```bash
-node skills/pcp/scripts/pcp.js init
+node pcp/scripts/pcp.js init
 ```
-Full procedure: `skills/pcp/procedures/init.md`
+Full procedure: `pcp/procedures/init.md`
 
 ### Fill gaps: `pcp mint <type> [--cluster <area>] [--sub <sub>]`
 Allocate a non-colliding shortcode with cryptographic entropy.
 ```bash
-node skills/pcp/scripts/pcp.js mint d
-node skills/pcp/scripts/pcp.js mint r --cluster billing --sub invoices
+node pcp/scripts/pcp.js mint d
+node pcp/scripts/pcp.js mint r --cluster billing --sub invoices
 ```
 Types:
 - `d` (Decision): Architectural patterns or structural frameworks.
@@ -112,25 +112,25 @@ Types:
 ### Audit: `pcp actualize`
 Compile maps, indexes, and validate trace connections. Run automatically on skill activation:
 ```bash
-node skills/pcp/scripts/pcp.js actualize
+node pcp/scripts/pcp.js actualize
 ```
-Full procedure: `skills/pcp/procedures/actualize.md`
+Full procedure: `pcp/procedures/actualize.md`
 
 ### Remove dead parts: `pcp prune [--write]`
 Detect and optionally archive Zombie Document Blocks (markdown entries with no matching inline code anchor):
 ```bash
-node skills/pcp/scripts/pcp.js prune          # dry-run report
-node skills/pcp/scripts/pcp.js prune --write   # archive and clean
+node pcp/scripts/pcp.js prune          # dry-run report
+node pcp/scripts/pcp.js prune --write   # archive and clean
 ```
-Full procedure: `skills/pcp/procedures/prune.md`
+Full procedure: `pcp/procedures/prune.md`
 
 ### Programmatic lookup
 Cheap one-shot reads that avoid globbing `.pcp/`:
 ```bash
-node skills/pcp/scripts/pcp.js read <shortcode>   # entry body only
-node skills/pcp/scripts/pcp.js map <shortcode>    # <file>:<line> only
-node skills/pcp/scripts/pcp.js ls <area>          # sub-areas and counts
-node skills/pcp/scripts/pcp.js find <query>       # search titles by substring
+node pcp/scripts/pcp.js read <shortcode>   # entry body only
+node pcp/scripts/pcp.js map <shortcode>    # <file>:<line> only
+node pcp/scripts/pcp.js ls <area>          # sub-areas and counts
+node pcp/scripts/pcp.js find <query>       # search titles by substring
 ```
 
 ---

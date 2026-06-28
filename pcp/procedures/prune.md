@@ -3,8 +3,8 @@
 When the agent detects or suspects documentation rot (markdown entries in `.pcp/` with no matching `@pcp:xxx` anchor in any source file), run:
 
 ```bash
-node skills/pcp/scripts/pcp.js prune          # dry-run: report only
-node skills/pcp/scripts/pcp.js prune --write   # archive and remove
+node pcp/scripts/pcp.js prune          # dry-run: report only
+node pcp/scripts/pcp.js prune --write   # archive and remove
 ```
 
 ## Dry-run (default)
