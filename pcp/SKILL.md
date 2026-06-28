@@ -1,6 +1,6 @@
 ---
 name: pcp
-description: "Project constitution protocol. Enforce context hygiene, shortcode traceability, anti-redundancy, and area-clustered logging via the PCP engine."
+description: "Prevent token bloat and merge conflicts in AI-driven workspaces. Activate the pcp skill to load the full protocol."
 ---
 
 # SYSTEM INSTRUCTION
