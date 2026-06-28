@@ -3,15 +3,54 @@
 /**
  * Project Constitution Protocol (PCP) Automation Engine
  * Universal, Zero-Dependency, ESM Node.js Script
+ *
+ * Phase 2: Semantic area/sub layout, programmatic lookup, size-budget warnings.
  */
 
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { execSync } from 'child_process';
 
 const ACCEPTED_TYPES = ['d', 'c', 'r', 'l'];
+const SIZE_WARN_THRESHOLD = 4096; // 4 KB soft ceiling per cluster file
+const ENTRY_SIZE_ESTIMATE = 300; // bytes per typical minted entry
 
-// Main CLI Entrypoint
+// ── Area / Sub Name Validation ─────────────────────────────────────────────
+
+const NAME_MAX_LEN = 32;
+const BRANCH_PREFIX_RE = /^(feat|fix|chore|hotfix|release)\//i;
+const TICKET_ID_RE = /^[A-Z]+-\d+$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const SAFE_KEBAB_RE = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+
+function validateAreaName(name) {
+  if (!name || typeof name !== 'string') {
+    throw new Error(`Invalid name: empty or missing`);
+  }
+  if (name.length > NAME_MAX_LEN) {
+    throw new Error(`Name "${name}" exceeds ${NAME_MAX_LEN} characters`);
+  }
+  if (BRANCH_PREFIX_RE.test(name)) {
+    throw new Error(`Name "${name}" looks like a git branch name. Use a stable codebase area name instead.`);
+  }
+  if (TICKET_ID_RE.test(name)) {
+    throw new Error(`Name "${name}" looks like a ticket ID. Use a stable codebase area name instead.`);
+  }
+  if (DATE_RE.test(name)) {
+    throw new Error(`Name "${name}" looks like a date. Use a stable codebase area name instead.`);
+  }
+  if (name.includes('/') || name.includes('\\') || name.includes('..')) {
+    throw new Error(`Name "${name}" contains path traversal characters`);
+  }
+  if (!SAFE_KEBAB_RE.test(name)) {
+    throw new Error(`Name "${name}" must be lowercase-kebab (a-z, 0-9, hyphens, no leading/trailing hyphen)`);
+  }
+  return name.toLowerCase();
+}
+
+// ── CLI Entrypoint ─────────────────────────────────────────────────────────
+
 async function main() {
   const args = process.argv.slice(2);
   const command = args[0];
@@ -30,15 +69,35 @@ async function main() {
         case 'init':
           await handleInit(root);
           break;
-        case 'mint':
-          await handleMint(root, args[1]);
+        case 'mint': {
+          const clusterIdx = args.indexOf('--cluster');
+          let cluster = null;
+          if (clusterIdx !== -1) cluster = validateAreaName(args[clusterIdx + 1]);
+          const subIdx = args.indexOf('--sub');
+          let sub = null;
+          if (subIdx !== -1) sub = validateAreaName(args[subIdx + 1]);
+          await handleMint(root, args[1], cluster, sub);
           break;
+        }
         case 'actualize':
           await handleActualize(root);
           break;
-        case 'prune':
+        case 'prune': {
           const isWrite = args.includes('--write');
           await handlePrune(root, isWrite);
+          break;
+        }
+        case 'read':
+          await handleRead(root, args[1]);
+          break;
+        case 'ls':
+          await handleLs(root, args[1]);
+          break;
+        case 'map':
+          await handleMap(root, args[1]);
+          break;
+        case 'find':
+          await handleFind(root, args.slice(1).join(' '));
           break;
         default:
           console.error(`Error: Unknown command "${command}"`);
@@ -62,111 +121,200 @@ function printUsage() {
   console.log(`
 Project Constitution Protocol (PCP) Engine CLI
 Usage:
-  node pcp.js init           Scaffold the isolation sandbox (.pcp/)
-  node pcp.js mint <type>    Allocate a new cryptographically unique shortcode
-  node pcp.js actualize      Compile maps, code signatures and validate active trace connections
-  node pcp.js prune [--write] Scan for and remove Zombie Document Blocks (docs missing code ties)
+  node pcp.js init                                          Scaffold the isolation sandbox (.pcp/)
+  node pcp.js mint <type> [--cluster <area>] [--sub <sub>]  Allocate a new cryptographically unique shortcode
+  node pcp.js actualize                                     Compile maps, area index, and validate traces
+  node pcp.js prune [--write]                               Scan for and remove Zombie Document Blocks
+  node pcp.js read <shortcode>                              Print the entry body for a shortcode
+  node pcp.js ls <area>                                     List sub-areas and entry counts for an area
+  node pcp.js map <shortcode>                               Print file path and line number for a shortcode
+  node pcp.js find <query>                                  Search entry titles for a substring
+
+Layout:
+  .pcp/_general.md          Default area (entries without a cluster)
+  .pcp/<area>/<sub>.md      Named area with sub-modules (e.g. auth/oauth.md)
+  .pcp/<area>/_misc.md      Catch-all sub when --sub is omitted and auto-route finds no match
+
+Naming rules:
+  - Lowercase-kebab only (a-z, 0-9, hyphens)
+  - Max 32 characters per segment
+  - Must be a stable codebase area name (e.g. auth, billing, infra)
+  - Never use git branch names, ticket IDs, or dates
   `);
 }
 
-// Find repository root by traversing upwards
+// ── Utilities ──────────────────────────────────────────────────────────────
+
+/**
+ * Resolve the canonical absolute path of the running pcp.js script.
+ * Follows symlinks so it works for npx skills add installs.
+ */
+function findOwnScriptPath() {
+  try {
+    const real = fs.realpathSync?.(process.argv[1]) || process.argv[1];
+    return path.resolve(real);
+  } catch {
+    return path.resolve(process.argv[1]);
+  }
+}
+
 async function findProjectRoot(startDir = process.cwd()) {
   let current = startDir;
   while (true) {
     try {
-      const checkGit = path.join(current, '.git');
-      const stat = await fs.stat(checkGit);
+      const stat = await fs.stat(path.join(current, '.git'));
       if (stat.isDirectory()) return current;
     } catch {}
-
     try {
-      const checkAgents = path.join(current, 'AGENTS.md');
-      await fs.stat(checkAgents);
+      await fs.stat(path.join(current, 'AGENTS.md'));
       return current;
     } catch {}
-
     const parent = path.dirname(current);
-    if (parent === current) {
-      // Default to process.cwd() if no boundary found
-      return process.cwd();
-    }
+    if (parent === current) return process.cwd();
     current = parent;
   }
 }
 
-// Ensure directory exists utility
 async function ensureDir(dirPath) {
-  try {
-    await fs.mkdir(dirPath, { recursive: true });
-  } catch (e) {
-    if (e.code !== 'EEXIST') throw e;
-  }
+  try { await fs.mkdir(dirPath, { recursive: true }); } catch (e) { if (e.code !== 'EEXIST') throw e; }
 }
 
-// Simple atomic locking mechanism using mkdir
 async function acquireLock(lockPath, timeoutMs = 10000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
-    try {
-      await fs.mkdir(lockPath);
-      return;
-    } catch (e) {
-      if (e.code === 'EEXIST') {
-        await new Promise(r => setTimeout(r, 100));
-      } else {
-        throw e;
-      }
+    try { await fs.mkdir(lockPath); return; } catch (e) {
+      if (e.code === 'EEXIST') { await new Promise(r => setTimeout(r, 100)); } else { throw e; }
     }
   }
   throw new Error(`Timeout waiting for PCP lock at ${lockPath}`);
 }
 
 async function releaseLock(lockPath) {
-  try {
-    await fs.rmdir(lockPath);
-  } catch (e) {}
+  try { await fs.rmdir(lockPath); } catch {}
 }
 
-// 1. Scaffold command (init)
+// ── Layout Helpers ─────────────────────────────────────────────────────────
+
+/**
+ * Resolve the target .md file for a new entry.
+ *   _general / no area → .pcp/_general.md
+ *   <area> / <sub>     → .pcp/<area>/<sub>.md  (creates stub if missing)
+ */
+async function resolveTargetFile(pcpDir, type, area, sub) {
+  if (!area || area === '_general') {
+    const targetPath = path.join(pcpDir, '_general.md');
+    try { await fs.stat(targetPath); } catch {
+      await fs.writeFile(targetPath, `# General Entries\n\nThis file groups d/c/r/l entries not specific to a particular area.\n`, 'utf-8');
+      console.log(`+ Created .pcp/_general.md`);
+    }
+    return targetPath;
+  }
+
+  const areaDir = path.join(pcpDir, area);
+  await ensureDir(areaDir);
+
+  const subName = sub || '_misc';
+  const targetPath = path.join(areaDir, `${subName}.md`);
+  try { await fs.stat(targetPath); } catch {
+    const displayName = area.charAt(0).toUpperCase() + area.slice(1);
+    const displaySub = subName.charAt(0).toUpperCase() + subName.slice(1);
+    await fs.writeFile(targetPath, `# ${displayName} / ${displaySub}\n\nThis file groups d/c/r/l entries for the ${area}/${subName} module.\n`, 'utf-8');
+    console.log(`+ Created .pcp/${area}/${subName}.md`);
+  }
+  return targetPath;
+}
+
+/**
+ * Derive {area, sub} from a MAP.json file path (relative to project root).
+ * Returns null for files that should be skipped (ARCHIVE.md, MAP.json, etc.).
+ */
+function deriveAreaSub(relFile) {
+  if (relFile === '.pcp/_general.md' || relFile === '.pcp/CONSTITUTION.md' || relFile === '.pcp/DRAFT_LOG.md') {
+    return { area: '_general', sub: null };
+  }
+  const legacyMatch = relFile.match(/^\.pcp\/clusters\/([a-z0-9-]+)\.md$/);
+  if (legacyMatch) return { area: legacyMatch[1], sub: '_misc' };
+  const areaMatch = relFile.match(/^\.pcp\/([a-z0-9-]+)\/([a-z0-9_-]+)\.md$/);
+  if (areaMatch) return { area: areaMatch[1], sub: areaMatch[2] };
+  return null;
+}
+
+// ── Git Auto-Route ─────────────────────────────────────────────────────────
+
+/**
+ * Infer a sub-area name from changed files in git (uncommitted + staged).
+ * Returns null when git is unavailable or no files match.
+ */
+async function inferSubFromGit(root, area) {
+  try {
+    const output = execSync('git status --porcelain -u', { cwd: root, encoding: 'utf-8', timeout: 5000 });
+    const lines = output.split('\n').filter(l => l.trim());
+    const sourceRoots = ['src/', 'app/', 'lib/'];
+    const subCounts = {};
+
+    for (const line of lines) {
+      const file = line.slice(3).trim();
+      if (!sourceRoots.some(r => file.startsWith(r))) continue;
+      const idx = file.indexOf(`/${area}/`);
+      if (idx === -1) continue;
+      const afterArea = file.slice(idx + area.length + 2);
+      const sub = afterArea.split('/')[0];
+      if (sub && sub !== area) {
+        subCounts[sub] = (subCounts[sub] || 0) + 1;
+      }
+    }
+
+    const entries = Object.entries(subCounts);
+    if (entries.length === 0) return null;
+    entries.sort((a, b) => b[1] - a[1]);
+    return entries[0][0];
+  } catch {
+    return null;
+  }
+}
+
+// ── Size Budget ────────────────────────────────────────────────────────────
+
+async function checkSizeBudget(filePath) {
+  try {
+    const stat = await fs.stat(filePath);
+    if (stat.size + ENTRY_SIZE_ESTIMATE > SIZE_WARN_THRESHOLD) {
+      const kb = (stat.size / 1024).toFixed(1);
+      console.warn(`WARN: ${filePath.includes('.pcp/') ? filePath.split('.pcp/')[1] : path.basename(filePath)} is ${kb} KB (near 4 KB limit). Consider splitting into a new sub-area.`);
+    }
+  } catch { /* file doesn't exist yet — fine */ }
+}
+
+// ── 1. INIT ────────────────────────────────────────────────────────────────
+
 async function handleInit(root) {
   const pcpDir = path.join(root, '.pcp');
   await ensureDir(pcpDir);
 
   const constitutionPath = path.join(pcpDir, 'CONSTITUTION.md');
   const draftLogPath = path.join(pcpDir, 'DRAFT_LOG.md');
+  const generalPath = path.join(pcpDir, '_general.md');
   const gitignorePath = path.join(root, '.gitignore');
 
-  // Boilerplate Constitution
-  try {
-    await fs.stat(constitutionPath);
-    console.log(`- CONSTITUTION.md already exists.`);
-  } catch {
-    await fs.writeFile(constitutionPath, `# Project Constitution
-
-This document lists stable, finalized Architectural Decisions (@pcp:d) and permanent Engineering Caveats (@pcp:c).
-`, 'utf-8');
+  try { await fs.stat(constitutionPath); console.log(`- CONSTITUTION.md already exists.`); } catch {
+    await fs.writeFile(constitutionPath, `# Project Constitution\n\nThis document lists stable, finalized Architectural Decisions (@pcp:d) and permanent Engineering Caveats (@pcp:c).\n`, 'utf-8');
     console.log(`+ Created .pcp/CONSTITUTION.md`);
   }
 
-  // Boilerplate Draft Log
-  try {
-    await fs.stat(draftLogPath);
-    console.log(`- DRAFT_LOG.md already exists.`);
-  } catch {
-    await fs.writeFile(draftLogPath, `# Draft Log
-
-This log registers newly minted requirements (@pcp:r), engineering caveats (@pcp:c), and deferred tasks (@pcp:l).
-`, 'utf-8');
+  try { await fs.stat(draftLogPath); console.log(`- DRAFT_LOG.md already exists.`); } catch {
+    await fs.writeFile(draftLogPath, `# Draft Log\n\nThis log registers newly minted requirements (@pcp:r), engineering caveats (@pcp:c), and deferred tasks (@pcp:l).\n`, 'utf-8');
     console.log(`+ Created .pcp/DRAFT_LOG.md`);
   }
 
-  // Update gitignore
-  let gitignoreContent = '';
-  try {
-    gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
-  } catch {}
+  try { await fs.stat(generalPath); console.log(`- _general.md already exists.`); } catch {
+    await fs.writeFile(generalPath, `# General Entries\n\nThis file groups d/c/r/l entries not specific to a particular area.\n`, 'utf-8');
+    console.log(`+ Created .pcp/_general.md`);
+  }
 
-  const targets = ['.pcp/MAP.json', '.pcp/INVENTORY.md'];
+  let gitignoreContent = '';
+  try { gitignoreContent = await fs.readFile(gitignorePath, 'utf-8'); } catch {}
+
+  const targets = ['.pcp/MAP.json', '.pcp/INVENTORY.md', '.pcp/INDEX.md'];
   let modified = false;
   for (const target of targets) {
     if (!gitignoreContent.split('\n').some(line => line.trim() === target)) {
@@ -182,52 +330,283 @@ This log registers newly minted requirements (@pcp:r), engineering caveats (@pcp
     console.log(`- .gitignore already contains PCP exclusions.`);
   }
 
+  // Drop AGENTS.md if missing (registers PCP as the active context-hygiene skill)
+  const agentsPath = path.join(root, 'AGENTS.md');
+  try {
+    await fs.stat(agentsPath);
+    console.log(`- AGENTS.md already exists.`);
+  } catch {
+    const agentsContent = [
+      '# Project Agent Instructions',
+      '',
+      '## Project Constitution Protocol (PCP)',
+      '',
+      'This project uses the PCP skill for context hygiene and requirements tracking.',
+      '',
+      '### Orientation',
+      '',
+      'Read `.pcp/INDEX.md` first to understand the current state of the constitution.',
+      '',
+      '### Shortcode Types',
+      '',
+      '- `@pcp:d-xxxx` (Architectural Decisions): Immutable design patterns.',
+      '- `@pcp:c-xxxx` (Engineering Caveats): Technical landmines.',
+      '- `@pcp:r-xxxx` (Functional Requirements): Lightweight requirements.',
+      '- `@pcp:l-xxxx` (Deferred Logs): Postponed tracks.',
+      '',
+      '### Usage',
+      '',
+      '- Run `pcp actualize` to synchronize the constitution.',
+      '- Use `pcp read <shortcode>` to read a specific entry.',
+      '- Use `pcp map <shortcode>` to get the file and line of an entry.',
+      '- Use `pcp ls <area>` to list sub-areas and counts.',
+      '- Use `pcp find <query>` to search titles.',
+      '',
+    ].join('\n');
+    await fs.writeFile(agentsPath, agentsContent, 'utf-8');
+    console.log(`+ Created AGENTS.md at project root.`);
+  }
+
   console.log(`\nPCP Sandbox successfully initialized at .pcp/`);
 }
 
-// 2. Allocate code command (mint)
-async function handleMint(root, type) {
+// ── 2. MINT ────────────────────────────────────────────────────────────────
+
+async function handleMint(root, type, area, sub) {
   if (!type || !ACCEPTED_TYPES.includes(type.toLowerCase())) {
     throw new Error(`Invalid type "${type}". Allowed types are: ${ACCEPTED_TYPES.join(', ')}`);
   }
 
   const pcpDir = path.join(root, '.pcp');
   await ensureDir(pcpDir);
-  const draftLogPath = path.join(pcpDir, 'DRAFT_LOG.md');
 
-  // Search existing codes to prevent collision
+  // Auto-route sub from git diff when not explicitly provided
+  let resolvedSub = sub;
+  if (!resolvedSub && area && area !== '_general') {
+    resolvedSub = await inferSubFromGit(root, area);
+    if (resolvedSub) console.log(`(auto-routed sub: ${resolvedSub})`);
+  }
+
+  const targetFile = await resolveTargetFile(pcpDir, type, area || '_general', resolvedSub);
+  const clusterLabel = area && area !== '_general'
+    ? `${area}/${resolvedSub || '_misc'}`
+    : '_general';
+
+  await checkSizeBudget(targetFile);
+
   const existingCodes = await scanExistingShortcodes(root);
-  
-  let attempts = 0;
   let code = '';
-  while (attempts < 1000) {
+  for (let attempts = 0; attempts < 1000; attempts++) {
     const entropy = crypto.randomBytes(16).toString('hex') + Date.now();
     const hash = crypto.createHash('md5').update(entropy).digest('hex');
-    const potentialCode = `${type}-${hash.slice(0, 4)}`;
-    if (!existingCodes.has(potentialCode)) {
-      code = potentialCode;
-      break;
-    }
-    attempts++;
+    const potential = `${type}-${hash.slice(0, 4)}`;
+    if (!existingCodes.has(potential)) { code = potential; break; }
   }
-
-  if (!code) {
-    throw new Error('Failed to generate a non-colliding cryptographic shortcode.');
-  }
+  if (!code) throw new Error('Failed to generate a non-colliding cryptographic shortcode.');
 
   const marker = `### [${code}] Title Descriptor`;
-  const template = `\n${marker}
-- **Date**: ${new Date().toISOString().split('T')[0]}
-- **Status**: Draft
-- **Description**: Add detailed architectural intent or requirement here.
-`;
+  const template = `\n${marker}\n- **Date**: ${new Date().toISOString().split('T')[0]}\n- **Status**: Draft\n- **Cluster**: ${clusterLabel}\n- **Description**: Add detailed architectural intent or requirement here.\n`;
 
-  await fs.appendFile(draftLogPath, template, 'utf-8');
+  await fs.appendFile(targetFile, template, 'utf-8');
   console.log(marker);
-  console.log(`- Code appended to .pcp/DRAFT_LOG.md`);
+  console.log(`- Code appended to ${path.relative(root, targetFile)}`);
 }
 
-// Scan all markdown and source files to aggregate already used shortcodes
+// ── 3. ACTUALIZE ───────────────────────────────────────────────────────────
+
+async function handleActualize(root) {
+  const pcpDir = path.join(root, '.pcp');
+  await ensureDir(pcpDir);
+
+  console.log(`[1/4] Compiling Markdown shortcode map...`);
+  const { map, mapErrors } = await compileShortcodeMap(pcpDir);
+  await fs.writeFile(path.join(pcpDir, 'MAP.json'), JSON.stringify(map, null, 2), 'utf-8');
+  console.log(`- Indexed ${Object.keys(map).length} shortcode definitions.`);
+
+  console.log(`[2/4] Extracting code signature inventory...`);
+  const inventoryMarkdown = await extractInventory(root);
+  await fs.writeFile(path.join(pcpDir, 'INVENTORY.md'), inventoryMarkdown, 'utf-8');
+  console.log(`- Code signature inventory compiled to .pcp/INVENTORY.md`);
+
+  console.log(`[3/4] Generating area index...`);
+  await writeIndexFile(pcpDir, map);
+  console.log(`- Area index compiled to .pcp/INDEX.md`);
+
+  console.log(`[4/4] Performing trace validation checks...`);
+  const traceErrors = await validateTraceConnections(root, map);
+  const allErrors = [...mapErrors, ...traceErrors];
+  if (allErrors.length > 0) {
+    const exc = new Error(allErrors.join('\n'));
+    exc.name = 'DeadConnectionBreachException';
+    throw exc;
+  }
+  console.log(`PCP validation successful: 0 breaches detected.`);
+}
+
+// ── 4. PRUNE ───────────────────────────────────────────────────────────────
+
+async function handlePrune(root, isWrite) {
+  const pcpDir = path.join(root, '.pcp');
+  const { map } = await compileShortcodeMap(pcpDir);
+
+  const activeTraces = new Set();
+  const files = await scanFiles(root, ['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.md']);
+  for (const file of files) {
+    if (file.includes('.pcp/')) continue;
+    try {
+      const content = await fs.readFile(file, 'utf-8');
+      const matches = content.match(/@pcp:[dcrl]-[0-9a-f]{4}\b/gi);
+      if (matches) {
+        for (const m of matches) activeTraces.add(m.replace('@pcp:', '').toLowerCase());
+      }
+    } catch {}
+  }
+
+  const zombies = [];
+  for (const code of Object.keys(map)) {
+    if (!activeTraces.has(code)) {
+      zombies.push({ code, file: map[code].file, line: map[code].line, title: map[code].title });
+    }
+  }
+
+  if (zombies.length === 0) {
+    console.log(`No Zombie Document Blocks detected. Codebase documentation is fully clean.`);
+    return;
+  }
+
+  console.log(`Detected ${zombies.length} Zombie Document Blocks (documentation structures with no active code connections):`);
+  for (const z of zombies) console.log(`- [${z.code}] "${z.title}" in ${z.file}:${z.line}`);
+
+  if (!isWrite) {
+    console.log(`\nRun command with "--write" flag to archive and clean out these obsolete blocks.`);
+    return;
+  }
+
+  console.log(`\nPruning zombie blocks and saving archives...`);
+  const archivePath = path.join(pcpDir, 'ARCHIVE.md');
+  let archiveContent = '';
+  try { archiveContent = await fs.readFile(archivePath, 'utf-8'); } catch {
+    archiveContent = `# Pruned Document Archives\n\nThis archive stores historical records of pruned design decisions and requirements.\n`;
+  }
+
+  const zombiesByFile = {};
+  for (const z of zombies) {
+    const fullPath = path.join(root, z.file);
+    if (!zombiesByFile[fullPath]) zombiesByFile[fullPath] = [];
+    zombiesByFile[fullPath].push(z);
+  }
+
+  for (const filePath of Object.keys(zombiesByFile)) {
+    const fileZombies = zombiesByFile[filePath];
+    fileZombies.sort((a, b) => b.line - a.line);
+    let updatedContent = await fs.readFile(filePath, 'utf-8');
+
+    for (const z of fileZombies) {
+      const linesArray = updatedContent.split('\n');
+      const startIdx = z.line - 1;
+      const headerLine = linesArray[startIdx];
+      if (!headerLine || !headerLine.includes(`[${z.code}]`)) {
+        console.warn(`Warning: Shortcode heading mismatch for [${z.code}] at expected line ${z.line}. Skipping prune.`);
+        continue;
+      }
+      let endIdx = startIdx + 1;
+      while (endIdx < linesArray.length) { if (/^#+ /.test(linesArray[endIdx])) break; endIdx++; }
+      const prunedBlock = linesArray.slice(startIdx, endIdx).join('\n');
+      archiveContent += `\n## Archived from ${path.basename(filePath)} on ${new Date().toISOString().split('T')[0]}\n${prunedBlock}\n`;
+      linesArray.splice(startIdx, endIdx - startIdx);
+      updatedContent = linesArray.join('\n');
+    }
+
+    await fs.writeFile(filePath, updatedContent.trim() + '\n', 'utf-8');
+    console.log(`- Pruned zombie block(s) from ${path.basename(filePath)}`);
+  }
+
+  await fs.writeFile(archivePath, archiveContent.trim() + '\n', 'utf-8');
+  console.log(`+ Archived zombie block(s) to .pcp/ARCHIVE.md`);
+}
+
+// ── 5. READ ────────────────────────────────────────────────────────────────
+
+async function handleRead(root, shortcode) {
+  if (!shortcode) { console.error('Usage: pcp read <shortcode>'); process.exit(1); }
+  const map = await loadMap(root);
+  const entry = map[shortcode.toLowerCase()];
+  if (!entry) { console.error(`Shortcode "${shortcode}" not found in MAP.json.`); process.exit(1); }
+
+  const filePath = path.resolve(root, entry.file);
+  const body = await findEntryInFile(filePath, shortcode.toLowerCase());
+  if (!body) { console.error(`Entry body not found for "${shortcode}" in ${entry.file}.`); process.exit(1); }
+  console.log(body);
+}
+
+// ── 6. LS ──────────────────────────────────────────────────────────────────
+
+async function handleLs(root, area) {
+  if (!area) { console.error('Usage: pcp ls <area>'); process.exit(1); }
+  const map = await loadMap(root);
+
+  const areaSubs = {};
+  for (const [code, meta] of Object.entries(map)) {
+    const derived = deriveAreaSub(meta.file);
+    if (!derived || derived.area !== area) continue;
+    const sub = derived.sub || '(root)';
+    if (!areaSubs[sub]) areaSubs[sub] = [];
+    areaSubs[sub].push(code);
+  }
+
+  if (Object.keys(areaSubs).length === 0) {
+    console.error(`Area "${area}" not found or has no entries.`);
+    process.exit(1);
+  }
+
+  console.log(`Area: ${area}\n`);
+  const sortedSubs = Object.keys(areaSubs).sort((a, b) => {
+    if (a === '(root)') return -1;
+    if (b === '(root)') return 1;
+    return a.localeCompare(b);
+  });
+  for (const sub of sortedSubs) {
+    console.log(`  ${sub}: ${areaSubs[sub].length} entries`);
+  }
+}
+
+// ── 7. MAP ─────────────────────────────────────────────────────────────────
+
+async function handleMap(root, shortcode) {
+  if (!shortcode) { console.error('Usage: pcp map <shortcode>'); process.exit(1); }
+  const map = await loadMap(root);
+  const entry = map[shortcode.toLowerCase()];
+  if (!entry) { console.error(`Shortcode "${shortcode}" not found in MAP.json.`); process.exit(1); }
+  console.log(`${entry.file}:${entry.line}`);
+}
+
+// ── 8. FIND ────────────────────────────────────────────────────────────────
+
+async function handleFind(root, query) {
+  if (!query) { console.error('Usage: pcp find <query>'); process.exit(1); }
+  const map = await loadMap(root);
+  const lowerQuery = query.toLowerCase();
+  const matches = [];
+
+  for (const [code, meta] of Object.entries(map)) {
+    if (meta.title.toLowerCase().includes(lowerQuery)) {
+      matches.push({ code, title: meta.title, file: meta.file, line: meta.line });
+    }
+  }
+
+  if (matches.length === 0) { console.log(`No entries matching "${query}" found.`); return; }
+  for (const m of matches) console.log(`@pcp:${m.code}\t${m.title}\t${m.file}:${m.line}`);
+}
+
+// ── Shared Helpers ─────────────────────────────────────────────────────────
+
+async function loadMap(root) {
+  const mapPath = path.join(root, '.pcp', 'MAP.json');
+  try { return JSON.parse(await fs.readFile(mapPath, 'utf-8')); } catch {
+    console.error('MAP.json not found. Run "pcp actualize" first.'); process.exit(1);
+  }
+}
+
 async function scanExistingShortcodes(root) {
   const codes = new Set();
   const files = await scanFiles(root, ['.md', '.js', '.jsx', '.ts', '.tsx', '.py', '.go']);
@@ -236,135 +615,63 @@ async function scanExistingShortcodes(root) {
       const content = await fs.readFile(file, 'utf-8');
       const matches = content.match(/@pcp:[dcrl]-[0-9a-f]{4}\b|\[[dcrl]-[0-9a-f]{4}\]/gi);
       if (matches) {
-        for (const match of matches) {
-          const raw = match.replace(/[@pcp:|\[|\]]/gi, '').toLowerCase();
-          codes.add(raw);
-        }
+        for (const m of matches) codes.add(m.replace(/[@pcp:|\[|\]]/gi, '').toLowerCase());
       }
     } catch {}
   }
   return codes;
 }
 
-// Utility to recursively find files matching extensions (parallelized)
 async function scanFiles(dir, extensions, excludeDirs = ['.git', 'node_modules', 'dist', 'build', 'tests', 'test', '__tests__']) {
   let entries;
-  try {
-    entries = await fs.readdir(dir, { withFileTypes: true });
-  } catch {
-    return [];
-  }
-
+  try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return []; }
   const files = [];
   const subdirPromises = [];
-
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!excludeDirs.includes(entry.name)) {
-        subdirPromises.push(scanFiles(fullPath, extensions, excludeDirs));
-      }
-    } else if (entry.isFile()) {
-      const ext = path.extname(entry.name).toLowerCase();
-      if (extensions.includes(ext)) {
-        files.push(fullPath);
-      }
+      if (!excludeDirs.includes(entry.name)) subdirPromises.push(scanFiles(fullPath, extensions, excludeDirs));
+    } else if (entry.isFile() && extensions.includes(path.extname(entry.name).toLowerCase())) {
+      files.push(fullPath);
     }
   }
-
   const subdirResults = await Promise.all(subdirPromises);
-  for (const batch of subdirResults) {
-    files.push(...batch);
-  }
+  for (const batch of subdirResults) files.push(...batch);
   return files;
 }
 
-// 3. Compile context & check traces (actualize)
-async function handleActualize(root) {
-  const pcpDir = path.join(root, '.pcp');
-  await ensureDir(pcpDir);
-
-  console.log(`[1/3] Compiling Markdown shortcode map...`);
-  const { map, mapErrors } = await compileShortcodeMap(pcpDir);
-  await fs.writeFile(path.join(pcpDir, 'MAP.json'), JSON.stringify(map, null, 2), 'utf-8');
-  console.log(`- Indexed ${Object.keys(map).length} shortcode definitions.`);
-
-  console.log(`[2/3] Extracting code signature inventory...`);
-  const inventoryMarkdown = await extractInventory(root);
-  await fs.writeFile(path.join(pcpDir, 'INVENTORY.md'), inventoryMarkdown, 'utf-8');
-  console.log(`- Code signature inventory compiled to .pcp/INVENTORY.md`);
-
-  console.log(`[3/3] Performing trace validation checks...`);
-  const traceErrors = await validateTraceConnections(root, map);
-  
-  const allErrors = [...mapErrors, ...traceErrors];
-  if (allErrors.length > 0) {
-    const exc = new Error(allErrors.join('\n'));
-    exc.name = 'DeadConnectionBreachException';
-    throw exc;
-  }
-
-  console.log(`PCP validation successful: 0 breaches detected.`);
-}
-
-// Helper to compile MAP.json from markdown files in .pcp/
-// Token-compressed: validates content at compile-time, stores only structural metadata
 async function compileShortcodeMap(pcpDir) {
   const map = {};
   const mapErrors = [];
-  
-  let list;
-  try {
-    list = await fs.readdir(pcpDir);
-  } catch {
-    return { map, mapErrors };
-  }
-
-  const mdFiles = list.filter(f => f.endsWith('.md'));
-  // Track raw content per code for compile-time validation only
+  const mdFiles = [];
+  await collectMarkdownFiles(pcpDir, mdFiles);
   const contentAccumulator = {};
 
-  for (const f of mdFiles) {
-    const filePath = path.join(pcpDir, f);
+  for (const filePath of mdFiles) {
     const content = await fs.readFile(filePath, 'utf-8');
     const lines = content.split('\n');
-    
+    const relativePath = path.relative(path.dirname(pcpDir), filePath);
     let currentCode = null;
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const match = line.match(/^#+.*\[([dcrl]-[0-9a-f]{4})\]\s*(.*)$/i);
-      
+      const match = lines[i].match(/^#+.*\[([dcrl]-[0-9a-f]{4})\]\s*(.*)$/i);
       if (match) {
-        if (currentCode) {
-          contentAccumulator[currentCode] = contentAccumulator[currentCode].trim();
-        }
-
+        if (currentCode) contentAccumulator[currentCode] = contentAccumulator[currentCode].trim();
         const rawCode = match[1].toLowerCase();
         const title = match[2].trim();
-        
         if (map[rawCode]) {
-          mapErrors.push(`Duplicate shortcode definition found: [${rawCode}] in ${f}:${i + 1} and ${map[rawCode].file}`);
+          mapErrors.push(`Duplicate shortcode definition found: [${rawCode}] in ${relativePath}:${i + 1} and ${map[rawCode].file}`);
         }
-
         currentCode = rawCode;
-        map[rawCode] = {
-          file: path.relative(path.dirname(pcpDir), filePath),
-          line: i + 1,
-          title: title
-        };
+        map[rawCode] = { file: relativePath, line: i + 1, title };
         contentAccumulator[rawCode] = '';
       } else if (currentCode) {
-        contentAccumulator[currentCode] += (contentAccumulator[currentCode] ? '\n' : '') + line;
+        contentAccumulator[currentCode] += (contentAccumulator[currentCode] ? '\n' : '') + lines[i];
       }
     }
-    
-    if (currentCode) {
-      contentAccumulator[currentCode] = contentAccumulator[currentCode].trim();
-    }
+    if (currentCode) contentAccumulator[currentCode] = contentAccumulator[currentCode].trim();
   }
 
-  // Compile-time validation: flag empty or placeholder content blocks
   for (const code of Object.keys(map)) {
     const raw = (contentAccumulator[code] || '').trim();
     const stripped = raw.replace(/[\s\-\*]/g, '').toLowerCase();
@@ -375,21 +682,82 @@ async function compileShortcodeMap(pcpDir) {
   return { map, mapErrors };
 }
 
-// Helper to scan codebase for exposed declarations
+async function collectMarkdownFiles(dir, result) {
+  let entries;
+  try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return; }
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await collectMarkdownFiles(fullPath, result);
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      result.push(fullPath);
+    }
+  }
+}
+
+async function writeIndexFile(pcpDir, map) {
+  const areas = {};
+
+  for (const [code, meta] of Object.entries(map)) {
+    const derived = deriveAreaSub(meta.file);
+    if (!derived) continue;
+    const { area, sub } = derived;
+    if (!areas[area]) areas[area] = {};
+    const subName = sub || '(root)';
+    if (!areas[area][subName]) areas[area][subName] = [];
+    areas[area][subName].push({ code, title: meta.title, populated: meta.populated });
+  }
+
+  let md = `# PCP Area Index\n\nAuto-generated index of all PCP entries by area and sub-area. Read this file first for orientation; do not glob \`.pcp/\`.\n\n| Area | Sub-areas | d | c | r | l | Total |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
+
+  const sortedAreas = Object.keys(areas).sort((a, b) => {
+    if (a === '_general') return -1;
+    if (b === '_general') return 1;
+    return a.localeCompare(b);
+  });
+
+  for (const area of sortedAreas) {
+    const subs = areas[area];
+    const subNames = Object.keys(subs).filter(s => s !== '(root)');
+    const subList = subNames.length > 0 ? subNames.join(', ') : '-';
+    const counts = { d: 0, c: 0, r: 0, l: 0 };
+    for (const entries of Object.values(subs)) {
+      for (const e of entries) {
+        const t = e.code.split('-')[0];
+        if (counts[t] !== undefined) counts[t]++;
+      }
+    }
+    const total = counts.d + counts.c + counts.r + counts.l;
+    md += `| \`${area}\` | ${subList} | ${counts.d} | ${counts.c} | ${counts.r} | ${counts.l} | ${total} |\n`;
+  }
+
+  for (const area of sortedAreas) {
+    const subs = areas[area];
+    md += `\n## ${area}\n`;
+    const sortedSubs = Object.keys(subs).sort((a, b) => {
+      if (a === '(root)') return -1;
+      if (b === '(root)') return 1;
+      return a.localeCompare(b);
+    });
+    for (const sub of sortedSubs) {
+      if (sub !== '(root)') md += `\n### ${sub}\n`;
+      for (const entry of subs[sub]) {
+        const status = entry.populated ? '' : ' (empty)';
+        md += `- \`@pcp:${entry.code}\` ${entry.title}${status}\n`;
+      }
+    }
+  }
+
+  await fs.writeFile(path.join(pcpDir, 'INDEX.md'), md.trim() + '\n', 'utf-8');
+}
+
 async function extractInventory(root) {
-  // Universally scan common folders: src, lib, app, or fallback to root
   let scanDirs = ['src', 'lib', 'app'];
   let actualDirs = [];
   for (const d of scanDirs) {
-    try {
-      const s = await fs.stat(path.join(root, d));
-      if (s.isDirectory()) actualDirs.push(d);
-    } catch {}
+    try { const s = await fs.stat(path.join(root, d)); if (s.isDirectory()) actualDirs.push(d); } catch {}
   }
-
-  if (actualDirs.length === 0) {
-    actualDirs = ['.']; // Fallback to scanning everything (except excluded)
-  }
+  if (actualDirs.length === 0) actualDirs = ['.'];
 
   const files = [];
   for (const d of actualDirs) {
@@ -398,130 +766,61 @@ async function extractInventory(root) {
   }
 
   const declarations = [];
-
   for (const file of files) {
-    // Avoid reading index files or map files
     if (file.includes('.pcp/') || file.includes('pcp.js')) continue;
-
     const content = await fs.readFile(file, 'utf-8');
     const relativePath = path.relative(root, file);
     const lines = content.split('\n');
-
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-
-      // TS/JS Exports
       if (/\.(js|jsx|ts|tsx)$/.test(file)) {
         const jsMatch = line.match(/\bexport\s+(class|function|interface|const)\s+([a-zA-Z0-9_$]+)/);
-        if (jsMatch) {
-          declarations.push({
-            type: jsMatch[1],
-            name: jsMatch[2],
-            file: relativePath,
-            line: i + 1
-          });
-        }
+        if (jsMatch) declarations.push({ type: jsMatch[1], name: jsMatch[2], file: relativePath, line: i + 1 });
         const defaultMatch = line.match(/\bexport\s+default\s+(class|function)\s+([a-zA-Z0-9_$]+)/);
-        if (defaultMatch) {
-          declarations.push({
-            type: `default ${defaultMatch[1]}`,
-            name: defaultMatch[2],
-            file: relativePath,
-            line: i + 1
-          });
-        }
+        if (defaultMatch) declarations.push({ type: `default ${defaultMatch[1]}`, name: defaultMatch[2], file: relativePath, line: i + 1 });
         const cjsMatch = line.match(/\b(?:module\.)?exports\.([a-zA-Z0-9_$]+)\s*=\s*(function|class|.*)/);
         if (cjsMatch && !jsMatch && !defaultMatch) {
-          declarations.push({
-            type: cjsMatch[2].startsWith('function') ? 'function' : (cjsMatch[2].startsWith('class') ? 'class' : 'const'),
-            name: cjsMatch[1],
-            file: relativePath,
-            line: i + 1
-          });
+          declarations.push({ type: cjsMatch[2].startsWith('function') ? 'function' : (cjsMatch[2].startsWith('class') ? 'class' : 'const'), name: cjsMatch[1], file: relativePath, line: i + 1 });
         }
       }
-
-      // Python Declarations
       if (/\.py$/.test(file)) {
         const pyMatch = line.match(/^(class|def)\s+([a-zA-Z0-9_$]+)/);
-        if (pyMatch) {
-          declarations.push({
-            type: pyMatch[1],
-            name: pyMatch[2],
-            file: relativePath,
-            line: i + 1
-          });
-        }
+        if (pyMatch) declarations.push({ type: pyMatch[1], name: pyMatch[2], file: relativePath, line: i + 1 });
       }
-
-      // Go Declarations
       if (/\.go$/.test(file)) {
         const goFuncMatch = line.match(/^func\s+(?:\([^)]+\)\s+)?([A-Z]\w*)\b/);
-        if (goFuncMatch) {
-          declarations.push({
-            type: 'func',
-            name: goFuncMatch[1],
-            file: relativePath,
-            line: i + 1
-          });
-        }
+        if (goFuncMatch) declarations.push({ type: 'func', name: goFuncMatch[1], file: relativePath, line: i + 1 });
         const goTypeMatch = line.match(/^type\s+([A-Z]\w*)\s+(struct|interface)\b/);
-        if (goTypeMatch) {
-          declarations.push({
-            type: goTypeMatch[2],
-            name: goTypeMatch[1],
-            file: relativePath,
-            line: i + 1
-          });
-        }
+        if (goTypeMatch) declarations.push({ type: goTypeMatch[2], name: goTypeMatch[1], file: relativePath, line: i + 1 });
       }
     }
   }
 
-  // Compile to markdown table
-  let md = `# Codebase Interface Inventory
-
-Auto-generated interface declarations surface table. Check here to avoid duplicate function/module implementation.
-
-| Type | Name | Defined In | Line |
-| :--- | :--- | :--- | :--- |
-`;
-
+  let md = `# Codebase Interface Inventory\n\nAuto-generated interface declarations surface table. Check here to avoid duplicate function/module implementation.\n\n| Type | Name | Defined In | Line |\n| :--- | :--- | :--- | :--- |\n`;
   if (declarations.length === 0) {
     md += `| *None* | *No exports detected* | | |\n`;
   } else {
-    // Sort declarations logically by file and type
     declarations.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
     for (const d of declarations) {
       md += `| \`${d.type}\` | \`${d.name}\` | [${path.basename(d.file)}](file://${path.resolve(root, d.file)}#L${d.line}) | ${d.line} |\n`;
     }
   }
-
   return md;
 }
 
-// Helper to scan code for inline traces (@pcp:x-xxxx) and validate against MAP.json
-// Content validation is already performed at compile-time in compileShortcodeMap;
-// this function only checks structural existence and the pre-computed `populated` flag.
 async function validateTraceConnections(root, map) {
   const errors = [];
   const files = await scanFiles(root, ['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.md']);
-  
   for (const file of files) {
     if (file.includes('.pcp/')) continue;
-
     const content = await fs.readFile(file, 'utf-8');
     const relativePath = path.relative(root, file);
     const lines = content.split('\n');
-
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const match = line.match(/@pcp:([dcrl]-[0-9a-f]{4})\b/i);
-
+      const match = lines[i].match(/@pcp:([dcrl]-[0-9a-f]{4})\b/i);
       if (match) {
         const traceCode = match[1].toLowerCase();
         const definition = map[traceCode];
-
         if (!definition) {
           errors.push(`Dead Connection: Reference @pcp:${traceCode} found in ${relativePath}:${i + 1} does not map to any markdown header definition in .pcp/`);
         } else if (!definition.populated) {
@@ -533,122 +832,22 @@ async function validateTraceConnections(root, map) {
   return errors;
 }
 
-// 4. Clean up documentation rot (prune)
-async function handlePrune(root, isWrite) {
-  const pcpDir = path.join(root, '.pcp');
-  const { map } = await compileShortcodeMap(pcpDir);
-  
-  // Aggregate all active trace references from source code files
-  const activeTraces = new Set();
-  const files = await scanFiles(root, ['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.md']);
-  for (const file of files) {
-    if (file.includes('.pcp/')) continue;
-    try {
-      const content = await fs.readFile(file, 'utf-8');
-      const matches = content.match(/@pcp:[dcrl]-[0-9a-f]{4}\b/gi);
-      if (matches) {
-        for (const match of matches) {
-          activeTraces.add(match.replace('@pcp:', '').toLowerCase());
-        }
-      }
-    } catch {}
-  }
-
-  // Find zombie blocks (exist in map but not in active traces)
-  const zombies = [];
-  for (const code of Object.keys(map)) {
-    if (!activeTraces.has(code)) {
-      zombies.push({
-        code: code,
-        file: map[code].file,
-        line: map[code].line,
-        title: map[code].title
-      });
-    }
-  }
-
-  if (zombies.length === 0) {
-    console.log(`No Zombie Document Blocks detected. Codebase documentation is fully clean.`);
-    return;
-  }
-
-  console.log(`Detected ${zombies.length} Zombie Document Blocks (documentation structures with no active code connections):`);
-  for (const z of zombies) {
-    console.log(`- [${z.code}] "${z.title}" in ${z.file}:${z.line}`);
-  }
-
-  if (!isWrite) {
-    console.log(`\nRun command with "--write" flag to archive and clean out these obsolete blocks.`);
-    return;
-  }
-
-  // Archive and delete zombie blocks
-  console.log(`\nPruning zombie blocks and saving archives...`);
-  const archivePath = path.join(pcpDir, 'ARCHIVE.md');
-  
-  let archiveContent = '';
+async function findEntryInFile(filePath, shortcode) {
   try {
-    archiveContent = await fs.readFile(archivePath, 'utf-8');
-  } catch {
-    archiveContent = `# Pruned Document Archives\n\nThis archive stores historical records of pruned design decisions and requirements.\n`;
-  }
-
-  // Group zombies by files to do updates efficiently
-  const zombiesByFile = {};
-  for (const z of zombies) {
-    const fullPath = path.join(root, z.file);
-    if (!zombiesByFile[fullPath]) zombiesByFile[fullPath] = [];
-    zombiesByFile[fullPath].push(z);
-  }
-
-  for (const filePath of Object.keys(zombiesByFile)) {
-    const fileZombies = zombiesByFile[filePath];
-    const fileContent = await fs.readFile(filePath, 'utf-8');
-    const lines = fileContent.split('\n');
-    
-    // Sort fileZombies descending by line index to avoid offset shifting issues
-    fileZombies.sort((a, b) => b.line - a.line);
-
-    let updatedContent = fileContent;
-
-    for (const z of fileZombies) {
-      // Find the range of the heading
-      const linesArray = updatedContent.split('\n');
-      const startIdx = z.line - 1; // 0-based
-      
-      // Double check that the line actually starts with the target header
-      const headerLine = linesArray[startIdx];
-      if (!headerLine || !headerLine.includes(`[${z.code}]`)) {
-        console.warn(`Warning: Shortcode heading mismatch for [${z.code}] at expected line ${z.line}. Skipping prune.`);
-        continue;
+    const content = await fs.readFile(filePath, 'utf-8');
+    const lines = content.split('\n');
+    let startIdx = -1;
+    let endIdx = lines.length;
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(/^#+.*\[([dcrl]-[0-9a-f]{4})\]/i);
+      if (match) {
+        if (startIdx !== -1) { endIdx = i; break; }
+        if (match[1].toLowerCase() === shortcode) startIdx = i;
       }
-
-      // Find the end index: next line starting with # or EOF
-      let endIdx = startIdx + 1;
-      while (endIdx < linesArray.length) {
-        if (/^#+ /.test(linesArray[endIdx])) {
-          break;
-        }
-        endIdx++;
-      }
-
-      // Extract pruned block content
-      const prunedBlock = linesArray.slice(startIdx, endIdx).join('\n');
-      
-      // Append to archive content
-      archiveContent += `\n## Archived from ${path.basename(filePath)} on ${new Date().toISOString().split('T')[0]}\n${prunedBlock}\n`;
-
-      // Remove from lines array
-      linesArray.splice(startIdx, endIdx - startIdx);
-      updatedContent = linesArray.join('\n');
     }
-
-    await fs.writeFile(filePath, updatedContent.trim() + '\n', 'utf-8');
-    console.log(`- Pruned zombie block(s) from ${path.basename(filePath)}`);
-  }
-
-  await fs.writeFile(archivePath, archiveContent.trim() + '\n', 'utf-8');
-  console.log(`+ Archived zombie block(s) to .pcp/ARCHIVE.md`);
+    if (startIdx === -1) return null;
+    return lines.slice(startIdx, endIdx).join('\n').trim();
+  } catch { return null; }
 }
 
 main();

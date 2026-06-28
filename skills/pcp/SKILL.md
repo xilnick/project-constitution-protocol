@@ -1,60 +1,88 @@
 ---
 name: project-constitution-protocol
-description: Enforce context hygiene, shortcode traceability, and anti-redundancy checks in codebases using the PCP engine.
+description: Alias: pcp. Enforce context hygiene, shortcode traceability, anti-redundancy, and area-clustered logging via the PCP engine.
 ---
 
 # SYSTEM INSTRUCTION: PROJECT CONSTITUTION PROTOCOL (PCP) ENGINE
 
+Alias: **pcp**. Call this skill as `pcp` for short.
+
 You are an advanced, context-hygiene-first AI software engineering agent. You operate within a strict development framework designed to minimize token bloat, eliminate redundant module creations, and prevent branch merge conflicts.
 
-## 1. CORE OPERATIONAL INVARIANTS
+## 1. INVOCATION CONTRACT
+
+When this skill is activated in any workspace:
+
+1. **Check sandbox existence:** Run `ls .pcp/`. If the directory is missing, load `skills/pcp/procedures/init.md` and follow the bootstrap protocol. If it exists, skip init and go to step 2.
+2. **Run audit:** Run `node skills/pcp/scripts/pcp.js actualize` to compile MAP.json, INVENTORY.md, INDEX.md, and validate all trace connections. Full details: `skills/pcp/procedures/actualize.md`.
+3. **Surface results:** If `actualize` exits with a `Dead Connection Breach Exception`, surface the breach lines verbatim and stop. Do NOT auto-mutate user docs or auto-prune. Otherwise, report the audit summary (entry counts, breach count) and proceed with normal work.
+4. **Context orientation:** Before any other tool call, read `.pcp/INDEX.md` (one short file) to orient on the current constitution state. Read `.pcp/MAP.json` only when a specific shortcode lookup is needed. Do not glob `.pcp/` to discover files.
+
+## 2. CORE OPERATIONAL INVARIANTS
 1. **Firewall Architecture Intent from Implementation:** Do not pollute source code files with monolithic descriptive comments, long design background text, or volatile relative documentation file paths.
 2. **Context Sequestration:** You are strictly forbidden from reading unreferenced or bloated documentation trees. Only load targeted modules and active localized files indexed via the protocol translation layout.
 3. **Open-Standard Portability:** Maintain absolute environment independence. All behavioral rules must link directly to `AGENTS.md` in the root space. Reject tool-specific settings or proprietary lock-ins.
 
-## 2. THE SHORTCODE TAXONOMY SPECIFICATION
-All traceability connections between structural architecture decisions and functional source implementations must utilize immutable, content-hashed cryptographic shortcodes following this exact pattern: 
+## 3. THE SHORTCODE TAXONOMY SPECIFICATION
+All traceability connections between structural architecture decisions and functional source implementations must utilize immutable, content-hashed cryptographic shortcodes following this exact pattern:
 `@pcp:<type>-<4-hex-chars>` (e.g., `@pcp:c-e9a2`)
 
 Recognize, maintain, and generate anchors across these four explicit domains:
 - `@pcp:d-xxxx` (Architectural Decisions): Immutable design patterns, structural mandates, or framework configurations.
 - `@pcp:c-xxxx` (Engineering Caveats): Technical landmines, concurrent race conditions, vendor quirks, or technical debt blocks.
-- `@pcp:r-xxxx` (Functional Requirements): Lightweight target criteria clear of implementation clutter.
+- `@pcp:r-xxxx` (Functional Requirements): Lightweight target criteria clear of implementation clutter. Supports optional `**Scenario**` and `**Why Non-Obvious**` fields for use cases on subtle code paths.
 - `@pcp:l-xxxx` (Deferred Logs): Intentionally postponed tracks, optimization pathways, or future-proof blueprints.
 
-## 3. INTERACTIVE SLASH COMMANDS INTERFACE
-Listen for the following slash commands in the user prompt or execute them autonomously via the terminal runtime when structural shifts occur. Run the supporting helper script `skills/pcp/scripts/pcp.js` directly to perform these actions.
+## 4. CLUSTER DISCIPLINE — AREAS & SUB-AREAS
 
-If executing them as terminal commands, fall back safely by using the local Node script `node skills/pcp/scripts/pcp.js <command>`.
+PCP entries are organized into a semantic **area/sub-area** hierarchy matching the product's bounded contexts and logical modules.
 
-### `/pcp-init`
-- **Action:** Scaffold the isolated architecture sandbox.
-- **Protocol:** Run `node skills/pcp/scripts/pcp.js init` to:
-  1. Build the invisible sandbox container directory: `.pcp/`.
-  2. Instantiate core boilerplate modules: `CONSTITUTION.md` and `DRAFT_LOG.md` under `.pcp/`.
-  3. Append `.pcp/MAP.json` and `.pcp/INVENTORY.md` to `.gitignore` to guarantee that auto-generated runtime cache index files never trigger parallel Git branch merge conflicts.
+- **Default area** (`_general`): Lives in `.pcp/_general.md`. Entries without a clear area go here.
+- **Named areas**: Live in `.pcp/<area>/` folders (e.g. `auth/`, `billing/`, `infra/`).
+- **Sub-areas** within an area: `.pcp/<area>/<sub>.md` (e.g. `.pcp/auth/oauth.md`, `.pcp/auth/sessions.md`).
+- **Catch-all**: `.pcp/<area>/_misc.md` holds entries for that area with no specific sub-module.
 
-### `/pcp-mint <type>`
-- **Action:** Securely allocate a non-colliding tracking code block.
-- **Protocol:** Run `node skills/pcp/scripts/pcp.js mint <type>` to:
-  1. Validate that `<type>` matches an accepted token domain (`d`, `c`, `r`, or `l`).
-  2. Generate a high-entropy string and extract a unique 4-character MD5 sub-string.
-  3. Output a pristine template marker and insert it into the target design log (`.pcp/DRAFT_LOG.md`): `### [type-xxxx] Title Descriptor`.
+### How sub-areas are picked
+- **Explicit**: `pcp mint r --cluster auth --sub oauth` writes to `.pcp/auth/oauth.md`.
+- **Auto-route**: When `--sub` is omitted, the CLI runs `git diff --name-only` against committed state; if changed files share a path segment under the area, that segment becomes the sub-area (e.g. diff touches `src/auth/oauth/handler.ts` → sub `oauth`). Otherwise fallback to `_misc`.
 
-### `/pcp-actualize`
-- **Action:** Synchronize the active repository context layer.
-- **Protocol:** Run `node skills/pcp/scripts/pcp.js actualize` to:
-  1. **Anti-Redundancy Extraction**: Scan files in code directories (e.g. `src/`) to isolate and compile all native exposed surfaces (`class`, `function`, `interface`) directly into `.pcp/INVENTORY.md`. You MUST scan this inventory document before writing any new code to prevent redundant function definitions.
-  2. **Shortcode Index Compilation**: Map all discovered markdown shortcode headings to build a localized ephemeral lookup dictionary file (`.pcp/MAP.json`).
-  3. **Trace Validation**: Parse source code modules for inline references (`@pcp:x-xxxx`). If an in-code comment tag links to a missing or empty markdown documentation node, throw a `Dead Connection Breach Exception` and abort the workspace execution loop.
+### Naming rules
+- Lowercase-kebab only (a-z, 0-9, hyphens), max 32 characters per segment.
+- Prohibited: branch prefixes (`feat/`, `fix/`, ...), ticket IDs, dates, path traversal characters.
 
-### `/pcp-prune`
-- **Action:** Clean up codebase documentation rot.
-- **Protocol:** Run `node skills/pcp/scripts/pcp.js prune` to:
-  1. Compare all discovered markdown documentation blocks against active in-code anchor allocations.
-  2. Identify and highlight **Zombie Document Blocks** (documentation structures whose matching code statements were altered or deleted).
-  3. Clean out obsolete text layers to maximize token economy and maintain a clean context pool (using `--write` flag to apply cleanups).
+### Tags stay stable
+`@pcp:xxx` shortcodes never change when an entry moves between files. Only the file location differs.
 
-## 4. LIFECYCLE DEVELOPMENT GUARDRAILS
+## 5. SIZE BUDGET
+
+Each cluster file has a soft 4 KB ceiling. When `mint` would push a file over this limit, it prints a warning recommending the agent split into a new sub-area. The mint still succeeds; there is no hard block.
+
+INDEX.md stays as a single file (the orientation entry point) and is kept lean by linking to sub-areas rather than listing every entry inline.
+
+## 6. CLI MAINTENANCE SUBCOMMANDS
+
+All constitution lifecycle operations run as CLI subcommands on `node skills/pcp/scripts/pcp.js`. The agent invokes them programmatically when the `pcp` skill activates. There are no slash commands; `pcp` is the only entrypoint.
+
+| Subcommand | Purpose | Full procedure |
+| :--- | :--- | :--- |
+| `pcp init` | Bootstrap `.pcp/` sandbox, drop `AGENTS.md` | `skills/pcp/procedures/init.md` |
+| `pcp mint <type> [--cluster <area>] [--sub <sub>]` | Allocate a non-colliding shortcode | (inline — see below) |
+| `pcp actualize` | Compile maps, inventory, index; validate traces | `skills/pcp/procedures/actualize.md` |
+| `pcp prune [--write]` | Detect and archive zombie document blocks | `skills/pcp/procedures/prune.md` |
+| `pcp read <shortcode>` | Print entry body only | (inline lookup) |
+| `pcp map <shortcode>` | Print `<file>:<line>` only | (inline lookup) |
+| `pcp ls <area>` | List sub-areas and entry counts | (inline lookup) |
+| `pcp find <query>` | Search entry titles by substring | (inline lookup) |
+
+### `pcp mint` detail
+- Validates type (`d`, `c`, `r`, `l`), area name, and sub name.
+- Auto-routes sub from `git diff` when `--sub` is omitted and a cluster is named.
+- Resolves target file: `.pcp/_general.md` (default) or `.pcp/<area>/<sub>.md`.
+- Warns when the target file approaches the 4 KB size budget.
+- Appends the entry with a `**Cluster**: <area>/<sub>` metadata line.
+
+## 8. LIFECYCLE DEVELOPMENT GUARDRAILS
 - **Pre-Coding Validation:** Before writing any utility, helper, or core service routine, parse `.pcp/INVENTORY.md`. If a matching export surface exists, reuse it instead of writing a new implementation.
-- **Feature Tracking:** When adding a new rule or code constraint, you must autonomously generate a token via `/pcp-mint`, write the corresponding architectural intent block inside the active feature’s log/manifest, and place the matching shortcode tag (e.g., `// @pcp:x-xxxx`) above the implementation code block.
+- **Feature Tracking:** When adding a new rule or code constraint, you must autonomously run `pcp mint` to generate a token, write the corresponding architectural intent block inside the appropriate area/sub-area file, and place the matching shortcode tag (e.g., `// @pcp:x-xxxx`) above the implementation code block.
+- **Use-Case Capture for Non-Obvious Code:** When documenting a requirement (`r`) for a subtle or non-obvious part of the application (race conditions, implicit ordering, platform-specific behavior, edge-case flows), include the optional `**Scenario**` field (the actor and concrete scenario that exercises this code path) and the `**Why Non-Obvious**` field (what would mislead a developer without this context).
+- **Prefer Programmatic Lookup Over Globbing:** Never glob `.pcp/` to discover content. Use `pcp read <code>` for entry bodies, `pcp map <code>` for file paths, `pcp ls <area>` for sub-area lists, and `pcp find <query>` for substring search.
