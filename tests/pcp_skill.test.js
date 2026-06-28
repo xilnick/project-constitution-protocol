@@ -43,12 +43,7 @@ test('PCP Skill Automation Suite', async (t) => {
   await t.test('1b. init creates AGENTS.md when absent', async () => {
     const agentsPath = path.join(playgroundDir, 'AGENTS.md');
     const content = await fs.readFile(agentsPath, 'utf-8');
-    assert.ok(content.includes('Project Constitution Protocol'));
-    assert.ok(content.includes('@pcp:d-xxxx'));
-    assert.ok(content.includes('@pcp:c-xxxx'));
-    assert.ok(content.includes('@pcp:r-xxxx'));
-    assert.ok(content.includes('@pcp:l-xxxx'));
-    assert.ok(content.includes('.pcp/INDEX.md'));
+    assert.ok(content.includes('Activate the `pcp` skill'));
   });
 
   await t.test('1c. second init does not overwrite existing AGENTS.md', async () => {
