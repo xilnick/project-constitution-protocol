@@ -14,7 +14,7 @@ This creates:
 - `.pcp/CONSTITUTION.md` – stable decisions (`@pcp:d`) and caveats (`@pcp:c`).
 - `.pcp/DRAFT_LOG.md` – working log of requirements (`@pcp:r`) and deferred tasks (`@pcp:l`).
 - `.pcp/_general.md` – default area for entries not tied to a bounded context.
-- Appends `.pcp/MAP.json`, `.pcp/INVENTORY.md`, `.pcp/INDEX.md` to `.gitignore`.
+- Appends `.pcp/MAP.json`, `.pcp/INVENTORY.md`, `.pcp/INVENTORY.json`, `.pcp/INDEX.md` to `.gitignore`.
 
 ## 2. Drop project-level `AGENTS.md` (if missing)
 
