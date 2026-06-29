@@ -183,8 +183,10 @@ function skillRootDir() {
 }
 
 /**
- * True when a scanned file belongs to the protocol itself (its own skill dir)
- * and must be excluded from trace/zombie/collision scans of the host project.
+ * True when a scanned file belongs to the running script's own skill dir.
+ * Secondary guard only: `scanFiles` already prunes every in-tree skill copy
+ * structurally via `isSkillRootDir`. This still covers the running copy when it
+ * lives outside the scanned project tree (e.g. `~/.claude/skills/pcp`).
  */
 function isProtocolOwnFile(file, skillRoot) {
   return file === skillRoot || file.startsWith(skillRoot + path.sep);
@@ -670,9 +672,32 @@ async function scanExistingShortcodes(root) {
   return codes;
 }
 
+/**
+ * Structurally detect a PCP skill installation: any directory that holds both
+ * `SKILL.md` and `scripts/pcp.js`. Used to prune EVERY skill copy found in the
+ * host tree — the running copy AND any vendored/mirrored copy (e.g.
+ * `.agents/skills/pcp/`, `.claude/skills/pcp/`) — from trace/zombie/collision
+ * scans. The protocol docs carry illustrative `@pcp:` example codes (e.g.
+ * `@pcp:c-e9a2`); keying exclusion only on the *running* script's own dir let a
+ * second in-tree copy's examples register as live anchors and raise a spurious
+ * Dead Connection breach whenever the agent ran a different copy of the script.
+ */
+async function isSkillRootDir(dir, entries) {
+  if (!entries.some(e => e.isFile() && e.name === 'SKILL.md')) return false;
+  if (!entries.some(e => e.isDirectory() && e.name === 'scripts')) return false;
+  try {
+    return (await fs.stat(path.join(dir, 'scripts', 'pcp.js'))).isFile();
+  } catch {
+    return false;
+  }
+}
+
 async function scanFiles(dir, extensions, excludeDirs = SCAN_EXCLUDE_DIRS) {
   let entries;
   try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return []; }
+  // Prune any PCP skill installation wherever it lives in the tree, so its
+  // illustrative `@pcp:` example codes never count as live anchors.
+  if (await isSkillRootDir(dir, entries)) return [];
   const files = [];
   const subdirPromises = [];
   for (const entry of entries) {
