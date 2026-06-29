@@ -418,6 +418,38 @@ test('PCP Skill Automation Suite', async (t) => {
     await fs.rm(consumer, { recursive: true, force: true });
   });
 
+  await t.test("22. a vendored in-tree skill copy never breaches, even when a DIFFERENT copy is run", async () => {
+    // Reproduces the real failure: a consumer repo vendors the skill at
+    // `.agents/skills/pcp/` (carrying the illustrative `@pcp:c-e9a2` example),
+    // but the agent runs a SEPARATE copy of the script (e.g. `~/.claude/skills/pcp`).
+    // The running copy is outside the tree, so keying exclusion on its own dir
+    // missed the vendored copy and raised a spurious breach. Structural pruning
+    // must exclude the vendored copy regardless of which copy is executed.
+    const consumer = path.resolve('tests/playground-vendored');
+    await fs.rm(consumer, { recursive: true, force: true });
+    await fs.mkdir(path.join(consumer, '.git'), { recursive: true });
+    await fs.cp(path.resolve('pcp'), path.join(consumer, '.agents', 'skills', 'pcp'), { recursive: true });
+
+    // Run the SOURCE copy (NOT the vendored one) against the consumer.
+    await execAsync(`node "${scriptPath}" init`, { cwd: consumer });
+    const ok = await execAsync(`node "${scriptPath}" actualize`, { cwd: consumer });
+    assert.match(ok.stdout, /PCP validation successful: 0 breaches detected/);
+
+    // The exclusion is structural, not a global mute: a real dangling anchor in
+    // the consumer's OWN code must still breach.
+    await fs.mkdir(path.join(consumer, 'src'), { recursive: true });
+    await fs.writeFile(path.join(consumer, 'src', 'app.ts'), '// @pcp:c-1234\nexport const v = 1;\n', 'utf-8');
+    try {
+      await execAsync(`node "${scriptPath}" actualize`, { cwd: consumer });
+      assert.fail('expected a breach for the consumer dangling anchor');
+    } catch (err) {
+      assert.ok(err.stderr.includes('Dead Connection Breach Exception'));
+      assert.ok(err.stderr.includes('@pcp:c-1234'));
+    }
+
+    await fs.rm(consumer, { recursive: true, force: true });
+  });
+
   // Cleanup
   await cleanPlayground();
 });
