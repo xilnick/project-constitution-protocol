@@ -37,6 +37,7 @@ test('PCP Skill Automation Suite', async (t) => {
     const gitignoreContent = await fs.readFile(path.join(playgroundDir, '.gitignore'), 'utf-8');
     assert.ok(gitignoreContent.includes('.pcp/MAP.json'));
     assert.ok(gitignoreContent.includes('.pcp/INVENTORY.md'));
+    assert.ok(gitignoreContent.includes('.pcp/INVENTORY.json'));
     assert.ok(gitignoreContent.includes('.pcp/INDEX.md'));
   });
 
@@ -144,10 +145,11 @@ test('PCP Skill Automation Suite', async (t) => {
     const indexContent = await fs.readFile(path.join(playgroundDir, '.pcp', 'INDEX.md'), 'utf-8');
     assert.ok(indexContent.includes('PCP Area Index'));
     assert.ok(indexContent.includes('_general'));
-    assert.ok(indexContent.includes('auth'));
-    assert.ok(indexContent.includes(`@pcp:${dCode}`));
-    assert.ok(indexContent.includes(`@pcp:${cCode}`));
-    assert.ok(indexContent.includes('sessions'));
+    assert.ok(indexContent.includes('| `auth` |'), 'INDEX should have an auth summary row');
+    assert.ok(indexContent.includes('sessions'), 'INDEX should list sub-areas in the summary');
+    // Lean index: entries are NOT inlined — they are reachable via pcp ls/find/read.
+    assert.ok(!indexContent.includes(`@pcp:${dCode}`), 'INDEX must not inline entry codes');
+    assert.ok(!indexContent.includes(`@pcp:${cCode}`), 'INDEX must not inline entry codes');
 
     // Verify MAP.json includes entries from area folders
     const mapContent = JSON.parse(await fs.readFile(path.join(playgroundDir, '.pcp', 'MAP.json'), 'utf-8'));
@@ -280,6 +282,140 @@ test('PCP Skill Automation Suite', async (t) => {
     const mapContent = JSON.parse(await fs.readFile(path.join(playgroundDir, '.pcp', 'MAP.json'), 'utf-8'));
     assert.ok(mapContent['r-aaaa']);
     assert.ok(mapContent['r-aaaa'].title.includes('Legacy Entry'));
+  });
+
+  await t.test("17. populated-check does not false-positive on 'here'/'there'/'where' substrings", async () => {
+    const out = await execAsync(`node "${scriptPath}" mint d`, { cwd: playgroundDir });
+    const code = out.stdout.match(/\[(d-[0-9a-f]{4})\]/)[1];
+
+    // Replace the newest placeholder with real prose that embeds "there" and "where"
+    // (both reduce to the substring "here" — the old check wrongly flagged these as placeholders).
+    const generalPath = path.join(playgroundDir, '.pcp', '_general.md');
+    let gen = await fs.readFile(generalPath, 'utf-8');
+    const ph = 'Add detailed architectural intent or requirement here.';
+    const idx = gen.lastIndexOf(ph);
+    assert.notEqual(idx, -1, 'expected a fresh placeholder to replace');
+    gen = gen.slice(0, idx) + 'The resolver runs there before the cache layer, where retries merge.' + gen.slice(idx + ph.length);
+    await fs.writeFile(generalPath, gen, 'utf-8');
+
+    // Anchor it in code so a non-populated entry would raise a Dead Connection breach.
+    await fs.writeFile(path.join(playgroundDir, 'src', 'here.ts'), `// @pcp:${code}\nexport const x = 1;\n`, 'utf-8');
+
+    const { stdout } = await execAsync(`node "${scriptPath}" actualize`, { cwd: playgroundDir });
+    assert.match(stdout, /PCP validation successful: 0 breaches detected/);
+
+    const map = JSON.parse(await fs.readFile(path.join(playgroundDir, '.pcp', 'MAP.json'), 'utf-8'));
+    assert.equal(map[code].populated, true, "prose containing 'there'/'where' must count as populated");
+  });
+
+  await t.test('18. actualize builds INVENTORY.json + lean summary; lookup queries it', async () => {
+    const srcDir = path.join(playgroundDir, 'src');
+    // Export forms the old line-regex missed: async function, type alias.
+    await fs.writeFile(
+      path.join(srcDir, 'util.ts'),
+      `export async function fetchUser() {}\nexport type UserId = string;\nexport const CACHE_TTL = 60;\n`,
+      'utf-8',
+    );
+
+    const { stdout } = await execAsync(`node "${scriptPath}" actualize`, { cwd: playgroundDir });
+    assert.match(stdout, /PCP validation successful: 0 breaches detected/);
+
+    // Full per-symbol index lands in INVENTORY.json.
+    const inv = JSON.parse(await fs.readFile(path.join(playgroundDir, '.pcp', 'INVENTORY.json'), 'utf-8'));
+    const names = inv.declarations.map((d) => d.name);
+    assert.ok(names.includes('fetchUser'), 'async function export must be captured');
+    assert.ok(names.includes('UserId'), 'type export must be captured');
+    assert.ok(names.includes('CACHE_TTL'));
+
+    // INVENTORY.md is a lean summary — no per-symbol rows, no absolute paths.
+    const invMd = await fs.readFile(path.join(playgroundDir, '.pcp', 'INVENTORY.md'), 'utf-8');
+    assert.ok(invMd.includes('lookup <name>'), 'summary should point to pcp lookup');
+    assert.ok(!invMd.includes('fetchUser'), 'summary must not inline individual symbols');
+    assert.ok(!invMd.includes('file://'), 'summary must not embed absolute file:// paths');
+
+    // lookup finds a symbol by substring and prints file:line.
+    const hit = await execAsync(`node "${scriptPath}" lookup fetch`, { cwd: playgroundDir });
+    assert.ok(hit.stdout.includes('fetchUser'));
+    assert.match(hit.stdout, /util\.ts:\d+/);
+
+    // lookup miss is graceful.
+    const miss = await execAsync(`node "${scriptPath}" lookup zzzznotreal`, { cwd: playgroundDir });
+    assert.ok(miss.stdout.includes('No exports matching'));
+  });
+
+  await t.test('19. archived shortcodes are not re-indexed into MAP.json (ARCHIVE.md excluded)', async () => {
+    // d-f00d was minted, pruned, and archived in test 15.
+    const archive = await fs.readFile(path.join(playgroundDir, '.pcp', 'ARCHIVE.md'), 'utf-8');
+    assert.ok(archive.includes('[d-f00d]'), 'precondition: zombie was archived');
+
+    await execAsync(`node "${scriptPath}" actualize`, { cwd: playgroundDir });
+    const map = JSON.parse(await fs.readFile(path.join(playgroundDir, '.pcp', 'MAP.json'), 'utf-8'));
+    assert.equal(map['d-f00d'], undefined, 'archived shortcode must not resurrect in MAP.json');
+
+    // and it must not be readable
+    try {
+      await execAsync(`node "${scriptPath}" read d-f00d`, { cwd: playgroundDir });
+      assert.fail('read should fail for an archived/non-indexed code');
+    } catch (err) {
+      assert.ok(err.stderr.includes('not found'));
+    }
+  });
+
+  await t.test('20. mint auto-routes sub from git status, including renamed files', async () => {
+    const gitDir = path.resolve('tests/playground-git');
+    await fs.rm(gitDir, { recursive: true, force: true });
+    await fs.mkdir(path.join(gitDir, 'src', 'auth', 'oauth'), { recursive: true });
+    const git = (cmd) => execAsync(`git -c user.email=t@t.dev -c user.name=t ${cmd}`, { cwd: gitDir });
+
+    await git('init -q');
+    await fs.writeFile(path.join(gitDir, 'src', 'auth', 'oauth', 'handler.ts'), 'export const x = 1;\n', 'utf-8');
+    await execAsync(`node "${scriptPath}" init`, { cwd: gitDir });
+    await git('add -A');
+
+    // Staged file under auth/oauth → sub 'oauth'.
+    const added = await execAsync(`node "${scriptPath}" mint r --cluster auth`, { cwd: gitDir });
+    assert.ok(added.stdout.includes('auto-routed sub: oauth'), added.stdout);
+    assert.ok(added.stdout.includes('.pcp/auth/oauth.md'));
+
+    // Commit, then rename into another sub → porcelain shows "R old -> new"; route on the new path.
+    await git('add -A');
+    await git('commit -q -m base');
+    await fs.mkdir(path.join(gitDir, 'src', 'auth', 'sessions'), { recursive: true });
+    await git('mv src/auth/oauth/handler.ts src/auth/sessions/handler.ts');
+
+    const renamed = await execAsync(`node "${scriptPath}" mint r --cluster auth`, { cwd: gitDir });
+    assert.ok(renamed.stdout.includes('auto-routed sub: sessions'), renamed.stdout);
+
+    await fs.rm(gitDir, { recursive: true, force: true });
+  });
+
+  await t.test("21. the skill's own docs (example @pcp codes) never breach a consumer project", async () => {
+    // Simulate a real install: copy the whole skill dir into a consumer repo and
+    // run that copy. SKILL.md carries the illustrative `@pcp:c-e9a2` example, which
+    // is NOT defined anywhere — it must not be treated as a live anchor.
+    const consumer = path.resolve('tests/playground-consumer');
+    await fs.rm(consumer, { recursive: true, force: true });
+    await fs.mkdir(path.join(consumer, '.git'), { recursive: true });
+    await fs.cp(path.resolve('pcp'), path.join(consumer, 'pcp'), { recursive: true });
+    const consumerScript = path.join(consumer, 'pcp', 'scripts', 'pcp.js');
+
+    await execAsync(`node "${consumerScript}" init`, { cwd: consumer });
+    const ok = await execAsync(`node "${consumerScript}" actualize`, { cwd: consumer });
+    assert.match(ok.stdout, /PCP validation successful: 0 breaches detected/);
+
+    // But a genuine dangling anchor in the consumer's OWN code still breaches —
+    // the exclusion is scoped to the skill dir, not a global mute.
+    await fs.mkdir(path.join(consumer, 'src'), { recursive: true });
+    await fs.writeFile(path.join(consumer, 'src', 'app.ts'), '// @pcp:c-1234\nexport const v = 1;\n', 'utf-8');
+    try {
+      await execAsync(`node "${consumerScript}" actualize`, { cwd: consumer });
+      assert.fail('expected a breach for the consumer dangling anchor');
+    } catch (err) {
+      assert.ok(err.stderr.includes('Dead Connection Breach Exception'));
+      assert.ok(err.stderr.includes('@pcp:c-1234'));
+    }
+
+    await fs.rm(consumer, { recursive: true, force: true });
   });
 
   // Cleanup

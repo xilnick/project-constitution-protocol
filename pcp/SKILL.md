@@ -12,7 +12,7 @@ Operate within a strict development framework designed to minimize token bloat, 
 When this skill is activated in any workspace:
 
 1. **Check sandbox existence:** Run `ls .pcp/`. If the directory is missing, load `pcp/procedures/init.md` and follow the bootstrap protocol. If it exists, skip init and go to step 2.
-2. **Run audit:** Run `node pcp/scripts/pcp.js actualize` to compile MAP.json, INVENTORY.md, INDEX.md, and validate all trace connections. Full details: `pcp/procedures/actualize.md`.
+2. **Run audit:** Run `node pcp/scripts/pcp.js actualize` to compile MAP.json, the export index (INVENTORY.json + INVENTORY.md summary), INDEX.md, and validate all trace connections. Full details: `pcp/procedures/actualize.md`.
 3. **Surface results:** If `actualize` exits with a `Dead Connection Breach Exception`, surface the breach lines verbatim and stop. Do NOT auto-mutate user docs or auto-prune. Otherwise, report the audit summary (entry counts, breach count) and proceed with normal work.
 4. **Context orientation:** Before any other tool call, read `.pcp/INDEX.md` (one short file) to orient on the current constitution state. Read `.pcp/MAP.json` only when a specific shortcode lookup is needed. Do not glob `.pcp/` to discover files.
 5. **Normalize existing AGENTS.md:** If `AGENTS.md` already exists at the project root, read it and classify every section or block as either **user-specific** (project conventions, tooling notes, team rules, build commands, contributor info unique to this repo, non-PCP coding guidelines) or **protocol duplication** (PCP taxonomy, shortcode spec, CLI subcommand tables, lifecycle guardrails, audit instructions, anything verbatim from `pcp/SKILL.md`). If the file is already a thin skill-reference pointer (≤ ~6 lines, no protocol prose), skip. Otherwise, rewrite `AGENTS.md` to preserve all user-specific content verbatim and replace protocol duplication with the thin pointer. Use this template:
@@ -56,7 +56,7 @@ PCP entries are organized into a semantic **area/sub-area** hierarchy matching t
 
 ### How sub-areas are picked
 - **Explicit**: `pcp mint r --cluster auth --sub oauth` writes to `.pcp/auth/oauth.md`.
-- **Auto-route**: When `--sub` is omitted, the CLI runs `git diff --name-only` against committed state; if changed files share a path segment under the area, that segment becomes the sub-area (e.g. diff touches `src/auth/oauth/handler.ts` → sub `oauth`). Otherwise fallback to `_misc`.
+- **Auto-route**: When `--sub` is omitted, the CLI runs `git status --porcelain` to inspect changed/untracked files; if they share a path segment under the area, that segment becomes the sub-area (e.g. a change to `src/auth/oauth/handler.ts` → sub `oauth`). Otherwise fallback to `_misc`.
 
 ### Naming rules
 - Lowercase-kebab only (a-z, 0-9, hyphens), max 32 characters per segment.
@@ -69,7 +69,9 @@ PCP entries are organized into a semantic **area/sub-area** hierarchy matching t
 
 Each cluster file has a soft 4 KB ceiling. When `mint` would push a file over this limit, it prints a warning recommending the agent split into a new sub-area. The mint still succeeds; there is no hard block.
 
-INDEX.md stays as a single file (the orientation entry point) and is kept lean by linking to sub-areas rather than listing every entry inline.
+The generated indexes never grow into bulk context:
+- **INDEX.md** is the orientation entry point — a per-area summary table only (sub-areas + per-type counts). It never inlines individual entries; drill down with `pcp ls <area>`, `pcp find <query>`, or `pcp read <code>`.
+- **INVENTORY** of code exports is split in two: `actualize` writes the full per-symbol index to the git-ignored `.pcp/INVENTORY.json` and only a tiny per-module summary to `.pcp/INVENTORY.md`. Never load it wholesale — query a symbol with `pcp lookup <name>`.
 
 ## 6. CLI MAINTENANCE SUBCOMMANDS
 
@@ -85,6 +87,7 @@ All constitution lifecycle operations run as CLI subcommands on `node pcp/script
 | `pcp map <shortcode>` | Print `<file>:<line>` only | (inline lookup) |
 | `pcp ls <area>` | List sub-areas and entry counts | (inline lookup) |
 | `pcp find <query>` | Search entry titles by substring | (inline lookup) |
+| `pcp lookup <name>` | Search code exports by name (reads `INVENTORY.json`) | (inline lookup) |
 
 ### `pcp mint` detail
 - Validates type (`d`, `c`, `r`, `l`), area name, and sub name.
@@ -93,8 +96,8 @@ All constitution lifecycle operations run as CLI subcommands on `node pcp/script
 - Warns when the target file approaches the 4 KB size budget.
 - Appends the entry with a `**Cluster**: <area>/<sub>` metadata line.
 
-## 8. LIFECYCLE DEVELOPMENT GUARDRAILS
-- **Pre-Coding Validation:** Before writing any utility, helper, or core service routine, parse `.pcp/INVENTORY.md`. If a matching export surface exists, reuse it instead of writing a new implementation.
+## 7. LIFECYCLE DEVELOPMENT GUARDRAILS
+- **Pre-Coding Validation:** Before writing any utility, helper, or core service routine, run `pcp lookup <name>` to check the code export index. If a matching export surface exists, reuse it instead of writing a new implementation. Never read `.pcp/INVENTORY.json` directly.
 - **Feature Tracking:** When adding a new rule or code constraint, you must autonomously run `pcp mint` to generate a token, write the corresponding architectural intent block inside the appropriate area/sub-area file, and place the matching shortcode tag (e.g., `// @pcp:x-xxxx`) above the implementation code block.
 - **Use-Case Capture for Non-Obvious Code:** When documenting a requirement (`r`) for a subtle or non-obvious part of the application (race conditions, implicit ordering, platform-specific behavior, edge-case flows), include the optional `**Scenario**` field (the actor and concrete scenario that exercises this code path) and the `**Why Non-Obvious**` field (what would mislead a developer without this context).
-- **Prefer Programmatic Lookup Over Globbing:** Never glob `.pcp/` to discover content. Use `pcp read <code>` for entry bodies, `pcp map <code>` for file paths, `pcp ls <area>` for sub-area lists, and `pcp find <query>` for substring search.
+- **Prefer Programmatic Lookup Over Globbing:** Never glob `.pcp/` to discover content. Use `pcp read <code>` for entry bodies, `pcp map <code>` for file paths, `pcp ls <area>` for sub-area lists, `pcp find <query>` for entry-title search, and `pcp lookup <name>` for code export search.

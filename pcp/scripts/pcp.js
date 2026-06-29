@@ -16,6 +16,16 @@ const ACCEPTED_TYPES = ['d', 'c', 'r', 'l'];
 const SIZE_WARN_THRESHOLD = 4096; // 4 KB soft ceiling per cluster file
 const ENTRY_SIZE_ESTIMATE = 300; // bytes per typical minted entry
 
+// Generated/transient .md files that must never be parsed as a source of
+// shortcode definitions (otherwise pruned/archived codes resurrect into MAP.json).
+const TRANSIENT_MD = new Set(['ARCHIVE.md', 'INDEX.md', 'INVENTORY.md']);
+
+// Directory scan exclusions for every source walk (inventory, trace validation,
+// zombie/collision scans). Build artifacts AND test dirs are skipped: @pcp anchors
+// belong above implementation code, never in tests, and excluding tests keeps test
+// fixtures that fabricate `@pcp:` strings from registering as real traces.
+const SCAN_EXCLUDE_DIRS = ['.git', 'node_modules', 'dist', 'build', 'tests', 'test', '__tests__'];
+
 // ── Area / Sub Name Validation ─────────────────────────────────────────────
 
 const NAME_MAX_LEN = 32;
@@ -99,6 +109,9 @@ async function main() {
         case 'find':
           await handleFind(root, args.slice(1).join(' '));
           break;
+        case 'lookup':
+          await handleLookup(root, args[1]);
+          break;
         default:
           console.error(`Error: Unknown command "${command}"`);
           printUsage();
@@ -129,6 +142,7 @@ Usage:
   node pcp.js ls <area>                                     List sub-areas and entry counts for an area
   node pcp.js map <shortcode>                               Print file path and line number for a shortcode
   node pcp.js find <query>                                  Search entry titles for a substring
+  node pcp.js lookup <name>                                 Search code exports by name (reads INVENTORY.json)
 
 Layout:
   .pcp/_general.md          Default area (entries without a cluster)
@@ -158,6 +172,24 @@ function findOwnScriptPath() {
   }
 }
 
+/**
+ * Absolute path of the installed skill's own root (the dir holding scripts/,
+ * SKILL.md, procedures/). The protocol docs carry illustrative `@pcp:` example
+ * codes (e.g. `@pcp:c-e9a2`); these must never be scanned as live anchors in the
+ * host project, or every consumer would get a spurious Dead Connection breach.
+ */
+function skillRootDir() {
+  return path.dirname(path.dirname(findOwnScriptPath()));
+}
+
+/**
+ * True when a scanned file belongs to the protocol itself (its own skill dir)
+ * and must be excluded from trace/zombie/collision scans of the host project.
+ */
+function isProtocolOwnFile(file, skillRoot) {
+  return file === skillRoot || file.startsWith(skillRoot + path.sep);
+}
+
 async function findProjectRoot(startDir = process.cwd()) {
   let current = startDir;
   while (true) {
@@ -179,11 +211,21 @@ async function ensureDir(dirPath) {
   try { await fs.mkdir(dirPath, { recursive: true }); } catch (e) { if (e.code !== 'EEXIST') throw e; }
 }
 
-async function acquireLock(lockPath, timeoutMs = 10000) {
+async function acquireLock(lockPath, timeoutMs = 10000, staleMs = 60000) {
   const start = Date.now();
   while (Date.now() - start < timeoutMs) {
     try { await fs.mkdir(lockPath); return; } catch (e) {
-      if (e.code === 'EEXIST') { await new Promise(r => setTimeout(r, 100)); } else { throw e; }
+      if (e.code === 'EEXIST') {
+        // Reclaim a lock left behind by a crashed process.
+        try {
+          const st = await fs.stat(lockPath);
+          if (Date.now() - st.mtimeMs > staleMs) {
+            await fs.rmdir(lockPath).catch(() => {});
+            continue;
+          }
+        } catch { /* lock vanished between mkdir and stat — retry immediately */ }
+        await new Promise(r => setTimeout(r, 100));
+      } else { throw e; }
     }
   }
   throw new Error(`Timeout waiting for PCP lock at ${lockPath}`);
@@ -253,7 +295,10 @@ async function inferSubFromGit(root, area) {
     const subCounts = {};
 
     for (const line of lines) {
-      const file = line.slice(3).trim();
+      let file = line.slice(3).trim();
+      // Renamed entries are reported as "old -> new"; route on the new path.
+      const arrow = file.indexOf(' -> ');
+      if (arrow !== -1) file = file.slice(arrow + 4).trim();
       if (!sourceRoots.some(r => file.startsWith(r))) continue;
       const idx = file.indexOf(`/${area}/`);
       if (idx === -1) continue;
@@ -314,7 +359,7 @@ async function handleInit(root) {
   let gitignoreContent = '';
   try { gitignoreContent = await fs.readFile(gitignorePath, 'utf-8'); } catch {}
 
-  const targets = ['.pcp/MAP.json', '.pcp/INVENTORY.md', '.pcp/INDEX.md'];
+  const targets = ['.pcp/MAP.json', '.pcp/INVENTORY.md', '.pcp/INVENTORY.json', '.pcp/INDEX.md'];
   let modified = false;
   for (const target of targets) {
     if (!gitignoreContent.split('\n').some(line => line.trim() === target)) {
@@ -403,9 +448,10 @@ async function handleActualize(root) {
   console.log(`- Indexed ${Object.keys(map).length} shortcode definitions.`);
 
   console.log(`[2/4] Extracting code signature inventory...`);
-  const inventoryMarkdown = await extractInventory(root);
-  await fs.writeFile(path.join(pcpDir, 'INVENTORY.md'), inventoryMarkdown, 'utf-8');
-  console.log(`- Code signature inventory compiled to .pcp/INVENTORY.md`);
+  const declarations = await extractInventory(root);
+  await fs.writeFile(path.join(pcpDir, 'INVENTORY.json'), JSON.stringify({ declarations }, null, 2), 'utf-8');
+  await fs.writeFile(path.join(pcpDir, 'INVENTORY.md'), renderInventorySummary(declarations), 'utf-8');
+  console.log(`- Indexed ${declarations.length} export(s) to .pcp/INVENTORY.json (summary in INVENTORY.md). Query with: pcp lookup <name>`);
 
   console.log(`[3/4] Generating area index...`);
   await writeIndexFile(pcpDir, map);
@@ -429,9 +475,10 @@ async function handlePrune(root, isWrite) {
   const { map } = await compileShortcodeMap(pcpDir);
 
   const activeTraces = new Set();
+  const skillRoot = skillRootDir();
   const files = await scanFiles(root, ['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.md']);
   for (const file of files) {
-    if (file.includes('.pcp/')) continue;
+    if (file.includes('.pcp/') || isProtocolOwnFile(file, skillRoot)) continue;
     try {
       const content = await fs.readFile(file, 'utf-8');
       const matches = content.match(/@pcp:[dcrl]-[0-9a-f]{4}\b/gi);
@@ -577,6 +624,19 @@ async function handleFind(root, query) {
   for (const m of matches) console.log(`@pcp:${m.code}\t${m.title}\t${m.file}:${m.line}`);
 }
 
+// ── 9. LOOKUP ──────────────────────────────────────────────────────────────
+
+async function handleLookup(root, name) {
+  if (!name) { console.error('Usage: pcp lookup <name>'); process.exit(1); }
+  const inventory = await loadInventory(root);
+  const declarations = inventory.declarations || [];
+  const lowerName = name.toLowerCase();
+  const matches = declarations.filter(d => d.name.toLowerCase().includes(lowerName));
+
+  if (matches.length === 0) { console.log(`No exports matching "${name}" found.`); return; }
+  for (const d of matches) console.log(`${d.type}\t${d.name}\t${d.file}:${d.line}`);
+}
+
 // ── Shared Helpers ─────────────────────────────────────────────────────────
 
 async function loadMap(root) {
@@ -586,22 +646,31 @@ async function loadMap(root) {
   }
 }
 
+async function loadInventory(root) {
+  const invPath = path.join(root, '.pcp', 'INVENTORY.json');
+  try { return JSON.parse(await fs.readFile(invPath, 'utf-8')); } catch {
+    console.error('INVENTORY.json not found. Run "pcp actualize" first.'); process.exit(1);
+  }
+}
+
 async function scanExistingShortcodes(root) {
   const codes = new Set();
+  const skillRoot = skillRootDir();
   const files = await scanFiles(root, ['.md', '.js', '.jsx', '.ts', '.tsx', '.py', '.go']);
   for (const file of files) {
+    if (isProtocolOwnFile(file, skillRoot)) continue;
     try {
       const content = await fs.readFile(file, 'utf-8');
       const matches = content.match(/@pcp:[dcrl]-[0-9a-f]{4}\b|\[[dcrl]-[0-9a-f]{4}\]/gi);
       if (matches) {
-        for (const m of matches) codes.add(m.replace(/[@pcp:|\[|\]]/gi, '').toLowerCase());
+        for (const m of matches) codes.add(m.replace(/@pcp:|[[\]]/gi, '').toLowerCase());
       }
     } catch {}
   }
   return codes;
 }
 
-async function scanFiles(dir, extensions, excludeDirs = ['.git', 'node_modules', 'dist', 'build', 'tests', 'test', '__tests__']) {
+async function scanFiles(dir, extensions, excludeDirs = SCAN_EXCLUDE_DIRS) {
   let entries;
   try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return []; }
   const files = [];
@@ -654,7 +723,7 @@ async function compileShortcodeMap(pcpDir) {
   for (const code of Object.keys(map)) {
     const raw = (contentAccumulator[code] || '').trim();
     const stripped = raw.replace(/[\s\-\*]/g, '').toLowerCase();
-    const isPlaceholder = stripped.includes('adddetailed') || stripped.includes('adddescription') || stripped.includes('here') || stripped.length < 5;
+    const isPlaceholder = stripped.includes('adddetailed') || stripped.includes('adddescription') || stripped.includes('intentorrequirementhere') || stripped.length < 5;
     map[code].populated = !isPlaceholder;
   }
 
@@ -668,7 +737,7 @@ async function collectMarkdownFiles(dir, result) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       await collectMarkdownFiles(fullPath, result);
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+    } else if (entry.isFile() && entry.name.endsWith('.md') && !TRANSIENT_MD.has(entry.name)) {
       result.push(fullPath);
     }
   }
@@ -684,10 +753,13 @@ async function writeIndexFile(pcpDir, map) {
     if (!areas[area]) areas[area] = {};
     const subName = sub || '(root)';
     if (!areas[area][subName]) areas[area][subName] = [];
-    areas[area][subName].push({ code, title: meta.title, populated: meta.populated });
+    areas[area][subName].push(code);
   }
 
-  let md = `# PCP Area Index\n\nAuto-generated index of all PCP entries by area and sub-area. Read this file first for orientation; do not glob \`.pcp/\`.\n\n| Area | Sub-areas | d | c | r | l | Total |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
+  let md = `# PCP Area Index\n\n` +
+    `Per-area summary of all PCP entries. Read this file first for orientation; do not glob \`.pcp/\`.\n` +
+    `Entries are intentionally not inlined here — drill down with \`pcp ls <area>\`, \`pcp find <query>\`, or \`pcp read <code>\`.\n\n` +
+    `| Area | Sub-areas | d | c | r | l | Total |\n| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n`;
 
   const sortedAreas = Object.keys(areas).sort((a, b) => {
     if (a === '_general') return -1;
@@ -697,34 +769,17 @@ async function writeIndexFile(pcpDir, map) {
 
   for (const area of sortedAreas) {
     const subs = areas[area];
-    const subNames = Object.keys(subs).filter(s => s !== '(root)');
+    const subNames = Object.keys(subs).filter(s => s !== '(root)').sort();
     const subList = subNames.length > 0 ? subNames.join(', ') : '-';
     const counts = { d: 0, c: 0, r: 0, l: 0 };
-    for (const entries of Object.values(subs)) {
-      for (const e of entries) {
-        const t = e.code.split('-')[0];
+    for (const codes of Object.values(subs)) {
+      for (const code of codes) {
+        const t = code.split('-')[0];
         if (counts[t] !== undefined) counts[t]++;
       }
     }
     const total = counts.d + counts.c + counts.r + counts.l;
     md += `| \`${area}\` | ${subList} | ${counts.d} | ${counts.c} | ${counts.r} | ${counts.l} | ${total} |\n`;
-  }
-
-  for (const area of sortedAreas) {
-    const subs = areas[area];
-    md += `\n## ${area}\n`;
-    const sortedSubs = Object.keys(subs).sort((a, b) => {
-      if (a === '(root)') return -1;
-      if (b === '(root)') return 1;
-      return a.localeCompare(b);
-    });
-    for (const sub of sortedSubs) {
-      if (sub !== '(root)') md += `\n### ${sub}\n`;
-      for (const entry of subs[sub]) {
-        const status = entry.populated ? '' : ' (empty)';
-        md += `- \`@pcp:${entry.code}\` ${entry.title}${status}\n`;
-      }
-    }
   }
 
   await fs.writeFile(path.join(pcpDir, 'INDEX.md'), md.trim() + '\n', 'utf-8');
@@ -745,6 +800,14 @@ async function extractInventory(root) {
   }
 
   const declarations = [];
+  const seen = new Set();
+  const push = (type, name, file, line) => {
+    const key = `${name}@${file}:${line}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    declarations.push({ type, name, file, line });
+  };
+
   for (const file of files) {
     if (file.includes('.pcp/') || file.includes('pcp.js')) continue;
     const content = await fs.readFile(file, 'utf-8');
@@ -752,46 +815,82 @@ async function extractInventory(root) {
     const lines = content.split('\n');
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      const ln = i + 1;
       if (/\.(js|jsx|ts|tsx)$/.test(file)) {
-        const jsMatch = line.match(/\bexport\s+(class|function|interface|const)\s+([a-zA-Z0-9_$]+)/);
-        if (jsMatch) declarations.push({ type: jsMatch[1], name: jsMatch[2], file: relativePath, line: i + 1 });
-        const defaultMatch = line.match(/\bexport\s+default\s+(class|function)\s+([a-zA-Z0-9_$]+)/);
-        if (defaultMatch) declarations.push({ type: `default ${defaultMatch[1]}`, name: defaultMatch[2], file: relativePath, line: i + 1 });
-        const cjsMatch = line.match(/\b(?:module\.)?exports\.([a-zA-Z0-9_$]+)\s*=\s*(function|class|.*)/);
-        if (cjsMatch && !jsMatch && !defaultMatch) {
-          declarations.push({ type: cjsMatch[2].startsWith('function') ? 'function' : (cjsMatch[2].startsWith('class') ? 'class' : 'const'), name: cjsMatch[1], file: relativePath, line: i + 1 });
+        // export [default] [async] [abstract] (class|function[*]|interface|const|let|var|type|enum) Name
+        const m = line.match(/\bexport\s+(?:default\s+)?(?:async\s+)?(?:abstract\s+)?(class|function\*?|interface|const|let|var|type|enum)\s+([A-Za-z0-9_$]+)/);
+        if (m) {
+          push(m[1], m[2], relativePath, ln);
+        } else {
+          // export { foo, bar as baz } [from '...']
+          const re = line.match(/\bexport\s*\{([^}]*)\}/);
+          if (re) {
+            for (const part of re[1].split(',')) {
+              const name = part.trim().split(/\s+as\s+/).pop().trim();
+              if (name && name !== 'default' && /^[A-Za-z0-9_$]+$/.test(name)) push('re-export', name, relativePath, ln);
+            }
+          }
+          // module.exports.x = / exports.x =
+          const cjs = line.match(/\b(?:module\.)?exports\.([A-Za-z0-9_$]+)\s*=\s*(function|class|.*)/);
+          if (cjs) {
+            const t = cjs[2].startsWith('function') ? 'function' : (cjs[2].startsWith('class') ? 'class' : 'const');
+            push(t, cjs[1], relativePath, ln);
+          }
         }
       }
       if (/\.py$/.test(file)) {
-        const pyMatch = line.match(/^(class|def)\s+([a-zA-Z0-9_$]+)/);
-        if (pyMatch) declarations.push({ type: pyMatch[1], name: pyMatch[2], file: relativePath, line: i + 1 });
+        const pyMatch = line.match(/^(class|def)\s+([A-Za-z0-9_$]+)/);
+        if (pyMatch) push(pyMatch[1], pyMatch[2], relativePath, ln);
       }
       if (/\.go$/.test(file)) {
         const goFuncMatch = line.match(/^func\s+(?:\([^)]+\)\s+)?([A-Z]\w*)\b/);
-        if (goFuncMatch) declarations.push({ type: 'func', name: goFuncMatch[1], file: relativePath, line: i + 1 });
+        if (goFuncMatch) push('func', goFuncMatch[1], relativePath, ln);
         const goTypeMatch = line.match(/^type\s+([A-Z]\w*)\s+(struct|interface)\b/);
-        if (goTypeMatch) declarations.push({ type: goTypeMatch[2], name: goTypeMatch[1], file: relativePath, line: i + 1 });
+        if (goTypeMatch) push(goTypeMatch[2], goTypeMatch[1], relativePath, ln);
       }
     }
   }
 
-  let md = `# Codebase Interface Inventory\n\nAuto-generated interface declarations surface table. Check here to avoid duplicate function/module implementation.\n\n| Type | Name | Defined In | Line |\n| :--- | :--- | :--- | :--- |\n`;
-  if (declarations.length === 0) {
-    md += `| *None* | *No exports detected* | | |\n`;
-  } else {
-    declarations.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
-    for (const d of declarations) {
-      md += `| \`${d.type}\` | \`${d.name}\` | [${path.basename(d.file)}](file://${path.resolve(root, d.file)}#L${d.line}) | ${d.line} |\n`;
-    }
+  declarations.sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line);
+  return declarations;
+}
+
+/**
+ * Render the lean, human/agent-readable inventory summary. The full per-symbol
+ * index lives in the git-ignored INVENTORY.json; this file only orients the
+ * agent and points at `pcp lookup` so the bulk is never loaded into context.
+ */
+function renderInventorySummary(declarations) {
+  const modules = {};
+  for (const d of declarations) {
+    const dir = path.dirname(d.file);
+    const mod = dir === '.' ? '(root)' : dir;
+    modules[mod] = (modules[mod] || 0) + 1;
   }
+
+  let md = `# Codebase Inventory (summary)\n\n` +
+    `The full export index lives in the git-ignored \`.pcp/INVENTORY.json\`. Do NOT read it wholesale.\n` +
+    `Before writing a new utility, query for an existing one:\n\n` +
+    `    node pcp/scripts/pcp.js lookup <name>\n\n`;
+
+  const mods = Object.keys(modules).sort();
+  if (mods.length === 0) {
+    md += `_No exports detected._\n`;
+    return md;
+  }
+
+  md += `| Module | Exports |\n| :--- | :--- |\n`;
+  for (const mod of mods) md += `| \`${mod}\` | ${modules[mod]} |\n`;
+  md += `\nTotal: ${declarations.length} export(s) across ${mods.length} module(s).\n`;
   return md;
 }
 
 async function validateTraceConnections(root, map) {
   const errors = [];
+  const skillRoot = skillRootDir();
   const files = await scanFiles(root, ['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.md']);
   for (const file of files) {
-    if (file.includes('.pcp/')) continue;
+    if (file.includes('.pcp/') || isProtocolOwnFile(file, skillRoot)) continue;
     const content = await fs.readFile(file, 'utf-8');
     const relativePath = path.relative(root, file);
     const lines = content.split('\n');
