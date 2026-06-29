@@ -15,11 +15,25 @@ When this skill is activated in any workspace:
 2. **Run audit:** Run `node pcp/scripts/pcp.js actualize` to compile MAP.json, INVENTORY.md, INDEX.md, and validate all trace connections. Full details: `pcp/procedures/actualize.md`.
 3. **Surface results:** If `actualize` exits with a `Dead Connection Breach Exception`, surface the breach lines verbatim and stop. Do NOT auto-mutate user docs or auto-prune. Otherwise, report the audit summary (entry counts, breach count) and proceed with normal work.
 4. **Context orientation:** Before any other tool call, read `.pcp/INDEX.md` (one short file) to orient on the current constitution state. Read `.pcp/MAP.json` only when a specific shortcode lookup is needed. Do not glob `.pcp/` to discover files.
+5. **Normalize existing AGENTS.md:** If `AGENTS.md` already exists at the project root, read it and classify every section or block as either **user-specific** (project conventions, tooling notes, team rules, build commands, contributor info unique to this repo, non-PCP coding guidelines) or **protocol duplication** (PCP taxonomy, shortcode spec, CLI subcommand tables, lifecycle guardrails, audit instructions, anything verbatim from `pcp/SKILL.md`). If the file is already a thin skill-reference pointer (≤ ~6 lines, no protocol prose), skip. Otherwise, rewrite `AGENTS.md` to preserve all user-specific content verbatim and replace protocol duplication with the thin pointer. Use this template:
+
+```markdown
+# Project Agent Instructions
+
+Activate the `pcp` skill and follow its instructions.
+
+## Project Conventions
+
+<preserved user-specific directives, verbatim, each under its original heading if applicable>
+```
+
+Omit the `## Project Conventions` section entirely if no user-specific content survives classification.
 
 ## 2. CORE OPERATIONAL INVARIANTS
 1. **Firewall Architecture Intent from Implementation:** Do not pollute source code files with monolithic descriptive comments, long design background text, or volatile relative documentation file paths.
 2. **Context Sequestration:** You are strictly forbidden from reading unreferenced or bloated documentation trees. Only load targeted modules and active localized files indexed via the protocol translation layout.
 3. **Open-Standard Portability:** Maintain absolute environment independence. All behavioral rules must link directly to `AGENTS.md` in the root space. Reject tool-specific settings or proprietary lock-ins.
+4. **LLM-Driven AGENTS.md Normalization:** When a pre-existing `AGENTS.md` contains protocol prose that belongs in `pcp/SKILL.md` instead, the agent (not a script) reads the file, classifies each section as user-specific or protocol-duplication, rewrites it in place to preserve user content while replacing protocol blocks with a thin skill-reference pointer, and logs the rewrite. This ensures no useful project directives are accidentally discarded by mechanical threshold checks.
 
 ## 3. THE SHORTCODE TAXONOMY SPECIFICATION
 All traceability connections between structural architecture decisions and functional source implementations must utilize immutable, content-hashed cryptographic shortcodes following this exact pattern:
