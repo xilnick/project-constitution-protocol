@@ -450,6 +450,51 @@ test('PCP Skill Automation Suite', async (t) => {
     await fs.rm(consumer, { recursive: true, force: true });
   });
 
+  await t.test('23. a duplicate shortcode names BOTH definitions, and the first one stays readable', async () => {
+    // The real failure: the breach line carried `file:line` for the definition found second and a
+    // bare filename for the first, so when both sat in ONE file it read as
+    // "layout.md:293 and layout.md" — naming nothing the reader could open. And the map silently
+    // took the LAST definition, so the other entry disappeared from `read`/`map` with only that
+    // unusable breach line to say so.
+    const consumer = path.resolve('tests/playground-duplicate');
+    await fs.rm(consumer, { recursive: true, force: true });
+    await fs.mkdir(path.join(consumer, '.git'), { recursive: true });
+    await execAsync(`node "${scriptPath}" init`, { cwd: consumer });
+
+    await fs.writeFile(
+      path.join(consumer, '.pcp', '_general.md'),
+      '# General\n\n'
+      + '### [d-aaaa] First definition of the colliding code\n'
+      + '- **Date**: 2026-01-01\n- **Status**: Accepted\n- **Cluster**: _general\n'
+      + '- **Description**: The body that belongs to the first definition and must survive.\n\n'
+      + '### [d-aaaa] Second definition wearing the same code\n'
+      + '- **Date**: 2026-01-02\n- **Status**: Accepted\n- **Cluster**: _general\n'
+      + '- **Description**: The body that must NOT be spliced onto the first.\n',
+      'utf-8',
+    );
+
+    try {
+      await execAsync(`node "${scriptPath}" actualize`, { cwd: consumer });
+      assert.fail('expected a duplicate-shortcode breach');
+    } catch (err) {
+      const said = err.stderr;
+      assert.match(said, /Duplicate shortcode definition found: \[d-aaaa\]/);
+      // BOTH sides located, each with a line, and each named by its own title.
+      assert.match(said, /"First definition of the colliding code" at \.pcp\/_general\.md:3/);
+      assert.match(said, /"Second definition wearing the same code" at \.pcp\/_general\.md:9/);
+    }
+
+    // The first definition is the one that stays reachable, and it keeps its own body.
+    const map = JSON.parse(await fs.readFile(path.join(consumer, '.pcp', 'MAP.json'), 'utf-8'));
+    assert.equal(map['d-aaaa'].line, 3);
+    assert.equal(map['d-aaaa'].title, 'First definition of the colliding code');
+    const { stdout } = await execAsync(`node "${scriptPath}" read d-aaaa`, { cwd: consumer });
+    assert.match(stdout, /must survive/);
+    assert.doesNotMatch(stdout, /must NOT be spliced/);
+
+    await fs.rm(consumer, { recursive: true, force: true });
+  });
+
   // Cleanup
   await cleanPlayground();
 });

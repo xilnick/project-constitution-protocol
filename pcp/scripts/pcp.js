@@ -744,7 +744,34 @@ async function compileShortcodeMap(pcpDir) {
         const rawCode = match[1].toLowerCase();
         const title = match[2].trim();
         if (map[rawCode]) {
-          mapErrors.push(`Duplicate shortcode definition found: [${rawCode}] in ${relativePath}:${i + 1} and ${map[rawCode].file}`);
+          /**
+           * BOTH SIDES OF A COLLISION GET NAMED, with a line each and both titles.
+           *
+           * The message used to carry `file:line` for the definition found SECOND and a bare
+           * filename for the first, so the reader was pointed at a file and left to search it —
+           * and when both definitions sat in one file it read as "layout.md:293 and layout.md",
+           * which names nothing at all. A breach the reader cannot locate is a breach they learn
+           * to scroll past.
+           */
+          const first = map[rawCode];
+          mapErrors.push(
+            `Duplicate shortcode definition found: [${rawCode}] — "${first.title}" at ` +
+            `${first.file}:${first.line}, and "${title}" at ${relativePath}:${i + 1}. ` +
+            `MAP.json keeps the FIRST; the second is unreachable via read/map until one is re-minted.`
+          );
+          /**
+           * THE FIRST DEFINITION WINS, AND THE SECOND'S BODY IS DROPPED RATHER THAN MERGED.
+           *
+           * Overwriting silently made a collision worse than the breach line suggested: the map
+           * pointed at whichever definition was parsed last, so one entry vanished from `read` and
+           * `map` with nothing but the breach to say so — and the loser was decided by directory
+           * order. Keeping the first is at least stable as files grow, and a later colliding mint
+           * can no longer take over an existing code's identity. `currentCode` is cleared so the
+           * duplicate's prose does not land in the first entry's body: two entries spliced into one
+           * read as a single entry asserting both things.
+           */
+          currentCode = null;
+          continue;
         }
         currentCode = rawCode;
         map[rawCode] = { file: relativePath, line: i + 1, title };
