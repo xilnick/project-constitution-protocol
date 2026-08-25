@@ -24,7 +24,13 @@ const TRANSIENT_MD = new Set(['ARCHIVE.md', 'INDEX.md', 'INVENTORY.md']);
 // zombie/collision scans). Build artifacts AND test dirs are skipped: @pcp anchors
 // belong above implementation code, never in tests, and excluding tests keeps test
 // fixtures that fabricate `@pcp:` strings from registering as real traces.
-const SCAN_EXCLUDE_DIRS = ['.git', 'node_modules', 'dist', 'build', 'tests', 'test', '__tests__'];
+const SCAN_EXCLUDE_DIRS = ['.git', 'node_modules', 'dist', 'build', 'tests', 'test', '__tests__',
+  // Generated build output and vendored envs: they hold compiled COPIES of source
+  // anchors (never original intent), and indexing them bloats the inventory with
+  // non-source symbols. Excluding them keeps trace validation and the export index
+  // scoped to hand-written source.
+  '.next', '.nuxt', '.svelte-kit', '.turbo', 'coverage',
+  '.venv', 'venv', '__pycache__', '.pytest_cache', '.mypy_cache'];
 
 // ── Area / Sub Name Validation ─────────────────────────────────────────────
 
@@ -692,18 +698,23 @@ async function isSkillRootDir(dir, entries) {
   }
 }
 
-async function scanFiles(dir, extensions, excludeDirs = SCAN_EXCLUDE_DIRS) {
+async function scanFiles(dir, extensions, excludeDirs = SCAN_EXCLUDE_DIRS, isRoot = true) {
   let entries;
   try { entries = await fs.readdir(dir, { withFileTypes: true }); } catch { return []; }
   // Prune any PCP skill installation wherever it lives in the tree, so its
   // illustrative `@pcp:` example codes never count as live anchors.
   if (await isSkillRootDir(dir, entries)) return [];
+  // Do not descend into a nested PCP-governed repo (e.g. a git submodule that
+  // ships its own `.pcp/` constitution). That subtree is audited by its own
+  // `actualize`; scanning it from a parent would flag every submodule anchor as a
+  // dead connection against the parent's (smaller, unrelated) constitution.
+  if (!isRoot && entries.some(e => e.isDirectory() && e.name === '.pcp')) return [];
   const files = [];
   const subdirPromises = [];
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      if (!excludeDirs.includes(entry.name)) subdirPromises.push(scanFiles(fullPath, extensions, excludeDirs));
+      if (!excludeDirs.includes(entry.name)) subdirPromises.push(scanFiles(fullPath, extensions, excludeDirs, false));
     } else if (entry.isFile() && extensions.includes(path.extname(entry.name).toLowerCase())) {
       files.push(fullPath);
     }
