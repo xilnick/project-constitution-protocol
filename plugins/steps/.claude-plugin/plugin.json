@@ -1,0 +1,20 @@
+{
+  "name": "steps",
+  "version": "1.0.0",
+  "description": "Run a roadmap phase by phase under separation of duties: plan, review the plan, implement, review the implementation, fix, verify, commit. The agent that writes a thing never grades it.",
+  "author": {
+    "name": "The Sovereign Architect",
+    "url": "https://github.com/xilnick"
+  },
+  "homepage": "https://github.com/xilnick/project-constitution-protocol",
+  "repository": "https://github.com/xilnick/project-constitution-protocol",
+  "license": "MIT",
+  "keywords": [
+    "orchestration",
+    "roadmap",
+    "planning",
+    "code-review",
+    "agentic-coding",
+    "separation-of-duties"
+  ]
+}

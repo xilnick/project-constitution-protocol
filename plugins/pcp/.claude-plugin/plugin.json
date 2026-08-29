@@ -1,0 +1,19 @@
+{
+  "name": "pcp",
+  "version": "1.1.0",
+  "description": "Project Constitution Protocol. Prevent token bloat and merge conflicts in AI-driven workspaces by recording intent \u2014 decisions, constraints, rationale, lessons \u2014 as short coded entries instead of restating them in code comments and chat.",
+  "author": {
+    "name": "The Sovereign Architect",
+    "url": "https://github.com/xilnick"
+  },
+  "homepage": "https://github.com/xilnick/project-constitution-protocol",
+  "repository": "https://github.com/xilnick/project-constitution-protocol",
+  "license": "MIT",
+  "keywords": [
+    "pcp",
+    "constitution",
+    "agentic-coding",
+    "context-hygiene",
+    "intent"
+  ]
+}

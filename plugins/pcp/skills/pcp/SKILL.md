@@ -11,11 +11,21 @@ Operate within a strict development framework designed to minimize token bloat, 
 
 When this skill is activated in any workspace:
 
-1. **Check sandbox existence:** Run `ls .pcp/`. If the directory is missing, load `pcp/procedures/init.md` and follow the bootstrap protocol. If it exists, skip init and go to step 2.
-2. **Run audit:** Run `node pcp/scripts/pcp.js actualize` to compile MAP.json, the export index (INVENTORY.json + INVENTORY.md summary), INDEX.md, and validate all trace connections. Full details: `pcp/procedures/actualize.md`.
+0. **Resolve the CLI once.** The script ships beside this file, so its location depends on how the
+   skill was installed. Set `PCP` to the first of these that exists and reuse it for every command
+   below:
+
+   ```bash
+   PCP="${CLAUDE_PLUGIN_ROOT:-}/skills/pcp/scripts/pcp.js"      # installed as a plugin
+   [ -f "$PCP" ] || PCP="$HOME/.claude/skills/pcp/scripts/pcp.js"   # installed as a user skill
+   [ -f "$PCP" ] || PCP="pcp/scripts/pcp.js"                        # vendored into the project
+   ```
+
+1. **Check sandbox existence:** Run `ls .pcp/`. If the directory is missing, load `procedures/init.md` and follow the bootstrap protocol. If it exists, skip init and go to step 2.
+2. **Run audit:** Run `node $PCP actualize` to compile MAP.json, the export index (INVENTORY.json + INVENTORY.md summary), INDEX.md, and validate all trace connections. Full details: `procedures/actualize.md`.
 3. **Surface results:** If `actualize` exits with a `Dead Connection Breach Exception`, surface the breach lines verbatim and stop. Do NOT auto-mutate user docs or auto-prune. Otherwise, report the audit summary (entry counts, breach count) and proceed with normal work.
 4. **Context orientation:** Before any other tool call, read `.pcp/INDEX.md` (one short file) to orient on the current constitution state. Read `.pcp/MAP.json` only when a specific shortcode lookup is needed. Do not glob `.pcp/` to discover files.
-5. **Normalize existing AGENTS.md:** If `AGENTS.md` already exists at the project root, read it and classify every section or block as either **user-specific** (project conventions, tooling notes, team rules, build commands, contributor info unique to this repo, non-PCP coding guidelines) or **protocol duplication** (PCP taxonomy, shortcode spec, CLI subcommand tables, lifecycle guardrails, audit instructions, anything verbatim from `pcp/SKILL.md`). If the file is already a thin skill-reference pointer (≤ ~6 lines, no protocol prose), skip. Otherwise, rewrite `AGENTS.md` to preserve all user-specific content verbatim and replace protocol duplication with the thin pointer. Use this template:
+5. **Normalize existing AGENTS.md:** If `AGENTS.md` already exists at the project root, read it and classify every section or block as either **user-specific** (project conventions, tooling notes, team rules, build commands, contributor info unique to this repo, non-PCP coding guidelines) or **protocol duplication** (PCP taxonomy, shortcode spec, CLI subcommand tables, lifecycle guardrails, audit instructions, anything verbatim from this skill's `SKILL.md`). If the file is already a thin skill-reference pointer (≤ ~6 lines, no protocol prose), skip. Otherwise, rewrite `AGENTS.md` to preserve all user-specific content verbatim and replace protocol duplication with the thin pointer. Use this template:
 
 ```markdown
 # Project Agent Instructions
@@ -77,14 +87,14 @@ The generated indexes never grow into bulk context:
 
 ## 6. CLI MAINTENANCE SUBCOMMANDS
 
-All constitution lifecycle operations run as CLI subcommands on `node pcp/scripts/pcp.js`. The agent invokes them programmatically when the `pcp` skill activates. There are no slash commands; `pcp` is the only entrypoint.
+All constitution lifecycle operations run as CLI subcommands on `node $PCP`. The agent invokes them programmatically when the `pcp` skill activates. There are no slash commands; `pcp` is the only entrypoint.
 
 | Subcommand | Purpose | Full procedure |
 | :--- | :--- | :--- |
-| `pcp init` | Bootstrap `.pcp/` sandbox, drop `AGENTS.md` | `pcp/procedures/init.md` |
+| `pcp init` | Bootstrap `.pcp/` sandbox, drop `AGENTS.md` | `procedures/init.md` |
 | `pcp mint <type> [--cluster <area>] [--sub <sub>]` | Allocate a non-colliding shortcode | (inline — see below) |
-| `pcp actualize` | Compile maps, inventory, index; validate traces | `pcp/procedures/actualize.md` |
-| `pcp prune [--write]` | Detect and archive zombie document blocks | `pcp/procedures/prune.md` |
+| `pcp actualize` | Compile maps, inventory, index; validate traces | `procedures/actualize.md` |
+| `pcp prune [--write]` | Detect and archive zombie document blocks | `procedures/prune.md` |
 | `pcp read <shortcode>` | Print entry body only | (inline lookup) |
 | `pcp map <shortcode>` | Print `<file>:<line>` only | (inline lookup) |
 | `pcp ls <area>` | List sub-areas and entry counts | (inline lookup) |
