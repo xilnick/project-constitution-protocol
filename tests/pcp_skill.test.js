@@ -6,7 +6,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const execAsync = promisify(exec);
-const scriptPath = path.resolve('pcp/scripts/pcp.js');
+const skillDir = path.resolve('plugins/pcp/skills/pcp');
+const scriptPath = path.join(skillDir, 'scripts', 'pcp.js');
 const playgroundDir = path.resolve('tests/playground');
 
 async function cleanPlayground() {
@@ -396,7 +397,7 @@ test('PCP Skill Automation Suite', async (t) => {
     const consumer = path.resolve('tests/playground-consumer');
     await fs.rm(consumer, { recursive: true, force: true });
     await fs.mkdir(path.join(consumer, '.git'), { recursive: true });
-    await fs.cp(path.resolve('pcp'), path.join(consumer, 'pcp'), { recursive: true });
+    await fs.cp(skillDir, path.join(consumer, 'pcp'), { recursive: true });
     const consumerScript = path.join(consumer, 'pcp', 'scripts', 'pcp.js');
 
     await execAsync(`node "${consumerScript}" init`, { cwd: consumer });
@@ -428,7 +429,7 @@ test('PCP Skill Automation Suite', async (t) => {
     const consumer = path.resolve('tests/playground-vendored');
     await fs.rm(consumer, { recursive: true, force: true });
     await fs.mkdir(path.join(consumer, '.git'), { recursive: true });
-    await fs.cp(path.resolve('pcp'), path.join(consumer, '.agents', 'skills', 'pcp'), { recursive: true });
+    await fs.cp(skillDir, path.join(consumer, '.agents', 'skills', 'pcp'), { recursive: true });
 
     // Run the SOURCE copy (NOT the vendored one) against the consumer.
     await execAsync(`node "${scriptPath}" init`, { cwd: consumer });

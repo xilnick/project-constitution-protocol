@@ -7,7 +7,7 @@ When the PCP skill is activated and the sandbox (`.pcp/`) does not exist, execut
 Run the CLI command:
 
 ```bash
-node pcp/scripts/pcp.js init
+node $PCP init
 ```
 
 This creates:
@@ -51,7 +51,7 @@ Read the existing `AGENTS.md` and classify each block/section as one of:
 - PCP lifecycle guardrails (mint-before-code, INVENTORY checks)
 - PCP cluster discipline, area/sub-area rules
 - PCP size budget rules
-- Any content verbatim from `pcp/SKILL.md`
+- Any content verbatim from this skill's `SKILL.md`
 
 ### Rewrite template
 

@@ -934,7 +934,7 @@ function renderInventorySummary(declarations) {
   let md = `# Codebase Inventory (summary)\n\n` +
     `The full export index lives in the git-ignored \`.pcp/INVENTORY.json\`. Do NOT read it wholesale.\n` +
     `Before writing a new utility, query for an existing one:\n\n` +
-    `    node pcp/scripts/pcp.js lookup <name>\n\n`;
+    `    node "$PCP" lookup <name>\n\n`;
 
   const mods = Object.keys(modules).sort();
   if (mods.length === 0) {

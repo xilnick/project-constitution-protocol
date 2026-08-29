@@ -3,14 +3,14 @@
 When the `pcp` skill is activated (step 2 of the Invocation Contract), or when the agent needs to synchronize the constitution after minting entries or modifying code, run:
 
 ```bash
-node pcp/scripts/pcp.js actualize
+node $PCP actualize
 ```
 
 ## What it does
 
 1. **Compile shortcode map.** Recursively scans all `*.md` files under `.pcp/` (including area folders) for headers matching `### [type-xxxx] Title`. Writes the result to `.pcp/MAP.json` as `{ "xxxx": { "file", "line", "title", "populated" } }`.
 
-2. **Extract code inventory.** Scans source directories (`src/`, `lib/`, `app/`, or project root) for exported declarations across JS/TS/Python/Go — classes, functions (incl. `async`/generators), interfaces, types, enums, consts, and `export { … }` re-exports. Writes the full per-symbol index to the git-ignored `.pcp/INVENTORY.json` and a lean per-module summary to `.pcp/INVENTORY.md`. Query individual symbols with `node pcp/scripts/pcp.js lookup <name>` — never load the inventory wholesale.
+2. **Extract code inventory.** Scans source directories (`src/`, `lib/`, `app/`, or project root) for exported declarations across JS/TS/Python/Go — classes, functions (incl. `async`/generators), interfaces, types, enums, consts, and `export { … }` re-exports. Writes the full per-symbol index to the git-ignored `.pcp/INVENTORY.json` and a lean per-module summary to `.pcp/INVENTORY.md`. Query individual symbols with `node $PCP lookup <name>` — never load the inventory wholesale.
 
 3. **Write area index.** Groups all entries by area and sub-area, counts per-type, and writes `.pcp/INDEX.md`. This is the file the agent reads first for cheap orientation.
 
