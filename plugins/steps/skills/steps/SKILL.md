@@ -84,6 +84,10 @@ turns run serially. Track phases with a todo list.
 | Review implementation | `steps-impl-reviewer` (2-3, one lens each) | `IMPL-REVIEW-<lens>.md` |
 | Fix | `steps-fixer` (one per area, strict ownership) | code, own files only |
 
+Those agent names ship with this skill. Where a harness does not have them, spawn a generic
+subagent per row and paste the role's brief into it — the roles are the protocol, the named agents
+are only a convenience.
+
 ## Rules that were paid for
 
 Each of these exists because something got through without it.
