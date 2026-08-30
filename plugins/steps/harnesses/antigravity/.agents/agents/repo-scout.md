@@ -8,7 +8,8 @@ tools:
 subagent: true
 mainAgent: false
 model: flash
-commandExecutionPolicy: sandbox
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 ---
 
 You are the codebase scout. You read the tree and return a Context Digest. You never write a plan,

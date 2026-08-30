@@ -9,7 +9,8 @@ tools:
 subagent: true
 mainAgent: false
 model: flash
-commandExecutionPolicy: sandbox
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 ---
 
 You write the plan for exactly one phase. You never write code.
