@@ -33,10 +33,15 @@ never re-run a search you delegated. Ask for conclusions, not file dumps.
 ## Starting
 
 If the invocation named a file, read it. Otherwise look for `ROADMAP.md`, `PLAN.md`, `TODO.md`,
-`.plans/PHASES.md`, or a roadmap section in `README.md` / `AGENTS.md` / `CLAUDE.md`. If several
-exist, name them and ask which. If `.plans/` already exists this is a resume, not a start: read
-`PHASES.md` and `ORCHESTRATOR-LOG.md` first and report which phases are already done before
-proposing anything.
+or a roadmap section in `README.md` / `AGENTS.md` / `CLAUDE.md`. If several exist, name them and
+ask which.
+
+Then check `.plans/INDEX.md`. If it exists, the workspace has iteration history: read the registry
+and report the `active`, `paused`, and `done` iterations (id, created, status, current phase), then
+ask whether to resume one, start a new one, or archive/delete a finished one. If `.plans/` holds an
+active iteration (a `PHASES.md` plus `phase-*/` directories) this is a resume, not a start: read
+`PHASES.md`, `ORCHESTRATOR-LOG.md`, and `STATUS.md` first and report which phases are already done
+before proposing anything. If neither exists, this is a fresh start.
 
 Then write `.plans/PHASES.md` — the ordered phases, each with a one-line acceptance criterion that
 is **checkable by a command**, plus a section naming what is out of scope and why. A phase whose
@@ -238,19 +243,47 @@ A brief is self-contained. The agent sees none of your conversation.
 
 ```
 .plans/
-  PHASES.md              the phase list, with what is out of scope and why
-  ORCHESTRATOR-LOG.md    cross-phase findings, ownership decisions, per-phase status
+  INDEX.md                 the iteration registry: id, created, status, goal, current phase
+  PHASES.md                the active iteration's phase list, with what is out of scope and why
+  ORCHESTRATOR-LOG.md      cross-phase findings, ownership decisions, per-phase status
+  STATUS.md                current phase, what is done, why paused
   phase-N/
-    PLAN.md              v2 after reconciliation, in place
-    RECONCILIATION.md    a row per review finding, with its disposition
+    PLAN.md                v2 after reconciliation, in place
+    RECONCILIATION.md      a row per review finding, with its disposition
     REVIEW-<lens>.md
     IMPL-REVIEW-<lens>.md
+  iterations/
+    <YYYY-MM-DD-HHMMSS>-<slug>/   paused iterations, each a full snapshot plus STATUS.md
+  archive/
+    <YYYY-MM-DD-HHMMSS>-<slug>/   finished iterations (optional; may be deleted instead)
 ```
 
 `ORCHESTRATOR-LOG.md` is the file that earns its keep. When a finding in one phase constrains
 another — a defect two phases discovered independently, a decision about which phase owns a fix,
 a number that turns out to mean something other than what it says — it goes there, with the
 ownership call made explicitly. Otherwise it is rediscovered, or worse, fixed twice.
+
+## Iterations, pausing, and resuming
+
+The protocol can hold several efforts in parallel. Each effort is an **iteration** — one roadmap
+run — archived in a timestamped folder the moment it leaves the hot seat. The active iteration is
+the flat `.plans/` working copy; everything else lives under `.plans/iterations/` (paused) or
+`.plans/archive/` (finished). `INDEX.md` is the registry: one row per iteration with its id,
+creation time, status (`active` / `paused` / `done`), goal, and current phase.
+
+- **Start alongside a paused one.** Pause the active iteration first (below), then write a fresh
+  `.plans/PHASES.md`. The previous iteration is preserved whole and can be resumed later.
+- **Pause** (mid-roadmap, e.g. 6 of 10 phases done). Move `.plans/PHASES.md`,
+  `.plans/ORCHESTRATOR-LOG.md`, `.plans/STATUS.md`, and every `.plans/phase-N/` into
+  `.plans/iterations/<YYYY-MM-DD-HHMMSS>-<slug>/`. Write `STATUS.md` stating the current phase,
+  what is done, and why you paused. Update `INDEX.md`.
+- **Resume.** Move the chosen iteration's files back into `.plans/`, read `STATUS.md` and
+  `ORCHESTRATOR-LOG.md`, and continue from the recorded phase. Do not re-plan phases already done.
+- **Finish.** When every phase is done and committed, move the iteration to
+  `.plans/archive/<id>/`, or delete it — the user's call. Update `INDEX.md` either way.
+
+A paused or archived iteration is never overwritten by a new one: the timestamp keeps each folder
+unique, and `INDEX.md` is the source of truth for what is unchanged, half-done, or finished.
 
 ## Stopping
 
