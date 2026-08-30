@@ -20,6 +20,7 @@ never re-run a search you delegated. Ask for conclusions, not file dumps.
 | Role | Writes | Never does |
 |---|---|---|
 | Planner | `PLAN.md` | Touch code |
+| Architect (planner variant, complexity gate) | `PLAN.md` or `REVIEW-<lens>.md` (critic) | Touch code |
 | Plan reviewer (one per lens) | `REVIEW-<lens>.md` | Touch code, review its own plan |
 | Reconciler | `PLAN.md` v2, `RECONCILIATION.md` | Touch code |
 | Implementer | code | Review itself, commit, weaken a gate |
@@ -53,7 +54,8 @@ Do not begin phase 1 until both are answered.
 For each phase, in order. Do not skip a step because the phase looks small — the steps that catch
 things are the ones that feel redundant.
 
-1. **Plan.** One planner writes `.plans/phase-N/PLAN.md`.
+1. **Plan.** One planner writes `.plans/phase-N/PLAN.md`. The orchestrator picks the planner through
+   the complexity gate in *Model routing* below.
 2. **Review the plan.** Two or three reviewers, **one lens each**, in a single wave. Typical lenses:
    *design/spec consistency*, *executability and gates*, *coverage*. Each writes its own file and
    gives a verdict of `approve` / `approve-with-amendments` / `reject`.
@@ -84,25 +86,50 @@ turns run serially. Track phases with a todo list.
 | Review implementation | `steps-impl-reviewer` (2-3, one lens each) | `IMPL-REVIEW-<lens>.md` |
 | Fix | `steps-fixer` (one per area, strict ownership) | code, own files only |
 
-Those agent names ship with this skill, plus `steps-architect-pro` for the complexity gate below.
-Where a harness does not have them, spawn a generic subagent per row and paste the role's brief
-into it — the roles are the protocol, the named agents are only a convenience.
+Those agent names ship with this skill; `steps-architect-pro` ships with the Factory Droid
+installation only. Where a harness does not have them, spawn a generic
+subagent per row and paste the role's brief into it — the roles are the protocol, the named agents
+are only a convenience.
 
-## Model routing
+## Model routing (Factory Droid)
 
-The protocol routes its seven roles across two model tiers: cheap fast models do the volume work,
-heavy models plan and critique but never touch code. The single source of truth — role→tier→model
-class, the complexity gate, and the concrete per-harness model bindings — is `MODEL_ROUTING.md` at
-the plugin root. The agent manifests for each harness live under `harnesses/` at the plugin root.
+Each role runs on a fixed model tier. Cheap fast models do the volume work; heavy models plan and
+critique but never touch code.
 
-- **Complexity gate** (orchestrator, once per phase): standard phases go to `steps-planner`;
-  architectural phases go to `steps-architect-pro`; middle-complexity phases plan cheap and then
-  get `steps-architect-pro` as an extra plan-review lens. Implementation is always
-  `steps-implementer`.
-- **Hard rules:** Tier-2 models never write code except `steps-fixer` (the deadlock escape).
-  Tier-2 context is distilled Tier-1 conclusions, never raw dumps. Every gate is run read-only and
-  its current output recorded as evidence. Escalation to `steps-fixer` triggers on two distinct
-  failed fixes, distinct from the normal fix wave.
+| Role | Droid | Model | Tier |
+|---|---|---|---|
+| Planner | `steps-planner` | glm-5.3 | 1 |
+| Architect | `steps-architect-pro` | qwen3.8-max | 2 |
+| Plan reviewer | `steps-plan-reviewer` | minimax-m3 | 1 |
+| Reconciler | `steps-reconciler` | glm-5.3 | 1 |
+| Implementer | `steps-implementer` | deepseek-v4-flash | 1 |
+| Impl reviewer | `steps-impl-reviewer` | minimax-m3 | 1 |
+| Fixer | `steps-fixer` | deepseek-v4-pro | 2 |
+
+### Complexity gate (orchestrator, once per phase)
+
+- **Standard** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (glm-5.3).
+- **Architectural** — DB migration, protocol change, cross-cutting refactor, distributed logic or
+  race-condition reasoning: `steps-architect-pro` (qwen3.8-max). This must stay rare; invoking the
+  architect for a standard phase is a routing defect, not thoroughness.
+- **Middle** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
+  plan-review lens (critic, never author). Keep that wave at three reviewers or fewer.
+
+### Hard rules
+
+- Tier-2 models never write code, with one deliberate exception: `steps-fixer` (deepseek-v4-pro) is
+  the deadlock escape hatch. `steps-architect-pro` plans and critiques only.
+- Context into a Tier-2 agent is distilled conclusions from Tier-1 work — paths, gate outputs,
+  findings — never raw file dumps. Tier-2 returns structured reasoning plus the plan: invariants,
+  ordering, failure modes, per-item gates.
+- `steps-architect-pro` runs every gate command read-only and records its current (failing) output
+  as evidence. No gate is reported as passing.
+- **Two fix paths, distinct triggers, same droid.** (a) The implementer is stuck mid-step — the same
+  failure survives two distinct fixes — it stops and reports the verbatim error (anti-thrash), and
+  the orchestrator escalates to `steps-fixer` with those logs instead of re-dispatching flash.
+  (b) Implementation reviewers returned blockers — the normal step-7 fix wave.
+- **Multimodality:** glm-5.3 and qwen3.8-max accept images (screenshots, diagrams are allowed in
+  their briefs); deepseek-v4-flash and minimax-m3 are text-only — no images in their briefs.
 
 ## Rules that were paid for
 
