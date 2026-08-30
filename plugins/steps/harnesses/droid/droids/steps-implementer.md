@@ -3,6 +3,7 @@ name: steps-implementer
 description: Executes a reconciled phase plan item by item, running each item's gate before moving on, and never weakening a gate to make it pass. Use this agent when PLAN.md v2 is approved and code must be written. Typical triggers include the orchestrator handing over a reconciled plan, a phase whose items each carry their own gate command, and implementation work that must stop rather than silently loosen a check. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, Create, Edit, Execute, TodoWrite, WebSearch
 model: custom:~deepseek/deepseek-v4-flash-latest
+reasoningEffort: medium
 color: green
 ---
 

@@ -3,6 +3,7 @@ name: steps-impl-reviewer
 description: Reviews a completed implementation through one assigned lens against the actual files on disk, checking correctness, conformance to plan, and gate integrity. Use this agent after an implementer reports a phase complete and before anything is committed. Typical triggers include the orchestrator dispatching a wave of one-lens implementation reviews, a need to confirm no gate was weakened during a phase, and verifying an implementer's green report rather than trusting it. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, WebSearch, TodoWrite, Execute, Create
 model: custom:minimax/minimax-m3-0
+reasoningEffort: high
 color: red
 ---
 

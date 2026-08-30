@@ -76,15 +76,15 @@ session model:
 
 ### Droid (`harnesses/droid/`)
 
-| Role | `model` |
-|---|---|
-| `repo-scout` | `custom:~deepseek/deepseek-v4-flash-latest` |
-| `steps-planner`, `steps-reconciler` | `custom:z-ai/glm-5.3-flash-0` |
-| `steps-plan-reviewer`, `steps-impl-reviewer` | `custom:minimax/minimax-m3-0` |
-| `steps-implementer` | `custom:~deepseek/deepseek-v4-flash-latest` |
-| `steps-architect-pro` | `custom:qwen/qwen-3.8-max-0` |
-| `step-verifier` | `custom:minimax/minimax-m3-0` |
-| `steps-fixer` | `custom:deepseek/deepseek-v4-pro-0813-0` |
+| Role | `model` | `reasoningEffort` |
+|---|---|---|
+| `repo-scout` | `custom:~deepseek/deepseek-v4-flash-latest` | `low` |
+| `steps-planner`, `steps-reconciler` | `custom:z-ai/glm-5.3-flash-0` | `medium` |
+| `steps-plan-reviewer`, `steps-impl-reviewer` | `custom:minimax/minimax-m3-0` | `high` |
+| `steps-implementer` | `custom:~deepseek/deepseek-v4-flash-latest` | `medium` |
+| `steps-architect-pro` | `custom:qwen/qwen-3.8-max-0` | `high` |
+| `step-verifier` | `custom:minimax/minimax-m3-0` | `medium` |
+| `steps-fixer` | `custom:deepseek/deepseek-v4-pro-0813-0` | `high` |
 
 ### Codex CLI (`harnesses/codex/`)
 
