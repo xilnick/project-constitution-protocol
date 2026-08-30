@@ -2,6 +2,7 @@ constitution:
   project: "project-constitution-protocol"
   version: "1.0.0"
   last_updated: "2026-08-31"
+  verification_command: "npm test"
   security:
     rules:
       - id: "sec-auth-01"
@@ -11,6 +12,16 @@ constitution:
       - id: "sec-data-01"
         domain: "data"
         rule: "Sensitive credentials, secrets, and private keys must never be logged or persisted in plain text."
+        enforcement: "strict"
+  quality:
+    pre_commit_checks:
+      - id: "qual-gate-01"
+        domain: "quality"
+        rule: "All pre-commit verification gates and the test suite defined in verification_command must execute cleanly and return exit code 0 prior to phase completion."
+        enforcement: "strict"
+      - id: "qual-hygiene-01"
+        domain: "hygiene"
+        rule: "Context exploration must use progressive disclosure via tokensave or RTK tools; broad repository-wide grep or full-file dumping is prohibited."
         enforcement: "strict"
 
 decisions:

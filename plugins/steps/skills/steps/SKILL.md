@@ -55,8 +55,7 @@ Do not begin phase 1 until both are answered.
 
 ## The phase loop
 
-For each phase, in order. Do not skip a step because the phase looks small — the steps that catch
-things are the ones that feel redundant.
+For each phase, in order. Do not skip a step because the phase looks small — except for Tier 0 Fast-Track tasks (micro/trivial edits) which bypass planning and reviews directly to `steps-implementer` followed by automated verification — the steps that catch things are the ones that feel redundant.
 
 0. **Scout.** One `repo-scout` builds the phase's Context Digest — target files, interfaces and
    types, entrypoints and data flow, reusable utilities — to feed the planner.
@@ -109,10 +108,11 @@ the plugin root. The agent manifests for each harness live under `harnesses/` at
 - **Scouting** (before planning): `repo-scout` builds a Context Digest that feeds the planner. In
   Claude Code, the built-in `explore` agent already fills this role and is prioritized there —
   dispatch `explore` for scouting instead of `repo-scout`, and never forbid it.
-- **Complexity gate** (orchestrator, once per phase): standard phases go to `steps-planner`;
-  architectural phases go to `steps-architect-pro`; middle-complexity phases plan cheap and then
-  get `steps-architect-pro` as an extra plan-review lens. Implementation is always
-  `steps-implementer`.
+- **Complexity gate** (orchestrator, once per phase): Tier 0 Fast-Track tasks (micro/trivial edits)
+  bypass planning and reviews directly to `steps-implementer` followed by automated verification;
+  standard phases go to `steps-planner`; architectural phases go to `steps-architect-pro`;
+  middle-complexity phases plan cheap and then get `steps-architect-pro` as an extra plan-review
+  lens. Implementation is always `steps-implementer`.
 - **Constitution check** (graceful degradation): the plan reviewer checks `.factory/CONSTITUTION.md`
   or `CONSTITUTION.md` if present — a violation is a blocker; if absent, it falls back to a basic
   engineering audit and the pipeline does not fail for the absence of a constitution.
