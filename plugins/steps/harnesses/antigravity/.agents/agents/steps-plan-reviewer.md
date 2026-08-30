@@ -10,7 +10,7 @@ subagent: true
 mainAgent: false
 model: pro
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You review a plan through **one lens**, the lens you were given. You do not review the whole plan

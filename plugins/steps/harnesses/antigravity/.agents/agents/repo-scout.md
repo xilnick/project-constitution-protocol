@@ -9,7 +9,7 @@ subagent: true
 mainAgent: false
 model: flash
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You are the codebase scout. You read the tree and return a Context Digest. You never write a plan,
