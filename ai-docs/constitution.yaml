@@ -1,0 +1,45 @@
+constitution:
+  project: "project-constitution-protocol"
+  version: "1.0.0"
+  last_updated: "2026-08-31"
+  security:
+    rules:
+      - id: "sec-auth-01"
+        domain: "auth"
+        rule: "All external requests must validate JWT signatures with asymmetric key pairs (RS256/ES256) and reject unsigned or HS256 tokens."
+        enforcement: "strict"
+      - id: "sec-data-01"
+        domain: "data"
+        rule: "Sensitive credentials, secrets, and private keys must never be logged or persisted in plain text."
+        enforcement: "strict"
+
+decisions:
+  - id: "d-8f3a"
+    title: "Unified ESM Execution Layer"
+    status: "active"
+    cluster: "_general"
+    date: "2026-06-27"
+    summary: "All JavaScript files in this workspace must use native ES Modules (import/export) and execute directly on Node.js without a separate compiler or bundler stage."
+    adr: "ai-docs/decisions/ADR-0001-unified-esm.md"
+
+caveats:
+  - id: "c-e9a2"
+    title: "Zero-Dependency Runtime Constraint"
+    status: "active"
+    cluster: "_general"
+    date: "2026-06-27"
+    summary: "Custom automations and internal developer tools must rely strictly on standard library modules of their respective runtime environment to prevent supply chain risks."
+
+requirements:
+  - id: "r-b111"
+    cluster: "billing"
+    title: "Idempotent Webhook Processing"
+    status: "active"
+    summary: "Incoming payment webhooks must implement idempotency keys with deduplication cache checks prior to mutation execution."
+
+deferred:
+  - id: "l-e404"
+    title: "Multi-Region Active-Active Data Replication"
+    cluster: "infra"
+    status: "deferred"
+    reason: "Cross-region consensus latency exceeds SLA targets for single-tenant deployments; deferred until global tier."
