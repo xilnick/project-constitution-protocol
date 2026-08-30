@@ -17,6 +17,9 @@ the models your providers actually expose.
 No wrapper files. The plugin marketplace installs `../agents/` and `../skills/steps/` directly.
 Set each agent's `model:` per the Claude Code table in `MODEL_ROUTING.md`, or leave `inherit`.
 
+The Scout role is Claude Code's built-in `explore` agent — it is prioritized there and must not be
+disabled. Dispatch `explore` for scouting; `repo-scout` ships for the other harnesses.
+
 ## Droid (Factory)
 
 ```

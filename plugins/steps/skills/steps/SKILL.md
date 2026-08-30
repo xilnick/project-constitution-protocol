@@ -106,7 +106,9 @@ heavy models plan and critique but never touch code. The single source of truth 
 class, the complexity gate, and the concrete per-harness model bindings — is `MODEL_ROUTING.md` at
 the plugin root. The agent manifests for each harness live under `harnesses/` at the plugin root.
 
-- **Scouting** (before planning): `repo-scout` builds a Context Digest that feeds the planner.
+- **Scouting** (before planning): `repo-scout` builds a Context Digest that feeds the planner. In
+  Claude Code, the built-in `explore` agent already fills this role and is prioritized there —
+  dispatch `explore` for scouting instead of `repo-scout`, and never forbid it.
 - **Complexity gate** (orchestrator, once per phase): standard phases go to `steps-planner`;
   architectural phases go to `steps-architect-pro`; middle-complexity phases plan cheap and then
   get `steps-architect-pro` as an extra plan-review lens. Implementation is always
