@@ -3,6 +3,7 @@ name: steps-plan-reviewer
 description: Reviews a phase plan through exactly one assigned lens and returns a verdict of approve, approve-with-amendments, or reject. Use this agent when a PLAN.md exists and must be checked before any implementation begins. Typical triggers include the orchestrator dispatching a wave of one-lens plan reviews, a plan whose executability or gate coverage is in doubt, and a rewritten plan needing re-review. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, WebSearch, TodoWrite, Execute, Create
 model: custom:minimax/minimax-m3-0
+reasoningEffort: high
 color: cyan
 ---
 

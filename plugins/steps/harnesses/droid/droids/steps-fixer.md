@@ -3,6 +3,7 @@ name: steps-fixer
 description: Repairs one area's review findings under a strict file-ownership list, fixing the whole class of a defect rather than the reported instance. Use this agent when implementation reviews return blockers that must be repaired, often several agents in parallel across non-overlapping zones. Typical triggers include a fix wave dispatched after IMPL-REVIEW files land, a defect likely to recur at other types or node kinds, and repairs that must not touch files another agent is editing. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, Create, Edit, Execute, TodoWrite, WebSearch
 model: custom:deepseek/deepseek-v4-pro-0813-0
+reasoningEffort: high
 color: orange
 ---
 

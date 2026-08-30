@@ -3,6 +3,7 @@ name: steps-architect-pro
 description: Heavy-reasoning architect for the steps protocol. Plans architectural phases and critiques plans drafted by cheaper planners, but never writes code. Use this agent when a phase involves a DB migration, a protocol change, a cross-cutting refactor, or distributed logic and race-condition reasoning, and as an extra plan-review lens on middle-complexity phases. Overkill for standard CRUD phases — routing this agent there is a defect. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, WebSearch, TodoWrite, Execute, Create
 model: custom:qwen/qwen-3.8-max-0
+reasoningEffort: high
 color: magenta
 ---
 

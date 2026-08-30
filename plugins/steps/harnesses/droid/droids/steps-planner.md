@@ -3,6 +3,7 @@ name: steps-planner
 description: Writes the plan for one phase of a roadmap under the steps protocol, as an ordered list of work items each with its own failing gate. Use this agent when a phase needs a PLAN.md before any code is written. Typical triggers include the orchestrator opening a new phase, a phase whose plan was rejected needing a rewrite from scratch, and a roadmap item being expanded into executable steps. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, WebSearch, TodoWrite, Execute, Create
 model: custom:z-ai/glm-5.3-flash-0
+reasoningEffort: medium
 color: blue
 ---
 

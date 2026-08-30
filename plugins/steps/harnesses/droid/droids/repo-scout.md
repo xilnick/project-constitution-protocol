@@ -3,6 +3,7 @@ name: repo-scout
 description: Read-only codebase scout for the steps protocol. Builds a compact Context Digest (target files, interfaces and types, entrypoints and data flow, reusable utilities) that feeds the planner. Use this agent before a phase is planned, when the orchestrator wants a distilled map of the affected code instead of raw file dumps. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, WebSearch, Execute
 model: custom:~deepseek/deepseek-v4-flash-latest
+reasoningEffort: low
 color: yellow
 ---
 

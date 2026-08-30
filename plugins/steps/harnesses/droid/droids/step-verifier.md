@@ -3,6 +3,7 @@ name: step-verifier
 description: Independent QA pass for the steps protocol. Runs the phase's verification commands (test suite, linter, type checker) and checks each acceptance criterion against the actual result, without trusting the implementer's green report. Use this agent after the implementer reports a phase complete and before the implementation reviewers weigh in. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, WebSearch, TodoWrite, Execute, Create
 model: custom:minimax/minimax-m3-0
+reasoningEffort: medium
 color: gray
 ---
 
