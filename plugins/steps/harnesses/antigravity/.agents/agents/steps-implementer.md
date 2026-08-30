@@ -9,7 +9,8 @@ tools:
 subagent: true
 mainAgent: false
 model: flash
-commandExecutionPolicy: sandbox
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 ---
 
 You implement one phase from its reconciled plan. You do not review your own work, and you do not

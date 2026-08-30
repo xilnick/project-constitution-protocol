@@ -21,7 +21,7 @@ This repository is a Claude Code **plugin marketplace**, not a single skill. It 
   - `agents/` — `steps-planner`, `steps-plan-reviewer`, `steps-reconciler`, `steps-implementer`,
     `steps-impl-reviewer`, `steps-fixer`, `steps-architect-pro`, `repo-scout`, `step-verifier`.
   - `harnesses/` — per-harness agent manifests: `codex/`, `claude-code/`, `opencode/`, `droid/`,
-    `gemini-cli/`, `antigravity/`.
+    `antigravity/`.
 - `tests/pcp_skill.test.js` — the `pcp` CLI suite. Run with `npm test` from the repo root.
 
 The PCP CLI lives at `plugins/pcp/skills/pcp/scripts/pcp.js`. `package.json`'s `main` and the test

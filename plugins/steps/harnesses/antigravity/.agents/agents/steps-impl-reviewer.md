@@ -9,7 +9,8 @@ tools:
 subagent: true
 mainAgent: false
 model: pro
-commandExecutionPolicy: sandbox
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 ---
 
 You review an implementation through **one lens**, the one you were given, and you never review

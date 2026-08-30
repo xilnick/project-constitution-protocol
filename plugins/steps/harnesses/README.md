@@ -48,17 +48,6 @@ opencode/.opencode/agents/*.md → ~/.config/opencode/agents/   (global)
 Markdown agents; the filename is the agent name. `model` uses `provider/model-id`; read-only roles
 get `permission.edit: deny` with `bash` allowed so they can run gates.
 
-## Gemini CLI (Google)
-
-```
-gemini-cli/.gemini/agents/*.md → ~/.gemini/agents/          (user)
-                                 <project>/.gemini/agents/  (project)
-```
-
-YAML-frontmatter subagents (`name`, `description`, `tools`, `model`, `max_turns`). Tool names are
-the Gemini CLI set (`read_file`, `write_file`, `edit_file`, `grep_search`, `run_shell_command`,
-`list_directory`, `glob`, `web_search`) — adjust if your CLI version differs.
-
 ## Antigravity (Google)
 
 ```
@@ -67,8 +56,12 @@ antigravity/.agents/agents/*.md → ~/.gemini/config/agents/          (global)
 ```
 
 YAML-frontmatter subagents (`name`, `description`, `tools`, `subagent`, `mainAgent`, `model`,
-`commandExecutionPolicy`). `model` is `flash` or `pro`. Tool names are `view_file`,
-`grep_search`, `run_command`, `replace_file_content`.
+`permissionMode`, `commandExecutionPolicy`). `model` is `flash` or `pro`. Tool names are
+`view_file`, `grep_search`, `run_command`, `replace_file_content`. For autonomous background
+runs every agent carries `permissionMode: acceptEdits` (auto-approve file edits) and
+`commandExecutionPolicy: auto` (auto-run standard test/build commands; high-risk commands stay
+gated). Set the CLI `agentMode` to `accept-edits` in `~/.gemini/antigravity-cli/settings.json`
+so subagents inherit it.
 
 ## Model bindings
 

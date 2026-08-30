@@ -109,16 +109,6 @@ session model:
 | `step-verifier` | `anthropic/claude-sonnet-4-20250514` |
 | `steps-architect-pro`, `steps-fixer` | `anthropic/claude-sonnet-4-20250514` |
 
-### Gemini CLI (`harnesses/gemini-cli/`)
-
-| Role | `model` |
-|---|---|
-| `repo-scout` | `gemini-3-flash-preview` |
-| `steps-planner`, `steps-reconciler`, `steps-implementer` | `gemini-3-flash-preview` |
-| `steps-plan-reviewer`, `steps-impl-reviewer` | `gemini-3-pro-preview` |
-| `step-verifier` | `gemini-3-pro-preview` |
-| `steps-architect-pro`, `steps-fixer` | `gemini-3-pro-preview` |
-
 ### Antigravity (`harnesses/antigravity/`)
 
 | Role | `model` |

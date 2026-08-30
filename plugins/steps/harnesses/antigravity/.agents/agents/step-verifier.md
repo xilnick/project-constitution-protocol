@@ -9,7 +9,8 @@ tools:
 subagent: true
 mainAgent: false
 model: pro
-commandExecutionPolicy: sandbox
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 ---
 
 You verify, independently. You did not write the code, and you do not fix it — you run the gates and

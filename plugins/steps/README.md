@@ -65,7 +65,7 @@ and a plan-review critic on middle-complexity phases, and it never writes code.
 The nine roles map onto two model tiers — cheap fast models for volume work, heavy models for
 planning and deadlock escape. The routing (role→tier, the complexity gate, per-harness model
 bindings) lives in [`MODEL_ROUTING.md`](MODEL_ROUTING.md), and installable agent manifests for
-Codex CLI, Claude Code, OpenCode, Factory Droid, Gemini CLI, and Antigravity live under
+Codex CLI, Claude Code, OpenCode, Factory Droid, and Antigravity live under
 [`harnesses/`](harnesses/).
 
 ## When not to use it

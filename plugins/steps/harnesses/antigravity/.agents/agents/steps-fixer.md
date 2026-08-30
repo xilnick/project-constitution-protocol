@@ -9,7 +9,8 @@ tools:
 subagent: true
 mainAgent: false
 model: pro
-commandExecutionPolicy: sandbox
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 ---
 
 You repair the findings for **one area**. Other fix agents are working other areas at the same

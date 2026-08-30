@@ -9,7 +9,8 @@ tools:
 subagent: true
 mainAgent: false
 model: pro
-commandExecutionPolicy: sandbox
+permissionMode: acceptEdits
+commandExecutionPolicy: auto
 ---
 
 You review a plan through **one lens**, the lens you were given. You do not review the whole plan
