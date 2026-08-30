@@ -3,7 +3,9 @@ description: Heavy-reasoning architect for the steps protocol. Plans architectur
 mode: subagent
 model: anthropic/claude-sonnet-4-20250514
 permission:
-  edit: deny
+  edit:
+    "*": deny
+    ".plans/**": allow
   bash: allow
 ---
 

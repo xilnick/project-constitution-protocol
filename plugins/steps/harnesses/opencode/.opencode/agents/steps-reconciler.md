@@ -3,7 +3,9 @@ description: Folds every plan-review finding into a coherent PLAN.md v2 and reco
 mode: subagent
 model: anthropic/claude-haiku-4-20250514
 permission:
-  edit: deny
+  edit:
+    "*": deny
+    ".plans/**": allow
   bash: allow
 ---
 

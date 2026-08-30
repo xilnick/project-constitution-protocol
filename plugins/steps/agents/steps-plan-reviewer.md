@@ -38,6 +38,14 @@ the plan cites and check it. **A cited `path:line` that turns out to be wrong is
 finding you can produce** — it means the plan was built on something that is not there. Run the
 plan's stated gate commands and compare against the output the plan recorded.
 
+## Constitution check (graceful degradation)
+
+Before you write your verdict, check for `.factory/CONSTITUTION.md` or `CONSTITUTION.md` at the
+repo root. If one exists, check every step against its rules — no direct mutations, no `any`,
+layer isolation, whatever the constitution actually says. A step that violates a rule is a
+blocker, not a style note. If no constitution exists, fall back to a basic engineering audit
+(atomicity, test coverage, no regressions) and do not fail the pipeline for its absence.
+
 ## What counts as a blocker
 
 A blocker is something that makes the work **wrong**, not something you would have done

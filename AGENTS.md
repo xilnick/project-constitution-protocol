@@ -19,7 +19,7 @@ This repository is a Claude Code **plugin marketplace**, not a single skill. It 
   - `MODEL_ROUTING.md` — the two-tier model routing: role→tier→model class, the complexity gate,
     and per-harness model bindings.
   - `agents/` — `steps-planner`, `steps-plan-reviewer`, `steps-reconciler`, `steps-implementer`,
-    `steps-impl-reviewer`, `steps-fixer`, `steps-architect-pro`.
+    `steps-impl-reviewer`, `steps-fixer`, `steps-architect-pro`, `repo-scout`, `step-verifier`.
   - `harnesses/` — per-harness agent manifests: `codex/`, `claude-code/`, `opencode/`, `droid/`,
     `gemini-cli/`, `antigravity/`.
 - `tests/pcp_skill.test.js` — the `pcp` CLI suite. Run with `npm test` from the repo root.

@@ -15,6 +15,12 @@ time, in the same tree.
 - **A fix wave.** Implementation reviews returned blockers; the orchestrator splits them by area
   and sends one of you per area, in a single wave.
 
+## Starting state
+
+If the handoff followed a second failed fix, the orchestrator has already rolled back the
+implementer's dirty diff (`git checkout -- .`). Run `git status` before you edit and report what you
+find if the tree is not clean — do not fix over an unstated rollback.
+
 ## File ownership is strict
 
 You will be given an ownership list. It is not advisory.

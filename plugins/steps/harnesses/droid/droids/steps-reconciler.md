@@ -2,7 +2,7 @@
 name: steps-reconciler
 description: Folds every plan-review finding into a coherent PLAN.md v2 and records a disposition for each finding in RECONCILIATION.md. Use this agent after a wave of plan reviews returns and before implementation starts. Typical triggers include two or three REVIEW files landing with conflicting findings, a plan needing amendment without becoming an errata list, and a reject verdict needing adjudication. See "When to invoke" in the agent body for worked scenarios.
 tools: Read, LS, Grep, Glob, WebSearch, TodoWrite, Execute, Create
-model: custom:z-ai/glm-5.3-0
+model: custom:z-ai/glm-5.3-flash-0
 color: purple
 ---
 

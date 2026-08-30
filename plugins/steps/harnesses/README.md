@@ -1,6 +1,6 @@
 # Harness wrappers
 
-The steps protocol is one protocol, seven roles. This directory holds the per-harness agent
+The steps protocol is one protocol, nine roles. This directory holds the per-harness agent
 manifests that let each harness dispatch those roles with the right model and tool surface.
 
 - **Canonical roles**: `../agents/` — the role briefs, harness-independent in content.

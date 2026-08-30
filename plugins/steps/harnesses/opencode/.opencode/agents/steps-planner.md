@@ -3,7 +3,9 @@ description: Writes the plan for one phase of a roadmap under the steps protocol
 mode: subagent
 model: anthropic/claude-haiku-4-20250514
 permission:
-  edit: deny
+  edit:
+    "*": deny
+    ".plans/**": allow
   bash: allow
 ---
 
