@@ -53,7 +53,10 @@ Do not begin phase 1 until both are answered.
 For each phase, in order. Do not skip a step because the phase looks small — the steps that catch
 things are the ones that feel redundant.
 
-1. **Plan.** One planner writes `.plans/phase-N/PLAN.md`.
+0. **Scout.** One `repo-scout` builds the phase's Context Digest — target files, interfaces and
+   types, entrypoints and data flow, reusable utilities — to feed the planner.
+1. **Plan.** One planner writes `.plans/phase-N/PLAN.md`. The orchestrator picks the planner through
+   the complexity gate in *Model routing* below.
 2. **Review the plan.** Two or three reviewers, **one lens each**, in a single wave. Typical lenses:
    *design/spec consistency*, *executability and gates*, *coverage*. Each writes its own file and
    gives a verdict of `approve` / `approve-with-amendments` / `reject`.
@@ -67,7 +70,8 @@ things are the ones that feel redundant.
 6. **Run a code-review pass** for the lens the others do not cover: reuse, simplification,
    efficiency, dead state.
 7. **Fix.** One agent per area, in parallel, under **strict file ownership** (below).
-8. **Verify yourself.** Run every gate. Do not accept a green report you did not reproduce.
+8. **Verify.** Dispatch `step-verifier` to run every gate independently, then reproduce the
+   critical ones yourself. Do not accept a green report you did not reproduce.
 9. **Record.** Update the roadmap and the project's intent record with numbers you measured this
    session, not numbers you copied.
 10. **Commit.** One commit per phase. Then the next phase.
@@ -77,32 +81,39 @@ turns run serially. Track phases with a todo list.
 
 | Step | Agent | Writes |
 |---|---|---|
+| Scout | `repo-scout` (one) | Context Digest |
 | Plan | `steps-planner` or `steps-architect-pro` (complexity gate, see *Model routing*) (one) | `.plans/phase-N/PLAN.md` |
 | Review plan | `steps-plan-reviewer` (2-3, one lens each; `steps-architect-pro` may join as a critic lens on middle-complexity phases) | `REVIEW-<lens>.md` |
 | Reconcile | `steps-reconciler` (one) | `PLAN.md` v2, `RECONCILIATION.md` |
 | Implement | `steps-implementer` (one) | code |
 | Review implementation | `steps-impl-reviewer` (2-3, one lens each) | `IMPL-REVIEW-<lens>.md` |
 | Fix | `steps-fixer` (one per area, strict ownership) | code, own files only |
+| Verify | `step-verifier` (one) | gate-results report |
 
-Those agent names ship with this skill, plus `steps-architect-pro` for the complexity gate below.
-Where a harness does not have them, spawn a generic subagent per row and paste the role's brief
-into it — the roles are the protocol, the named agents are only a convenience.
+Those agent names ship with this skill, plus `steps-architect-pro`, `repo-scout`, and
+`step-verifier`. Where a harness does not have them, spawn a generic subagent per row and paste the
+role's brief into it — the roles are the protocol, the named agents are only a convenience.
 
 ## Model routing
 
-The protocol routes its seven roles across two model tiers: cheap fast models do the volume work,
+The protocol routes its nine roles across two model tiers: cheap fast models do the volume work,
 heavy models plan and critique but never touch code. The single source of truth — role→tier→model
 class, the complexity gate, and the concrete per-harness model bindings — is `MODEL_ROUTING.md` at
 the plugin root. The agent manifests for each harness live under `harnesses/` at the plugin root.
 
+- **Scouting** (before planning): `repo-scout` builds a Context Digest that feeds the planner.
 - **Complexity gate** (orchestrator, once per phase): standard phases go to `steps-planner`;
   architectural phases go to `steps-architect-pro`; middle-complexity phases plan cheap and then
   get `steps-architect-pro` as an extra plan-review lens. Implementation is always
   `steps-implementer`.
+- **Constitution check** (graceful degradation): the plan reviewer checks `.factory/CONSTITUTION.md`
+  or `CONSTITUTION.md` if present — a violation is a blocker; if absent, it falls back to a basic
+  engineering audit and the pipeline does not fail for the absence of a constitution.
 - **Hard rules:** Tier-2 models never write code except `steps-fixer` (the deadlock escape).
   Tier-2 context is distilled Tier-1 conclusions, never raw dumps. Every gate is run read-only and
-  its current output recorded as evidence. Escalation to `steps-fixer` triggers on two distinct
-  failed fixes, distinct from the normal fix wave.
+  its current output recorded as evidence. The circuit breaker records git state before each step;
+  on the second distinct failure it rolls back (`git checkout -- .`) and escalates to `steps-fixer`,
+  distinct from the normal fix wave.
 
 ## Rules that were paid for
 

@@ -19,6 +19,7 @@ never re-run a search you delegated. Ask for conclusions, not file dumps.
 
 | Role | Writes | Never does |
 |---|---|---|
+| Scout | Context Digest (report) | Touch code, propose a plan |
 | Planner | `PLAN.md` | Touch code |
 | Architect (planner variant, complexity gate) | `PLAN.md` or `REVIEW-<lens>.md` (critic) | Touch code |
 | Plan reviewer (one per lens) | `REVIEW-<lens>.md` | Touch code, review its own plan |
@@ -26,6 +27,7 @@ never re-run a search you delegated. Ask for conclusions, not file dumps.
 | Implementer | code | Review itself, commit, weaken a gate |
 | Implementation reviewer (one per lens) | `IMPL-REVIEW-<lens>.md` | Touch code |
 | Fix agent (one per area) | code, in its own files only | Touch another agent's files |
+| Verifier | gate-results report | Touch code, fix what it finds |
 | Orchestrator | phase list, log, commits | Any of the above |
 
 ## Starting
@@ -54,6 +56,8 @@ Do not begin phase 1 until both are answered.
 For each phase, in order. Do not skip a step because the phase looks small — the steps that catch
 things are the ones that feel redundant.
 
+0. **Scout.** One `repo-scout` builds the phase's Context Digest — target files, interfaces and
+   types, entrypoints and data flow, reusable utilities — to feed the planner.
 1. **Plan.** One planner writes `.plans/phase-N/PLAN.md`. The orchestrator picks the planner through
    the complexity gate in *Model routing* below.
 2. **Review the plan.** Two or three reviewers, **one lens each**, in a single wave. Typical lenses:
@@ -69,7 +73,8 @@ things are the ones that feel redundant.
 6. **Run a code-review pass** for the lens the others do not cover: reuse, simplification,
    efficiency, dead state.
 7. **Fix.** One agent per area, in parallel, under **strict file ownership** (below).
-8. **Verify yourself.** Run every gate. Do not accept a green report you did not reproduce.
+8. **Verify.** Dispatch `step-verifier` to run every gate independently, then reproduce the
+   critical ones yourself. Do not accept a green report you did not reproduce.
 9. **Record.** Update the roadmap and the project's intent record with numbers you measured this
    session, not numbers you copied.
 10. **Commit.** One commit per phase. Then the next phase.
@@ -79,15 +84,17 @@ turns run serially. Track phases with a todo list.
 
 | Step | Agent | Writes |
 |---|---|---|
+| Scout | `repo-scout` (one) | Context Digest |
 | Plan | `steps-planner` or `steps-architect-pro` (complexity gate, see *Model routing*) (one) | `.plans/phase-N/PLAN.md` |
 | Review plan | `steps-plan-reviewer` (2-3, one lens each; `steps-architect-pro` may join as a critic lens on middle-complexity phases) | `REVIEW-<lens>.md` |
 | Reconcile | `steps-reconciler` (one) | `PLAN.md` v2, `RECONCILIATION.md` |
 | Implement | `steps-implementer` (one) | code |
 | Review implementation | `steps-impl-reviewer` (2-3, one lens each) | `IMPL-REVIEW-<lens>.md` |
 | Fix | `steps-fixer` (one per area, strict ownership) | code, own files only |
+| Verify | `step-verifier` (one) | gate-results report |
 
-Those agent names ship with this skill; `steps-architect-pro` ships with the Factory Droid
-installation only. Where a harness does not have them, spawn a generic
+Those agent names ship with this skill; `steps-architect-pro`, `repo-scout`, and `step-verifier`
+ship with the Factory Droid installation. Where a harness does not have them, spawn a generic
 subagent per row and paste the role's brief into it — the roles are the protocol, the named agents
 are only a convenience.
 
@@ -98,22 +105,38 @@ critique but never touch code.
 
 | Role | Droid | Model | Tier |
 |---|---|---|---|
-| Planner | `steps-planner` | glm-5.3 | 1 |
+| Scout | `repo-scout` | deepseek-v4-flash | 1 |
+| Planner | `steps-planner` | glm-5.3-flash | 1 |
 | Architect | `steps-architect-pro` | qwen3.8-max | 2 |
 | Plan reviewer | `steps-plan-reviewer` | minimax-m3 | 1 |
-| Reconciler | `steps-reconciler` | glm-5.3 | 1 |
+| Reconciler | `steps-reconciler` | glm-5.3-flash | 1 |
 | Implementer | `steps-implementer` | deepseek-v4-flash | 1 |
 | Impl reviewer | `steps-impl-reviewer` | minimax-m3 | 1 |
+| Verifier | `step-verifier` | minimax-m3 | 1 |
 | Fixer | `steps-fixer` | deepseek-v4-pro | 2 |
+
+### Scouting (before planning)
+
+The orchestrator dispatches `repo-scout` first to build a Context Digest — target files, interfaces
+and types, entrypoints and data flow, reusable utilities — that feeds the planner. It is read-only
+and never proposes a plan or writes code.
 
 ### Complexity gate (orchestrator, once per phase)
 
-- **Standard** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (glm-5.3).
+- **Standard** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (glm-5.3-flash).
 - **Architectural** — DB migration, protocol change, cross-cutting refactor, distributed logic or
   race-condition reasoning: `steps-architect-pro` (qwen3.8-max). This must stay rare; invoking the
   architect for a standard phase is a routing defect, not thoroughness.
 - **Middle** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
   plan-review lens (critic, never author). Keep that wave at three reviewers or fewer.
+
+### Constitution check (graceful degradation)
+
+Before approving a plan, the plan reviewer checks for `.factory/CONSTITUTION.md` or
+`CONSTITUTION.md`. If one exists, every step is checked against its rules (no direct mutations, no
+`any`, layer isolation, whatever the project's constitution says); a violation is a blocker, not a
+style note. If none exists, the reviewer falls back to a basic engineering audit — atomicity, test
+coverage, no regressions — and the pipeline does not fail for the absence of a constitution.
 
 ### Hard rules
 
@@ -124,12 +147,14 @@ critique but never touch code.
   ordering, failure modes, per-item gates.
 - `steps-architect-pro` runs every gate command read-only and records its current (failing) output
   as evidence. No gate is reported as passing.
-- **Two fix paths, distinct triggers, same droid.** (a) The implementer is stuck mid-step — the same
-  failure survives two distinct fixes — it stops and reports the verbatim error (anti-thrash), and
-  the orchestrator escalates to `steps-fixer` with those logs instead of re-dispatching flash.
-  (b) Implementation reviewers returned blockers — the normal step-7 fix wave.
-- **Multimodality:** glm-5.3 and qwen3.8-max accept images (screenshots, diagrams are allowed in
-  their briefs); deepseek-v4-flash and minimax-m3 are text-only — no images in their briefs.
+- **Circuit breaker with git checkpoints.** Before each step is handed to the implementer, the
+  orchestrator records the git state (`git stash` or the current sha). Failure 1: the verbatim logs
+  go back to the implementer for a local fix. Failure 2: roll the dirty diff back
+  (`git checkout -- .`), then escalate to `steps-fixer` with the full log dump — never re-dispatch
+  the flash coder a third time. This is distinct from the normal fix wave, which handles
+  reviewer-found blockers.
+- **Multimodality:** glm-5.3-flash and qwen3.8-max accept images (screenshots, diagrams are allowed
+  in their briefs); deepseek-v4-flash and minimax-m3 are text-only — no images in their briefs.
 
 ## Rules that were paid for
 

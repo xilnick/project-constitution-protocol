@@ -54,14 +54,15 @@ Per phase, in order:
 ## Agents
 
 `steps-planner`, `steps-plan-reviewer`, `steps-reconciler`, `steps-implementer`,
-`steps-impl-reviewer`, `steps-fixer`, `steps-architect-pro`. Each is a standing brief for its role
-and can be dispatched directly, not only through `/steps`. `steps-architect-pro` is the heavy
-Tier-2 planner for architectural phases and a plan-review critic on middle-complexity phases; it
-never writes code.
+`steps-impl-reviewer`, `steps-fixer`, `steps-architect-pro`, `repo-scout`, `step-verifier`. Each is
+a standing brief for its role and can be dispatched directly, not only through `/steps`.
+`repo-scout` builds the pre-planning Context Digest; `step-verifier` runs the gates independently
+after implementation; `steps-architect-pro` is the heavy Tier-2 planner for architectural phases
+and a plan-review critic on middle-complexity phases, and it never writes code.
 
 ## Model routing and harnesses
 
-The seven roles map onto two model tiers — cheap fast models for volume work, heavy models for
+The nine roles map onto two model tiers — cheap fast models for volume work, heavy models for
 planning and deadlock escape. The routing (role→tier, the complexity gate, per-harness model
 bindings) lives in [`MODEL_ROUTING.md`](MODEL_ROUTING.md), and installable agent manifests for
 Codex CLI, Claude Code, OpenCode, Factory Droid, Gemini CLI, and Antigravity live under

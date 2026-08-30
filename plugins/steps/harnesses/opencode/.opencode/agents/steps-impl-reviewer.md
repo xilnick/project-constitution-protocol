@@ -3,7 +3,9 @@ description: Reviews a completed implementation through one assigned lens agains
 mode: subagent
 model: anthropic/claude-sonnet-4-20250514
 permission:
-  edit: deny
+  edit:
+    "*": deny
+    ".plans/**": allow
   bash: allow
 ---
 
