@@ -59,9 +59,9 @@ YAML-frontmatter subagents (`name`, `description`, `tools`, `subagent`, `mainAge
 `permissionMode`, `commandExecutionPolicy`). `model` is `flash` or `pro`. Tool names are
 `view_file`, `grep_search`, `run_command`, `replace_file_content`. For autonomous background
 runs every agent carries `permissionMode: acceptEdits` (auto-approve file edits) and
-`commandExecutionPolicy: auto` (auto-run standard test/build commands; high-risk commands stay
-gated). Set the CLI `agentMode` to `accept-edits` in `~/.gemini/antigravity-cli/settings.json`
-so subagents inherit it.
+`commandExecutionPolicy: eager` (auto-run shell commands; high-risk commands stay gated). Set the
+CLI `agentMode` to `accept-edits` and `toolPermission` to `proceed-in-sandbox` in
+`~/.gemini/antigravity-cli/settings.json` so subagents inherit it.
 
 ## Model bindings
 

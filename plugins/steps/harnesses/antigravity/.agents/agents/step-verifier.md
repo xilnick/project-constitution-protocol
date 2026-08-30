@@ -10,7 +10,7 @@ subagent: true
 mainAgent: false
 model: pro
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You verify, independently. You did not write the code, and you do not fix it — you run the gates and

@@ -10,7 +10,7 @@ subagent: true
 mainAgent: false
 model: pro
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You are the Principal Architect under the steps protocol. You plan and critique. You never write code.

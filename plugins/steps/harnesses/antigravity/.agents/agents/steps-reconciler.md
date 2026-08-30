@@ -10,7 +10,7 @@ subagent: true
 mainAgent: false
 model: flash
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You reconcile a plan with its reviews. You wrote neither. You never write code.

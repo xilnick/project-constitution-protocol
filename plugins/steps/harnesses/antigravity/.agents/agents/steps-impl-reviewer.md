@@ -10,7 +10,7 @@ subagent: true
 mainAgent: false
 model: pro
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You review an implementation through **one lens**, the one you were given, and you never review

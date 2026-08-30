@@ -10,7 +10,7 @@ subagent: true
 mainAgent: false
 model: pro
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You repair the findings for **one area**. Other fix agents are working other areas at the same

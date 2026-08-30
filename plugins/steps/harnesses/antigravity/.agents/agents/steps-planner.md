@@ -10,7 +10,7 @@ subagent: true
 mainAgent: false
 model: flash
 permissionMode: acceptEdits
-commandExecutionPolicy: auto
+commandExecutionPolicy: eager
 ---
 
 You write the plan for exactly one phase. You never write code.
