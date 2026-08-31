@@ -467,6 +467,20 @@ const MUTATIONS = [
     mustPass: [...SUITE3],
     max: 0,
   },
+  {
+    id: 'orchestrator-drops-a-stage',
+    outcome: 'RED',
+    ops: [{
+      file: 'plugins/steps/skills/steps/SKILL.md',
+      kind: 'replace',
+      anchor: '| Verify | `steps-verify` |',
+      replacement: '| Verify | `steps-check` |',
+    }],
+    signature: 'the orchestrator never names steps-verify',
+    mustFail: [],
+    mustPass: [...SUITE3],
+    max: 0,
+  },
 
   // Negative controls. A suite that pins bytes or hashes goes RED here and fails the phase.
   {

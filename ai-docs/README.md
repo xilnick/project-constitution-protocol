@@ -20,8 +20,8 @@ The query recipes live in exactly one place: `plugins/pcp/skills/constitution-qu
 Every recipe there is executed against the files in this directory by the test suite, so a second
 copy kept here would be a second thing to keep true.
 
-`constitution.execution` in `constitution.yaml` declares the execution tier ladder and its
-escalation triggers; `plugins/steps/MODEL_ROUTING.md` is that block's prose.
+`constitution.execution` in `constitution.yaml` declares the execution tier ladder, the stages each
+tier runs, and the escalation triggers; `plugins/steps/MODEL_ROUTING.md` is that block's prose.
 
 ---
 

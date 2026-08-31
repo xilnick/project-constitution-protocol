@@ -1013,6 +1013,11 @@ add('E12', 'every declared stage has a skill, and every tier runs the unskippabl
     const entry = SKILL_INVENTORY.find((s) => s.expectedName === stage.skill);
     if (!fs.existsSync(repoPath(entry.relPath))) throw new Error(`${entry.relPath} does not exist`);
   }
+  // The orchestrator's table is prose; without this it can drift from the stages it composes.
+  const orchestrator = fs.readFileSync(repoPath('plugins/steps/skills/steps/SKILL.md'), 'utf8');
+  for (const stage of stages) {
+    if (!orchestrator.includes(`\`${stage.skill}\``)) throw new Error(`the orchestrator never names ${stage.skill}`);
+  }
   const ids = stages.map((s) => s.id);
   const unskippable = stages.filter((s) => s.skip_when === null).map((s) => s.id);
   if (!unskippable.length) throw new Error('no stage is unskippable, so every tier is optional');

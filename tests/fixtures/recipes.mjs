@@ -86,17 +86,6 @@ export const ESCALATION_TRIGGER_BRIEFS = {
   orchestrator: 'plugins/steps/skills/steps/SKILL.md',
 };
 
-// A harness skill copy is the canonical protocol verbatim plus exactly one extra section.
-export const HARNESS_SKILL_OVERLAYS = [
-  {
-    path: 'plugins/steps/harnesses/droid/skills/steps/SKILL.md',
-    canonical: 'plugins/steps/skills/steps/SKILL.md',
-    overlayHeading: 'Droid specifics',
-  },
-];
-
-// The model bindings, declared here so the manifests and MODEL_ROUTING.md are graded against a
-// third thing rather than against each other.
 export const HARNESS_BINDINGS = [
   {
     key: 'droid',
