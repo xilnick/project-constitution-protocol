@@ -3,6 +3,7 @@
 // paragraph, or from a copy inside a fenced template; all three are real defects.
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 const ATX = /^ {0,3}(#{1,6})(?:\s+(.*?))?\s*$/;
+const CODE_SPAN = /(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/g;
 
 function stripTrailingHashes(text) {
   return text.replace(/\s+#+\s*$/, '');
@@ -27,9 +28,17 @@ export function parseDoc(content) {
     }
   }
 
+  // Fence and span line numbers are file-relative, so a failure message can be
+  // pasted into an editor; the scanning loop below indexes the frontmatter-stripped body.
+  const frontmatterLines = text.length === body.length
+    ? 0
+    : text.slice(0, text.length - body.length).split('\n').length - 1;
+
   const lines = body.split('\n');
   const headings = [];
   const fenceStrippedLines = [];
+  const fences = [];
+  const codeSpans = [];
   let openFence = null;
 
   lines.forEach((line, i) => {
@@ -37,15 +46,33 @@ export function parseDoc(content) {
     if (openFence) {
       // A closing fence is the same character, at least as long, and bare.
       if (fence && fence[1][0] === openFence.char && fence[1].length >= openFence.length && fence[2].trim() === '') {
+        fences.push({
+          index: fences.length,
+          info: openFence.info,
+          startLine: openFence.startLine,
+          endLine: i + frontmatterLines + 1,
+          body: openFence.body.join('\n'),
+        });
         openFence = null;
+      } else {
+        openFence.body.push(line);
       }
       return;
     }
     if (fence) {
-      openFence = { char: fence[1][0], length: fence[1].length };
+      openFence = {
+        char: fence[1][0],
+        length: fence[1].length,
+        info: fence[2].trim().toLowerCase(),
+        startLine: i + frontmatterLines + 1,
+        body: [],
+      };
       return;
     }
     fenceStrippedLines.push(line);
+    for (const span of line.matchAll(CODE_SPAN)) {
+      codeSpans.push({ line: i + frontmatterLines + 1, text: span[2].trim() });
+    }
     const atx = ATX.exec(line);
     if (atx) {
       headings.push({
@@ -56,11 +83,24 @@ export function parseDoc(content) {
     }
   });
 
+  // An unterminated fence still holds its lines; dropping it would hide a block.
+  if (openFence) {
+    fences.push({
+      index: fences.length,
+      info: openFence.info,
+      startLine: openFence.startLine,
+      endLine: lines.length + frontmatterLines,
+      body: openFence.body.join('\n'),
+    });
+  }
+
   return {
     frontmatter,
     bodyLines: lines,
     fenceStripped: fenceStrippedLines.join('\n'),
     headings,
+    fences,
+    codeSpans,
   };
 }
 

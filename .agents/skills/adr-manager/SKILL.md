@@ -85,7 +85,7 @@ When creating `ai-docs/decisions/ADR-0002-<name>.md`:
        status: "active"
        cluster: "<cluster>"
        date: "YYYY-MM-DD"
-       summary: "<One-sentence summary under 300 tokens>"
+       summary: "<One-sentence summary under 200 tokens>"
        adr: "ai-docs/decisions/ADR-XXXX-<slug>.md"
    ```
 

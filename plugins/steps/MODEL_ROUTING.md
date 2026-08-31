@@ -29,11 +29,11 @@ The orchestrator routes **planning** per phase, never per item:
 
 - **Tier 0 (Fast-Track / Planning Bypass)** — Micro or trivial edits such as typos, single-line or isolated bug fixes, or simple documentation/config tweaks. Tier 0 completely bypasses the multi-agent planning and review waves, routing execution directly to `steps-implementer` (Tier 1 fast cheap coder), immediately followed by the automated verification gate (`verification_command`). The orchestrator never touches code directly.
 - **Tier 1 (Standard)** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (Tier 1).
+- **Tier 1.5 (Middle)** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
+  plan-review lens (critic, never author), keeping the wave at three reviewers or fewer.
 - **Tier 2 (Architectural)** — DB migration, protocol change, cross-cutting refactor, distributed logic or
   race-condition reasoning: `steps-architect-pro` (Tier 2). Rare by design; routing the architect
   for a standard phase is a defect, not thoroughness.
-- **Middle** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
-  plan-review lens (critic, never author), keeping the wave at three reviewers or fewer.
 
 Implementation is **always** `steps-implementer` (Tier 1). The only Tier-2 model that writes code
 is `steps-fixer`, and only as the deadlock escape: the same failure has survived two distinct

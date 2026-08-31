@@ -32,14 +32,13 @@ TokenSave can be invoked through two interfaces:
 ### 1. Locate Exact Symbol (`find_exact_symbol`)
 Return all graph nodes whose identifier exactly matches a given name:
 ```bash
-# CLI Recipe
-tokensave tool find_exact_symbol name="executePhase"
-
-# MCP Tool Call
+tokensave tool find_exact_symbol --name ensureDir
+```
+```json
 {
   "tool": "find_exact_symbol",
   "arguments": {
-    "name": "executePhase"
+    "name": "ensureDir"
   }
 }
 ```
@@ -47,29 +46,28 @@ tokensave tool find_exact_symbol name="executePhase"
 ### 2. List File Entities (`entities`)
 Get a flat list of top-level symbols (functions, structs, types, constants) declared in a file:
 ```bash
-# CLI Recipe
-tokensave tool entities path="plugins/pcp/skills/pcp/scripts/pcp.js"
-
-# MCP Tool Call
+tokensave tool entities --file plugins/pcp/skills/pcp/scripts/pcp.js
+```
+```json
 {
   "tool": "entities",
   "arguments": {
-    "path": "plugins/pcp/skills/pcp/scripts/pcp.js"
+    "file": "plugins/pcp/skills/pcp/scripts/pcp.js"
   }
 }
 ```
 
 ### 3. Trace Callers (`callers`)
-Find incoming call edges to a function or method:
+Find incoming call edges to a function or method. Callers are addressed by node ID only, so resolve the ID first:
 ```bash
-# CLI Recipe (by symbol name or node ID)
-tokensave tool callers name="actualize"
-
-# MCP Tool Call
+NODE_ID=$(tokensave tool find_exact_symbol --name ensureDir | jq -r ".matches[0].id")
+tokensave tool callers --node-id "$NODE_ID"
+```
+```json
 {
   "tool": "callers",
   "arguments": {
-    "name": "actualize"
+    "node_id": "<node id from find_exact_symbol>"
   }
 }
 ```
@@ -77,15 +75,15 @@ tokensave tool callers name="actualize"
 ### 4. Trace Callees (`callees`)
 Find outgoing function/method calls from a symbol up to a specified depth:
 ```bash
-# CLI Recipe
-tokensave tool callees name="actualize" depth=1
-
-# MCP Tool Call
+NODE_ID=$(tokensave tool find_exact_symbol --name handleInit | jq -r ".matches[0].id")
+tokensave tool callees --node-id "$NODE_ID" --max-depth 1
+```
+```json
 {
   "tool": "callees",
   "arguments": {
-    "name": "actualize",
-    "depth": 1
+    "node_id": "<node id from find_exact_symbol>",
+    "max_depth": 1
   }
 }
 ```
@@ -93,14 +91,14 @@ tokensave tool callees name="actualize" depth=1
 ### 5. Calculate Impact Radius (`impact`)
 Compute all symbols that directly or indirectly depend on a given node:
 ```bash
-# CLI Recipe
-tokensave tool impact name="normalizeAgentsMd"
-
-# MCP Tool Call
+NODE_ID=$(tokensave tool find_exact_symbol --name ensureDir | jq -r ".matches[0].id")
+tokensave tool impact --node-id "$NODE_ID"
+```
+```json
 {
   "tool": "impact",
   "arguments": {
-    "name": "normalizeAgentsMd"
+    "node_id": "<node id from find_exact_symbol>"
   }
 }
 ```
@@ -108,14 +106,13 @@ tokensave tool impact name="normalizeAgentsMd"
 ### 6. Extract Symbol Source Body (`body`)
 Retrieve the precise implementation body of a symbol without reading the surrounding file:
 ```bash
-# CLI Recipe
-tokensave tool body name="generateShortcode"
-
-# MCP Tool Call
+tokensave tool body --symbol ensureDir
+```
+```json
 {
   "tool": "body",
   "arguments": {
-    "name": "generateShortcode"
+    "symbol": "ensureDir"
   }
 }
 ```
@@ -123,7 +120,6 @@ tokensave tool body name="generateShortcode"
 ### 7. Graph Status & Health (`status`)
 Inspect aggregate node, edge, and file metrics for the workspace:
 ```bash
-# CLI Recipe
 tokensave tool status
 ```
 

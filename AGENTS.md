@@ -60,7 +60,7 @@ The repository exposes modular skills for governance, semantic discovery, and AD
    - Strictly forbid repository-wide broad grep, deep recursive file scans, or raw full-file dumping.
    - Agents must inspect symbols, call graphs, and module dependencies via `tokensave` or RTK CLI.
 2. **RTK Fallback Protocol**:
-   - When filtered or semantic commands truncate, drop, or omit required execution logs or compiler diagnostics, agents must fallback to `rtk raw <cmd>` to inspect complete output safely.
+   - When filtered or semantic commands truncate, drop, or omit required execution logs or compiler diagnostics, agents must fallback to `rtk proxy <cmd>` to inspect complete output safely.
 3. **Constitutional Automated Verification**:
    - Consult `ai-docs/constitution.yaml` for governance invariants.
    - Before completing any phase or committing changes, agents must execute `verification_command: "npm test"` and confirm an exit code of 0.
@@ -84,4 +84,5 @@ Task complexity dictates planning and agent routing per phase:
 
 - **Tier 0 (Fast-Track / Planning Bypass)**: Micro or trivial tasks (e.g. typos, isolated single-line fixes, simple documentation/config tweaks). Completely bypasses planning and review waves directly to `steps-implementer` (Tier 1 fast cheap coder), immediately followed by the automated verification gate (`verification_command`). The orchestrator never touches code.
 - **Tier 1 (Standard)**: Standard feature additions, refactoring, and component edits. Follows the phased workflow via `steps-planner` (Tier 1 cheap reader) and `steps-implementer` (Tier 1 fast coder).
+- **Tier 1.5 (Middle)**: Phases that are more than standard but short of architectural. Plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra plan-review lens (critic, never author), keeping the wave at three reviewers or fewer.
 - **Tier 2 (Architectural)**: High-complexity, protocol changes, database migrations, or cross-cutting architectural tasks. Planned by `steps-architect-pro` (Tier 2 heavy architect), implemented by `steps-implementer`, with `steps-fixer` (Tier 2) reserved strictly as a deadlock escape if failures survive two distinct fix attempts.

@@ -13,7 +13,7 @@ AI agents must avoid loading full documentation files into context windows. Mono
 
 Instead, apply **progressive disclosure**:
 1. Query only the relevant slice or shortcode required for the immediate task.
-2. Verify all extracted payloads fit well within isolated sub-300 token boundaries.
+2. Verify all extracted payloads fit well within isolated sub-200 token boundaries.
 3. If an architectural decision requires deep context, follow its referenced ADR path (`.adr`) directly rather than parsing unreferenced documents.
 
 ### Shortcode Taxonomy
@@ -91,8 +91,8 @@ yq -o=json ai-docs/constitution.yaml | jq '.deferred[] | select(.id == "l-e404")
 ### 6. Domain Specifications
 Query domain spec slices from `ai-docs/specs/*.yaml`:
 ```bash
-# Inspect entire spec definition
-yq '.spec' ai-docs/specs/auth-spec.yaml
+# List the spec's top-level sections
+yq '.spec | keys' ai-docs/specs/auth-spec.yaml
 
 # Query specific endpoint or section
 yq '.spec.endpoints[] | select(.path == "/api/v1/auth/login")' ai-docs/specs/auth-spec.yaml
@@ -101,6 +101,6 @@ yq '.spec.endpoints[] | select(.path == "/api/v1/auth/login")' ai-docs/specs/aut
 ---
 
 ## Invariants & Guardrails
-- **Payload Constraint**: Every individual query payload must remain under 300 tokens.
-- **Source of Truth**: `ai-docs/constitution.yaml` is the canonical registry for shortcodes.
+- **Payload Constraint**: Every individual query payload must remain under 200 tokens.
+- **Source of Truth**: `ai-docs/constitution.yaml` is canonical for the governance shortcodes this skill queries. `.pcp/MAP.json` is the pcp CLI sandbox registry that minting writes; it is git-ignored and not shipped, so its shortcodes are machine-local and are not governance.
 - **No Direct Mutation**: Never edit shortcodes or security rules directly without running validation procedures.

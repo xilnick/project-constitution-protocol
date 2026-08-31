@@ -58,7 +58,7 @@ Per phase, in order:
 a standing brief for its role and can be dispatched directly, not only through `/steps`.
 `repo-scout` builds the pre-planning Context Digest; `step-verifier` runs the gates independently
 after implementation; `steps-architect-pro` is the heavy Tier-2 planner for architectural phases
-and a plan-review critic on middle-complexity phases, and it never writes code.
+and a plan-review critic on Tier 1.5 (Middle) phases, and it never writes code.
 
 ## Model routing and harnesses
 

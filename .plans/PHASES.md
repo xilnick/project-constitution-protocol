@@ -20,12 +20,19 @@ reachable once installed.
      `npm test` **fails** for every one and passes on the clean tree. Exit 0 only if all hold.
 
 2. **Phase 2: Make every documented recipe execute**
-   - Repairs: `name="X"` → `--name X` across `.agents/skills/code-intelligence/SKILL.md:36,51,66,81,97,112`;
+   - Repairs: each `tokensave` recipe corrected to the parameter its subcommand actually takes, per
+     `tokensave tool <name> --help` (**not** a blanket `name="X"` → `--name X`: `body` takes
+     `--symbol`, and `callers`/`callees`/`impact` take `--node-id` with no name form at all —
+     orchestrator ruling D1, see `ORCHESTRATOR-LOG.md`);
      `entities` `path` → `--file`; `callers`/`callees`/`impact` need `--node-id`;
      the four cited symbols that do not exist; `rtk raw` → `rtk proxy` (`AGENTS.md:63`);
      the `ai-docs/` vs `.pcp/` canonical registry (`constitution-query/SKILL.md:105`);
-     doc contradictions (4-vs-5 workflow phases, Middle-vs-Tier numbering) and the stale
-     graph counts in the archived `phase-2/PLAN.md:15`.
+     live doc contradictions only — the Middle-vs-Tier routing label, and the
+     300-vs-200 token bound that Phase 1 left behind in three skill docs while the gate
+     enforces 200 (`tests/constitution_skills.test.js:236`). The 4-vs-5 workflow phases and
+     the stale graph counts exist **only** under `.plans/archive/` — live `AGENTS.md:73-79`
+     says five and enumerates five — so they fall under Out of Scope below, not here
+     (orchestrator ruling D4).
    - Acceptance criterion: `node tests/recipe-exec.test.js` — extracts every fenced shell
      recipe from the three skills and `AGENTS.md`, runs each, asserts exit 0 **and** a
      non-empty payload that is not `count: 0`; plus a banned-string gate for commands that

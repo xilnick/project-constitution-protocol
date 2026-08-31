@@ -8,7 +8,8 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test tests/pcp_skill.test.js tests/constitution_skills.test.js && node tests/lib/repo-guard.mjs --selftest",
+    "test": "node --test tests/pcp_skill.test.js tests/constitution_skills.test.js && node tests/lib/repo-guard.mjs --selftest && node tests/recipe-exec.test.js --hermetic",
+    "test:recipes": "node tests/recipe-exec.test.js",
     "test:mutation": "node tests/mutation-harness.mjs"
   },
   "keywords": [

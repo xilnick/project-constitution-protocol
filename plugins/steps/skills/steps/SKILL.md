@@ -89,7 +89,7 @@ turns run serially. Track phases with a todo list.
 |---|---|---|
 | Scout | `repo-scout` (one) | Context Digest |
 | Plan | `steps-planner` or `steps-architect-pro` (complexity gate, see *Model routing*) (one) | `.plans/phase-N/PLAN.md` |
-| Review plan | `steps-plan-reviewer` (2-3, one lens each; `steps-architect-pro` may join as a critic lens on middle-complexity phases) | `REVIEW-<lens>.md` |
+| Review plan | `steps-plan-reviewer` (2-3, one lens each; `steps-architect-pro` may join as a critic lens on Tier 1.5 (Middle) phases) | `REVIEW-<lens>.md` |
 | Reconcile | `steps-reconciler` (one) | `PLAN.md` v2, `RECONCILIATION.md` |
 | Implement | `steps-implementer` (one) | code |
 | Review implementation | `steps-impl-reviewer` (2-3, one lens each) | `IMPL-REVIEW-<lens>.md` |
@@ -113,7 +113,7 @@ the plugin root. The agent manifests for each harness live under `harnesses/` at
 - **Complexity gate** (orchestrator, once per phase): Tier 0 Fast-Track tasks (micro/trivial edits)
   bypass planning and reviews directly to `steps-implementer` followed by automated verification;
   standard phases go to `steps-planner`; architectural phases go to `steps-architect-pro`;
-  middle-complexity phases plan cheap and then get `steps-architect-pro` as an extra plan-review
+  Tier 1.5 (Middle) phases plan cheap and then get `steps-architect-pro` as an extra plan-review
   lens. Implementation is always `steps-implementer`.
 - **Constitution check** (graceful degradation): the plan reviewer checks `.factory/CONSTITUTION.md`
   or `CONSTITUTION.md` if present — a violation is a blocker; if absent, it falls back to a basic
