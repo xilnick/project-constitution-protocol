@@ -10,13 +10,16 @@ that trade is that a graph can be *confidently out of date*, and this skill is m
 
 ## The habit
 
-In a project with a graph, structural questions go to the graph: what exists, who calls it, what
-depends on it, what a change reaches. Reading whole files to find a symbol, or grepping the repo for
-something the graph indexes, is the expensive way to get a worse answer. Independent graph queries are
-read-only — send them in one message rather than one per turn.
+Structural questions go to the graph: what exists, who calls it, what depends on it, what a change
+reaches. Reading whole files to find a symbol is the expensive way to get a worse answer. Graph
+queries are read-only, so independent ones go out in one message rather than one per turn.
 
 Read status through the tool interface (`tokensave tool status`), not the human one: `tokensave status`
 paints a colour banner that can run to tens of kilobytes.
+
+Do not delegate code research to an exploration subagent while the graph is up: it will read files to
+answer what a query answers, and you pay for its context too. Delegate where the graph cannot reach —
+the web, an external API, a non-code question.
 
 ## When the graph is lying to you
 
@@ -59,9 +62,9 @@ editing.
 
 ## What the graph structurally cannot know
 
-It is synced at turn boundaries, so it never contains the edits you made this turn. Anything you just
-wrote is verified by reading the file — which is also why a reviewer looking at a fresh diff reads
-files rather than querying the graph.
+It is synced at turn boundaries, so it never holds the edits you made this turn. Anything you just
+wrote is verified by reading the file — which is also the one case where a reviewing subagent should
+read files rather than query.
 
 ## Living with the installer
 
