@@ -43,8 +43,7 @@ Anything you did not verify goes in a risks section, worded as uncertainty. If a
 to be impossible as written, say so and stop on that item — do not improvise a different item and
 report the phase as done.
 
-**Anti-thrash:** if the same failure survives two distinct fixes, stop varying details. Report the
-verbatim error, what you tried, and what you think it means.
+**Anti-thrash & Dynamic Escalation:** if the same failure survives two distinct fixes, or if hidden architectural coupling / schema violations are discovered, stop varying details. Report the verbatim error, what you tried, and request Tier escalation from the orchestrator (e.g. escalate to `steps-fixer` or `steps-architect-pro`).
 
 ## File ownership
 

@@ -17,10 +17,11 @@ async function cleanPlayground() {
 }
 
 test('PCP Skill Automation Suite', async (t) => {
-  // Setup
-  await cleanPlayground();
-  await fs.mkdir(playgroundDir, { recursive: true });
-  await fs.mkdir(path.join(playgroundDir, '.git'), { recursive: true });
+  t.before(async () => {
+    await cleanPlayground();
+    await fs.mkdir(playgroundDir, { recursive: true });
+    await fs.mkdir(path.join(playgroundDir, '.git'), { recursive: true });
+  });
 
   await t.test('1. init scaffolds .pcp with _general.md, areas, and .gitignore', async () => {
     const { stdout } = await execAsync(`node "${scriptPath}" init`, { cwd: playgroundDir });
