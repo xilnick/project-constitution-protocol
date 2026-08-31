@@ -17,3 +17,8 @@
 - Updated `AGENTS.md` with modular skills matrix, strict tool routing protocols, RTK log fallback rules, TokenSave staleness cooldown, 5-phase sequential workflow, and adaptive complexity gate.
 - Documented Tier 0 Fast-Track Planning Bypass in `plugins/steps/MODEL_ROUTING.md` and `plugins/steps/skills/steps/SKILL.md`.
 - Added `verification_command: "npm test"` and pre-commit quality checks in `ai-docs/constitution.yaml`.
+
+### Phase 4 Completion (2026-08-31)
+- Implemented `tests/constitution_skills.test.js` covering schema validation, query extraction & token bounds (<300 tokens), modular skill discoverability, and bidirectional ADR synchronization.
+- Configured `package.json` test runner to execute both test files.
+- Verified full test suite (`npm test`): 49 tests passing, 0 failures.
