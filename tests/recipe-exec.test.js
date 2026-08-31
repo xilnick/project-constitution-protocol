@@ -1013,10 +1013,16 @@ add('E12', 'every declared stage has a skill, and every tier runs the unskippabl
     const entry = SKILL_INVENTORY.find((s) => s.expectedName === stage.skill);
     if (!fs.existsSync(repoPath(entry.relPath))) throw new Error(`${entry.relPath} does not exist`);
   }
-  // The orchestrator's table is prose; without this it can drift from the stages it composes.
-  const orchestrator = fs.readFileSync(repoPath('plugins/steps/skills/steps/SKILL.md'), 'utf8');
+  // The orchestrator's stage table is prose; without this it can drift from the stages it composes.
+  // Scoped to that section, because a passing mention elsewhere is not a composition contract.
+  const orchestrator = parseDoc(fs.readFileSync(repoPath('plugins/steps/skills/steps/SKILL.md'), 'utf8'));
+  const composition = sectionLines(orchestrator, 'The phase loop')
+    .filter((l) => l.trim().startsWith('|'))
+    .join('\n');
   for (const stage of stages) {
-    if (!orchestrator.includes(`\`${stage.skill}\``)) throw new Error(`the orchestrator never names ${stage.skill}`);
+    if (!composition.includes(`\`${stage.skill}\``)) {
+      throw new Error(`the orchestrator's stage table never names ${stage.skill}`);
+    }
   }
   const ids = stages.map((s) => s.id);
   const unskippable = stages.filter((s) => s.skip_when === null).map((s) => s.id);

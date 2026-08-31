@@ -476,7 +476,7 @@ const MUTATIONS = [
       anchor: '| Verify | `steps-verify` |',
       replacement: '| Verify | `steps-check` |',
     }],
-    signature: 'the orchestrator never names steps-verify',
+    signature: "the orchestrator's stage table never names steps-verify",
     mustFail: [],
     mustPass: [...SUITE3],
     max: 0,
