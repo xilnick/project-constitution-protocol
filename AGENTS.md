@@ -29,6 +29,7 @@ This repository is a Claude Code **plugin marketplace**, not a single skill. It 
   - `agents/`, `harnesses/*/` — **rendered output**, committed because installs copy it. Never edit
     by hand: the render check will fail and your edit will be overwritten.
 - `plugins/toolbelt/` — the habits that decide what an agent costs.
+  - `.claude-plugin/plugin.json`
   - `skills/parallel/`, `skills/tokensave/`, `skills/search-tools/`
 - `ai-docs/` — the queried constitution: `constitution.yaml`, `decisions/`, `specs/`. Its
   `constitution.execution` block declares the tier ladder, the stages each tier runs, and the
