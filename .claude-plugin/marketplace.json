@@ -20,6 +20,13 @@
       "source": "./plugins/steps",
       "category": "workflow",
       "homepage": "https://github.com/xilnick/project-constitution-protocol/tree/main/plugins/steps"
+    },
+    {
+      "name": "toolbelt",
+      "description": "Three habits that decide what an agent costs: fan independent work out into one wave, ask the code graph instead of reading files, and route each search to the tool that answers it cheapest.",
+      "source": "./plugins/toolbelt",
+      "category": "workflow",
+      "homepage": "https://github.com/xilnick/project-constitution-protocol/tree/main/plugins/toolbelt"
     }
   ]
 }

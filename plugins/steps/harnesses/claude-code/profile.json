@@ -1,0 +1,26 @@
+{
+  "key": "claude-code",
+  "label": "Claude Code",
+  "out": "agents/{name}.md",
+  "format": "md",
+  "h1": false,
+  "vars": { "write_tool": "Write", "exec_tool": "Bash" },
+  "toolStyle": "csv",
+  "tools": {
+    "none":   ["Glob","Grep","LS","Read","NotebookRead","WebFetch","WebSearch","TodoWrite","Bash","BashOutput","KillShell"],
+    "report": ["Glob","Grep","LS","Read","NotebookRead","WebFetch","WebSearch","TodoWrite","Bash","BashOutput","KillShell","Write"],
+    "code":   ["Glob","Grep","LS","Read","Write","Edit","NotebookRead","NotebookEdit","WebFetch","WebSearch","TodoWrite","Bash","BashOutput","KillShell"]
+  },
+  "fields": ["name","description","tools","model","color"],
+  "models": {
+    "repo-scout": { "model": "inherit" },
+    "steps-planner": { "model": "inherit" },
+    "steps-reconciler": { "model": "inherit" },
+    "steps-plan-reviewer": { "model": "inherit" },
+    "steps-impl-reviewer": { "model": "inherit" },
+    "steps-implementer": { "model": "inherit" },
+    "steps-architect-pro": { "model": "inherit" },
+    "step-verifier": { "model": "inherit" },
+    "steps-fixer": { "model": "inherit" }
+  }
+}

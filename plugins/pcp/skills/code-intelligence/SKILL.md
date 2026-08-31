@@ -21,9 +21,12 @@ Follow **progressive disclosure** principles for code navigation:
 
 ## Tool Invocation Modes
 
-TokenSave can be invoked through two interfaces:
+TokenSave can be invoked through two interfaces, and the mapping between them is mechanical:
 1. **CLI Commands**: `tokensave tool <command> [args]`
-2. **MCP stdio Calls**: Tool calls through an MCP client runtime (`tokensave_<command>` or `tokensave: { tool: "<command>" }`).
+2. **MCP stdio Calls**: `tokensave_<command>` (or `tokensave: { tool: "<command>" }`) with each
+   `--flag value` becoming an `arguments` key — `--max-depth 1` is `"max_depth": 1`.
+
+Every recipe below is written in CLI form; read it as the MCP call of the same name.
 
 ---
 
@@ -34,27 +37,11 @@ Return all graph nodes whose identifier exactly matches a given name:
 ```bash
 tokensave tool find_exact_symbol --name ensureDir
 ```
-```json
-{
-  "tool": "find_exact_symbol",
-  "arguments": {
-    "name": "ensureDir"
-  }
-}
-```
 
 ### 2. List File Entities (`entities`)
 Get a flat list of top-level symbols (functions, structs, types, constants) declared in a file:
 ```bash
 tokensave tool entities --file plugins/pcp/skills/pcp/scripts/pcp.js
-```
-```json
-{
-  "tool": "entities",
-  "arguments": {
-    "file": "plugins/pcp/skills/pcp/scripts/pcp.js"
-  }
-}
 ```
 
 ### 3. Trace Callers (`callers`)
@@ -63,29 +50,12 @@ Find incoming call edges to a function or method. Callers are addressed by node 
 NODE_ID=$(tokensave tool find_exact_symbol --name ensureDir | jq -r ".matches[0].id")
 tokensave tool callers --node-id "$NODE_ID"
 ```
-```json
-{
-  "tool": "callers",
-  "arguments": {
-    "node_id": "<node id from find_exact_symbol>"
-  }
-}
-```
 
 ### 4. Trace Callees (`callees`)
 Find outgoing function/method calls from a symbol up to a specified depth:
 ```bash
 NODE_ID=$(tokensave tool find_exact_symbol --name handleInit | jq -r ".matches[0].id")
 tokensave tool callees --node-id "$NODE_ID" --max-depth 1
-```
-```json
-{
-  "tool": "callees",
-  "arguments": {
-    "node_id": "<node id from find_exact_symbol>",
-    "max_depth": 1
-  }
-}
 ```
 
 ### 5. Calculate Impact Radius (`impact`)
@@ -94,27 +64,11 @@ Compute all symbols that directly or indirectly depend on a given node:
 NODE_ID=$(tokensave tool find_exact_symbol --name ensureDir | jq -r ".matches[0].id")
 tokensave tool impact --node-id "$NODE_ID"
 ```
-```json
-{
-  "tool": "impact",
-  "arguments": {
-    "node_id": "<node id from find_exact_symbol>"
-  }
-}
-```
 
 ### 6. Extract Symbol Source Body (`body`)
 Retrieve the precise implementation body of a symbol without reading the surrounding file:
 ```bash
 tokensave tool body --symbol ensureDir
-```
-```json
-{
-  "tool": "body",
-  "arguments": {
-    "symbol": "ensureDir"
-  }
-}
 ```
 
 ### 7. Graph Status & Health (`status`)

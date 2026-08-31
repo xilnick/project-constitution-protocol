@@ -25,15 +25,20 @@ binding table below.
 
 ## Complexity gate
 
-The orchestrator routes **planning** per phase, never per item. The ladder itself is declared in
-`ai-docs/constitution.yaml` under `constitution.execution.tiers`; this table is its prose.
+The orchestrator picks a tier per phase, never per item. The ladder itself — the tiers, the stages
+each one runs, and the escalation triggers — is declared in `ai-docs/constitution.yaml` under
+`constitution.execution`; this section is its prose.
 
-| Tier | Entry | Plans with | Escalates to |
-|---|---|---|---|
-| **Tier 0 (Fast-Track / Planning Bypass)** | a typo, an isolated single-line fix, a doc or config tweak | nobody — straight to `steps-implementer`, then the verification gate | Tier 1 |
-| **Tier 1 (Standard)** | CRUD, a component edit, a local fix, a dependency bump | `steps-planner` | Tier 1.5 |
-| **Tier 1.5 (Middle)** | more than standard, short of architectural | `steps-planner`, plus `steps-architect-pro` as one extra plan-review lens — critic, never author, wave kept to three reviewers or fewer | Tier 2 |
-| **Tier 2 (Architectural)** | DB migration, protocol change, cross-cutting refactor, distributed logic or race-condition reasoning | `steps-architect-pro` | — |
+| Tier | Entry | Stages | Plans with | Escalates to |
+|---|---|---|---|---|
+| **Tier 0 (Fast-Track / Planning Bypass)** | a typo, an isolated single-line fix, a doc or config tweak | implement, verify | nobody | Tier 1 |
+| **Tier 1 (Standard)** | CRUD, a component edit, a local fix, a dependency bump | plan, implement, verify | `steps-planner` | Tier 1.5 |
+| **Tier 1.5 (Middle)** | more than standard, short of architectural | plan, review, implement, verify, fix | `steps-planner`, plus `steps-architect-pro` as one extra plan-review lens — critic, never author | Tier 2 |
+| **Tier 2 (Architectural)** | DB migration, protocol change, cross-cutting refactor, distributed logic or race-condition reasoning | plan, review, implement, verify, fix | `steps-architect-pro` | — |
+
+Each stage is its own skill — `steps-plan`, `steps-review`, `steps-implement`, `steps-verify`,
+`steps-fix` — loaded when the tier calls for it. Implement and verify appear in every tier: they are
+what makes leaving the others out a decision rather than a gamble.
 
 Tier 2 is rare by design: routing the architect for a standard phase is a defect, not thoroughness.
 Implementation is **always** `steps-implementer` (Tier 1). The only Tier-2 model that writes code is

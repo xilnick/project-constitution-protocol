@@ -1,0 +1,22 @@
+{
+  "key": "codex",
+  "label": "Codex CLI",
+  "out": "harnesses/codex/.codex/agents/{name}.toml",
+  "format": "toml",
+  "h1": false,
+  "vars": { "write_tool": "apply_patch", "exec_tool": "shell" },
+  "toolStyle": "none",
+  "sandbox": { "none": "read-only", "report": "workspace-write", "code": "workspace-write" },
+  "fields": ["name","description","model","model_reasoning_effort","sandbox_mode","developer_instructions"],
+  "models": {
+    "repo-scout": { "model": "gpt-5.6-luna", "effort": "low" },
+    "steps-planner": { "model": "gpt-5.6-terra", "effort": "medium" },
+    "steps-reconciler": { "model": "gpt-5.6-terra", "effort": "medium" },
+    "steps-plan-reviewer": { "model": "gpt-5.6-terra", "effort": "high" },
+    "steps-impl-reviewer": { "model": "gpt-5.6-terra", "effort": "high" },
+    "steps-implementer": { "model": "gpt-5.6-luna", "effort": "medium" },
+    "steps-architect-pro": { "model": "gpt-5.6", "effort": "high" },
+    "step-verifier": { "model": "gpt-5.6-terra", "effort": "medium" },
+    "steps-fixer": { "model": "gpt-5.6", "effort": "max" }
+  }
+}

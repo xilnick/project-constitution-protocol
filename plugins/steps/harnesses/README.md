@@ -8,10 +8,14 @@ manifests that let each harness dispatch those roles with the right model and to
   the per-harness binding tables. Every manifest's model field below must agree with it.
 - **Protocol**: `../skills/steps/SKILL.md`.
 
-The manifests were generated from the canonical briefs. What differs per harness is the frontmatter
-(tools, model, file format), an H1 title line where the format wants one, and harness tool names.
-The role text itself does not. The non-Droid model ids are **example defaults** — replace them with
-the models your providers actually expose.
+The manifests are **generated**, not maintained: `../tools/render.mjs` composes them from `../roles/`,
+`../partials/` and the `profile.json` in each directory here. What a profile decides is the
+frontmatter (tools, model, file format), the H1 title where the format wants one, the harness's tool
+names, and how a role's write class is expressed — an absent edit tool, a permission map, or a
+sandbox mode. Run `npm run render` after any change; `npm test` fails if the committed output drifts.
+
+The non-Droid model ids are **example defaults** — replace them in the profile with the models your
+providers actually expose.
 
 ## Claude Code (native)
 

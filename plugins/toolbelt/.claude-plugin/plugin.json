@@ -1,0 +1,19 @@
+{
+  "name": "toolbelt",
+  "version": "1.0.0",
+  "description": "Three habits that decide what an agent costs: fan work out instead of walking it, ask the code graph instead of reading files, and route each question to the tool that answers it cheapest.",
+  "author": {
+    "name": "The Sovereign Architect",
+    "url": "https://github.com/xilnick"
+  },
+  "homepage": "https://github.com/xilnick/project-constitution-protocol",
+  "repository": "https://github.com/xilnick/project-constitution-protocol",
+  "license": "MIT",
+  "keywords": [
+    "parallelism",
+    "subagents",
+    "code-intelligence",
+    "token-economy",
+    "agentic-coding"
+  ]
+}

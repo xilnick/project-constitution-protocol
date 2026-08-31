@@ -1,6 +1,6 @@
 ---
 name: steps
-description: "Run a roadmap or multi-phase plan to completion under separation of duties — plan, review the plan, implement, review the implementation, fix, verify, commit, next phase. Use when the user asks to work through a roadmap, execute a plan in phases, or orchestrate agents across planning and implementation. Triggers include 'go through the roadmap', 'run this in phases', 'plan then implement then review', 'you are the orchestrator'."
+description: "Orchestrate a roadmap phase by phase under separation of duties: the agent that writes a thing never grades it. Use when asked to work through a roadmap, run work in phases, plan then implement then review, or be the orchestrator. Composes the five stage skills and decides which a phase needs."
 ---
 
 # steps
@@ -32,6 +32,10 @@ never re-run a search you delegated. Ask for conclusions, not file dumps.
 | Verifier | gate-results report | Touch code, fix what it finds |
 | Orchestrator | phase list, log, commits | Any of the above |
 
+Those nine roles ship as named agents with this plugin. Where a harness does not have them, spawn a
+generic subagent per row and paste the role's brief into it — the roles are the protocol, the named
+agents are a convenience.
+
 ## Starting
 
 If the invocation named a file, read it. Otherwise look for `ROADMAP.md`, `PLAN.md`, `TODO.md`,
@@ -60,52 +64,33 @@ Do not begin phase 1 until both are answered.
 
 ## The phase loop
 
-For each phase, in order. Do not skip a step because the phase looks small: the steps that catch
-things are the ones that feel redundant. A Tier-0 task is the single exception, and not because it
-is small — it is the case where the verification gate alone can show the work right or wrong, so it
-runs `steps-implementer` and that gate. A gate that fails proves the task was never Tier 0:
-escalate rather than review after the fact (see *Model routing*).
+A phase is a composition of five stages, not a fixed ten-step ritual. Each stage is its own skill,
+with its own rules and its own agents; you load the ones the phase needs.
 
-0. **Scout.** One `repo-scout` builds the phase's Context Digest — target files, interfaces and
-   types, entrypoints and data flow, reusable utilities — to feed the planner.
-1. **Plan.** One planner writes `.plans/phase-N/PLAN.md`. The orchestrator picks the planner through
-   the complexity gate in *Model routing* below.
-2. **Review the plan.** Two or three reviewers, **one lens each**, in a single wave. Typical lenses:
-   *design/spec consistency*, *executability and gates*, *coverage*. Each writes its own file and
-   gives a verdict of `approve` / `approve-with-amendments` / `reject`.
-3. **Reconcile.** A separate agent folds every finding into `PLAN.md` v2 and records a disposition
-   per finding in `RECONCILIATION.md`: `accept`, `accept-modified` (say how), or `reject` (evidence,
-   not preference). Nothing is dropped silently. v2 reads as one coherent plan, never v1 plus errata.
-4. **Implement.** One implementer executes v2 item by item.
-5. **Review the implementation.** Reviewers in one wave, one lens each: *correctness and regression*,
-   *conformance to plan and gate integrity*. They read the actual files — a code graph or index
-   lags the edits just made.
-6. **Run a code-review pass** for the lens the others do not cover: reuse, simplification,
-   efficiency, dead state.
-7. **Fix.** One agent per area, in parallel, under **strict file ownership** (below).
-8. **Verify.** Dispatch `step-verifier` to run every gate independently, then reproduce the
-   critical ones yourself. Do not accept a green report you did not reproduce.
-9. **Record.** Update the roadmap and the project's intent record with numbers you measured this
-   session, not numbers you copied.
-10. **Commit.** One commit per phase. Then the next phase.
+| Stage | Skill | Produces | Skippable when |
+|---|---|---|---|
+| Plan | `steps-plan` | `PLAN.md`, items each with a failing gate | one command can already show the work right or wrong |
+| Review | `steps-review` | `REVIEW-<lens>.md`, `RECONCILIATION.md`, `IMPL-REVIEW-<lens>.md` | there is nothing to review, or a declared expected result covers it |
+| Implement | `steps-implement` | code | never |
+| Verify | `steps-verify` | gate-results report | never |
+| Fix | `steps-fix` | code, one agent per area | no blocker, and the circuit breaker did not trip |
 
-Dispatch each wave as **one message with several agent calls** — the same calls spread over several
-turns run serially. Track phases with a todo list.
+Which stages a phase runs is declared, not improvised: `constitution.execution.tiers` names the
+stage set per tier, and `MODEL_ROUTING.md` is its prose. Implement and verify appear in every tier —
+that is what makes skipping the others safe rather than optimistic.
 
-| Step | Agent | Writes |
-|---|---|---|
-| Scout | `repo-scout` (one) | Context Digest |
-| Plan | `steps-planner` or `steps-architect-pro` (complexity gate, see *Model routing*) (one) | `.plans/phase-N/PLAN.md` |
-| Review plan | `steps-plan-reviewer` (2-3, one lens each; `steps-architect-pro` may join as a critic lens on Tier 1.5 (Middle) phases) | `REVIEW-<lens>.md` |
-| Reconcile | `steps-reconciler` (one) | `PLAN.md` v2, `RECONCILIATION.md` |
-| Implement | `steps-implementer` (one) | code |
-| Review implementation | `steps-impl-reviewer` (2-3, one lens each) | `IMPL-REVIEW-<lens>.md` |
-| Fix | `steps-fixer` (one per area, strict ownership) | code, own files only |
-| Verify | `step-verifier` (one) | gate-results report |
+Around the stages, the work that is yours alone:
 
-Those agent names ship with this skill, plus `steps-architect-pro`, `repo-scout`, and
-`step-verifier`. Where a harness does not have them, spawn a generic subagent per row and paste the
-role's brief into it — the roles are the protocol, the named agents are only a convenience.
+- **Pick the tier once**, at the start of the phase, and record it with your reason in
+  `ORCHESTRATOR-LOG.md`. For a fast-track task that line is the only artifact.
+- **Reproduce the critical gates yourself** after `steps-verify` reports. A green you did not run is
+  not a green.
+- **Record** what you measured this session in the roadmap and the project's intent record — numbers
+  you ran, not numbers you copied.
+- **Commit** once per phase. Then the next phase.
+
+Dispatch each wave as **one message with several agent calls**; the same calls spread over turns run
+serially. Track phases with a todo list.
 
 ## Model routing
 
@@ -168,46 +153,20 @@ allowed in their briefs. deepseek-v4-flash and minimax-m3 are text-only — no i
 
 ## Rules that were paid for
 
-Each of these exists because something got through without it.
+Each of these exists because something got through without it. The rules that belong to one stage
+live in that stage's skill; these are the ones that are yours.
 
-**Agent reports are data, not truth.** Verify a claim by opening the file or running the command.
-A cited `path:line` that turns out to be wrong is the highest-value finding a reviewer can produce.
-Reviewers should be told this explicitly, and so should reconcilers reading reviews.
-
-**A blocker is something that makes the work wrong, not something you would have done differently.**
-Say so in every review brief, or you get twelve stylistic notes and miss the two real defects.
-
-**Never make a gate pass by weakening it.** No new skip-list entry, no loosened assertion, no
-narrowed glob, no expectation downgraded to something easier, no test rewritten to match whatever
-the implementation emitted. If a gate must legitimately change scope, that is a reported decision,
-not a quiet edit. Have a reviewer diff every gate file against the pre-phase state and answer one
-question: does this gate now check *more* or *less*?
-
-**Ask for the class, not the instance.** When you send an agent to fix a defect, require it to
-enumerate every place the same class could occur and report the enumeration. A pass that recurses
-on one node kind silently skips every form whose children are of another kind; a lowering that is
-wrong at one type is usually wrong at the others. In practice the enumeration finds a second
-instance more often than not, and the second instance is the one no review found.
-
-**Two components agreeing on a wrong answer is not agreement.** Any gate that works by comparing
-two implementations is blind to a defect they share. Give such a gate a *declared expected result*
-for at least the cases that matter, so it can fail while both sides agree.
-
-**"Exercised" is not "works".** A thing called once, at one type, in one shape, is evidence about
-that call and nothing else. Coverage counted by *mentions* is fakeable and will be faked by
-accident; count what actually executed. Before trusting a coverage number, try to construct the
-cheapest edit that raises it without raising real coverage — if you can, the metric is wrong.
+**Agent reports are data, not truth.** Verify a claim by opening the file or running the command
+before you act on it. A cited `path:line` that turns out to be wrong is the highest-value finding a
+reviewer can produce, and the cheapest one for you to check.
 
 **Every number in a status document is re-measured or it is not written.** A figure copied from an
 agent's report into a roadmap is an assertion wearing the costume of a measurement. Require the
 command that produced it.
 
-**Each work item must be able to fail before the next one starts.** A plan whose middle items have
-no harness is a plan that discovers everything at the end. When reviewing a plan, ask of every item:
-what fails, right now, if this item is done wrong? An item with no answer is misordered.
-
-**Ask what a conformant-but-wrong implementation would still pass.** Put this question in every plan
-review brief. It is the single highest-yield question in the protocol.
+**Do not skip a stage because the phase looks small.** Skip it because the ladder says so, which is a
+different claim with a gate behind it. The stages that catch things are the ones that feel redundant,
+and the tier is a decision you record rather than a feeling you act on.
 
 ## Fanning out safely
 

@@ -19,6 +19,15 @@ import { parseDoc } from './lib/markdown-sections.mjs';
 import { resolveTool } from './lib/tools.mjs';
 import { estimateTokens } from './lib/token-estimate.mjs';
 import {
+  BRIEF_HEADINGS,
+  DESCRIPTION_MAX,
+  REPORT_SCOPE_SENTENCE,
+  ROLE_WRITE_CLASS,
+  SIZE_BUDGETS,
+  SKILL_INVENTORY,
+  WRITE_CLASS_EXPECTATIONS,
+} from './fixtures/expected.mjs';
+import {
   ALLOWED_HEADS,
   CANONICAL_LABEL_RESIDUAL,
   COMMAND_SPANS,
@@ -26,9 +35,9 @@ import {
   COMPLEXITY_TIERS,
   ESCALATION_TRIGGERS,
   ESCALATION_TRIGGER_BRIEFS,
+  EXECUTION_STAGES,
   EXECUTION_TIERS,
   HARNESS_BINDINGS,
-  HARNESS_SKILL_OVERLAYS,
   DOC_CHECK_COUNT,
   DOC_TOOLS,
   FULL_CHECK_COUNT,
@@ -51,6 +60,7 @@ import {
   TOKEN_BUDGET,
   TOKEN_BUDGET_DOC_SITES,
   TIER_TABLE_DOCS,
+  UNSAFE_BLOCKS,
   TOKEN_BUDGET_GATE_SITES,
 } from './fixtures/recipes.mjs';
 
@@ -430,6 +440,16 @@ function tierLabels(lines) {
     .map((m) => m[1]);
 }
 
+function allFilesUnder(dir) {
+  const out = [];
+  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, e.name);
+    if (e.isDirectory()) out.push(...allFilesUnder(full));
+    else if (e.isFile()) out.push(full);
+  }
+  return out;
+}
+
 function markdownFilesUnder(dir, skip) {
   const out = [];
   const walk = (d) => {
@@ -625,6 +645,7 @@ for (const f of RECIPE_FILES) {
     const declared = new Map();
     for (const r of RUNNABLE_RECIPES) if (r.file === f.key) declared.set(r.fenceIndex, { kind: 'runnable', id: r.id });
     for (const b of STATIC_BLOCKS) if (b.file === f.key) declared.set(b.fenceIndex, { kind: 'static', id: b.id, info: b.info });
+    for (const b of UNSAFE_BLOCKS) if (b.file === f.key) declared.set(b.fenceIndex, { kind: 'static', id: b.id, info: b.info });
     const extracted = doc.fences.map((x) => x.index);
     if (!eqSet(extracted, [...declared.keys()])) {
       throw new Error(`extracted fences ${JSON.stringify(extracted)}, declared ${JSON.stringify([...declared.keys()].sort((a, b) => a - b))}`);
@@ -879,18 +900,152 @@ add('E5', 'the ladder has an exit and every trigger is named in the brief that d
   }
 });
 
-add('E6', 'each harness skill copy is the canonical protocol plus its declared overlay', () => {
-  for (const o of HARNESS_SKILL_OVERLAYS) {
-    const canonical = fs.readFileSync(repoPath(o.canonical), 'utf8');
-    const copy = fs.readFileSync(repoPath(o.path), 'utf8');
-    const heading = `## ${o.overlayHeading}`;
-    const start = copy.indexOf(heading);
-    if (start < 0) throw new Error(`${o.path} has no '${heading}' section`);
-    const next = copy.indexOf('\n## ', start);
-    if (next < 0) throw new Error(`${o.path}: the overlay is the last section, so nothing follows it`);
-    const stripped = copy.slice(0, start) + copy.slice(next + 1);
-    if (stripped !== canonical) throw new Error(`${o.path} minus its overlay is not ${o.canonical} verbatim`);
+// --- U: blocks that are published but must never run ---------------------------
+
+for (const b of UNSAFE_BLOCKS) {
+  add(`U:${b.id}`, `${filePath(b.file)} block ${b.id} is published but never executed`, () => {
+    if (!b.reason?.trim()) throw new Error('a block declared unexecutable must say why');
+    const fence = docFor(b.file).fences.find((f) => f.index === b.fenceIndex);
+    if (!fence) throw new Error(`no fence ${b.fenceIndex}`);
+    const units = extractCommands(fence.body, false);
+    if (!units.length) throw new Error('declared unsafe but carries no command');
+    for (const unit of units) {
+      for (const seg of pipeSegments(unit)) {
+        const tokens = shellTokens(stripAssignments(seg));
+        if (!tokens.length) continue;
+        if (!b.heads.includes(tokens[0])) throw new Error(`head '${tokens[0]}' is not declared for ${b.id}`);
+        const verb = tokens[1];
+        if (verb && !verb.startsWith('-') && !b.verbs.includes(verb)) {
+          throw new Error(`verb '${verb}' is not declared for ${b.id}`);
+        }
+      }
+    }
+  });
+}
+
+// --- E8-E14: the skill corpus --------------------------------------------------
+
+// Rendered copies are single-source by construction, so they are not a second statement of a rule.
+function skillPaths() {
+  return SKILL_INVENTORY.map((s) => s.relPath).filter((p) => !p.includes('/harnesses/'));
+}
+
+function flat(text) {
+  return text.replace(/\s+/g, ' ');
+}
+
+function paragraphs(text, min = 140) {
+  return text
+    .replace(/^---[\s\S]*?\n---\n/, '')
+    .split(/\n\s*\n/)
+    .map((p) => p.trim().replace(/\s+/g, ' '))
+    .filter((p) => p.length >= min && !p.startsWith('|') && !p.startsWith('#'));
+}
+
+add('E8', 'no two skills state the same rule', () => {
+  const paras = new Map(skillPaths().map((p) => [p, new Set(paragraphs(fs.readFileSync(repoPath(p), 'utf8')))]));
+  const shared = [];
+  const names = [...paras.keys()];
+  for (let i = 0; i < names.length; i += 1) {
+    for (let j = i + 1; j < names.length; j += 1) {
+      for (const para of paras.get(names[i])) {
+        if (paras.get(names[j]).has(para)) shared.push(`${names[i]} & ${names[j]}: ${para.slice(0, 60)}…`);
+      }
+    }
   }
+  if (shared.length) throw new Error(`${shared.length} shared paragraph(s): ${shared.join(' | ')}`);
+});
+
+add('E9', 'AGENTS.md points at the tool skills instead of restating them', () => {
+  const text = fs.readFileSync(repoPath('AGENTS.md'), 'utf8');
+  const restated = ['progressive disclosure', 'rtk proxy', 'staleness cooldown'].filter((p) => text.toLowerCase().includes(p));
+  if (restated.length) throw new Error(`AGENTS.md restates ${JSON.stringify(restated)}`);
+  for (const pointer of ['parallel', 'tokensave', 'search-tools']) {
+    if (!text.includes(pointer)) throw new Error(`AGENTS.md does not name the ${pointer} skill`);
+  }
+});
+
+add('E10', "every skill's description is one line inside the declared bound", () => {
+  for (const rel of skillPaths()) {
+    const raw = fs.readFileSync(repoPath(rel), 'utf8').replace(/\r\n/g, '\n');
+    const block = /^---\n([\s\S]*?)\n---\n/.exec(raw);
+    if (!block) throw new Error(`${rel}: no frontmatter block`);
+    const lines = block[1].split('\n');
+    const at = lines.findIndex((l) => l.startsWith('description:'));
+    if (at < 0) throw new Error(`${rel}: no description in frontmatter`);
+    if (lines.slice(at + 1).some((l) => l && !/^[a-zA-Z_-]+:/.test(l))) {
+      throw new Error(`${rel}: description spans more than one line`);
+    }
+    const value = lines[at].slice('description:'.length).trim().replace(/^"|"$/g, '');
+    if (!value) throw new Error(`${rel}: empty description`);
+    if (value.length > DESCRIPTION_MAX) throw new Error(`${rel}: description is ${value.length} chars, bound is ${DESCRIPTION_MAX}`);
+  }
+});
+
+add('E11', "every harness expresses each role's declared write class", () => {
+  for (const h of WRITE_CLASS_EXPECTATIONS) {
+    for (const [role, klass] of Object.entries(ROLE_WRITE_CLASS)) {
+      const rel = h.manifest.replace('{name}', role);
+      const text = fs.readFileSync(repoPath(rel), 'utf8');
+      const head = text.startsWith('---') ? text.split('\n---\n')[0] : text.split('developer_instructions')[0];
+      for (const token of h.tokens?.[klass]?.present ?? []) {
+        if (!new RegExp(`(?<![A-Za-z_])${token}(?![A-Za-z_])`).test(head)) throw new Error(`${rel}: ${klass} role lacks ${token}`);
+      }
+      for (const token of h.tokens?.[klass]?.absent ?? []) {
+        if (new RegExp(`(?<![A-Za-z_])${token}(?![A-Za-z_])`).test(head)) throw new Error(`${rel}: ${klass} role must not carry ${token}`);
+      }
+      for (const needle of h.text?.[klass] ?? []) {
+        if (!head.includes(needle)) throw new Error(`${rel}: ${klass} role does not declare ${JSON.stringify(needle)}`);
+      }
+      // Where a harness cannot scope a write, the body is the only place the scope can live.
+      if (klass === 'report' && !flat(text).includes(REPORT_SCOPE_SENTENCE)) {
+        throw new Error(`${rel}: report role does not state its write scope in the body`);
+      }
+    }
+  }
+});
+
+add('E12', 'every declared stage has a skill, and every tier runs the unskippable ones', () => {
+  const stages = EXECUTION_STAGES;
+  const declaredSkills = new Set(SKILL_INVENTORY.map((s) => s.expectedName));
+  for (const stage of stages) {
+    if (!declaredSkills.has(stage.skill)) throw new Error(`stage ${stage.id} names undeclared skill ${stage.skill}`);
+    const entry = SKILL_INVENTORY.find((s) => s.expectedName === stage.skill);
+    if (!fs.existsSync(repoPath(entry.relPath))) throw new Error(`${entry.relPath} does not exist`);
+  }
+  const ids = stages.map((s) => s.id);
+  const unskippable = stages.filter((s) => s.skip_when === null).map((s) => s.id);
+  if (!unskippable.length) throw new Error('no stage is unskippable, so every tier is optional');
+  for (const tier of EXECUTION_TIERS) {
+    for (const id of tier.stages) if (!ids.includes(id)) throw new Error(`${tier.id} runs undeclared stage ${id}`);
+    for (const id of unskippable) if (!tier.stages.includes(id)) throw new Error(`${tier.id} omits unskippable stage ${id}`);
+  }
+});
+
+add('E13', 'every artifact is inside its declared byte budget', () => {
+  const over = [];
+  for (const budget of SIZE_BUDGETS) {
+    if (!budget.buys?.trim()) throw new Error(`budget for ${budget.glob} does not say what it buys`);
+    const re = new RegExp(`^${budget.glob.split('*').map((p) => p.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('[^/]*')}$`);
+    const files = allFilesUnder(repoPath('plugins')).map((f) => path.relative(REPO_ROOT, f)).filter((f) => re.test(f));
+    if (!files.length) throw new Error(`budget ${budget.glob} matches nothing`);
+    for (const f of files) {
+      const size = fs.statSync(repoPath(f)).size;
+      if (size > budget.max) over.push(`${f} is ${size}B, budget ${budget.max}B`);
+    }
+  }
+  if (over.length) throw new Error(over.join('; '));
+});
+
+add('E14', 'one rule, one heading, across every brief', () => {
+  const unknown = [];
+  for (const f of fs.readdirSync(repoPath('plugins/steps/agents')).filter((x) => x.endsWith('.md'))) {
+    const doc = parseDoc(fs.readFileSync(repoPath(`plugins/steps/agents/${f}`), 'utf8'));
+    for (const h of doc.headings.filter((x) => x.level === 2)) {
+      if (!BRIEF_HEADINGS.includes(h.text)) unknown.push(`${f}: '${h.text}'`);
+    }
+  }
+  if (unknown.length) throw new Error(`heading(s) outside the declared vocabulary: ${unknown.join(', ')}`);
 });
 
 add('E7', 'each harness manifest and MODEL_ROUTING.md agree with the declared binding', () => {
@@ -904,11 +1059,16 @@ add('E7', 'each harness manifest and MODEL_ROUTING.md agree with the declared bi
       const effort = cells.length > 2 ? (/`([^`]+)`/.exec(cells[2] ?? '')?.[1] ?? null) : null;
       for (const m of cells[0].matchAll(/`([^`]+)`/g)) inDoc.set(m[1], { model, effort });
     }
+    const profile = JSON.parse(fs.readFileSync(repoPath(`plugins/steps/harnesses/${h.key}/profile.json`), 'utf8'));
     for (const [role, want] of Object.entries(h.roles)) {
       const row = inDoc.get(role);
       if (!row) throw new Error(`MODEL_ROUTING.md '${h.heading}' has no row for ${role}`);
       if (row.model !== want.model) throw new Error(`${h.key}/${role}: doc says ${row.model}, declared ${want.model}`);
       if (row.effort !== want.effort) throw new Error(`${h.key}/${role}: doc effort ${row.effort}, declared ${want.effort}`);
+      // The generator's input is graded too, so a wrong profile cannot render a wrong manifest quietly.
+      const bound = profile.models[role] ?? {};
+      if (bound.model !== want.model) throw new Error(`${h.key}/profile.json ${role}: ${bound.model}, declared ${want.model}`);
+      if ((bound.effort ?? null) !== want.effort) throw new Error(`${h.key}/profile.json ${role}: effort ${bound.effort ?? null}, declared ${want.effort}`);
       const rel = h.manifest.replace('%s', role);
       const text = fs.readFileSync(repoPath(rel), 'utf8');
       if (!new RegExp(`^\\s*model\\s*[:=]\\s*"?${escapeForRegex(want.model)}"?\\s*$`, 'm').test(text)) {

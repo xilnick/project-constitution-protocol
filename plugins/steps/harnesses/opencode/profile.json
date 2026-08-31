@@ -1,0 +1,27 @@
+{
+  "key": "opencode",
+  "label": "OpenCode",
+  "out": "harnesses/opencode/.opencode/agents/{name}.md",
+  "format": "md",
+  "h1": false,
+  "vars": { "write_tool": "write", "exec_tool": "bash" },
+  "toolStyle": "none",
+  "permission": {
+    "none":   { "edit": "deny", "bash": "allow" },
+    "report": { "edit": { "*": "deny", ".plans/**": "allow" }, "bash": "allow" },
+    "code":   { "edit": "allow", "bash": "allow" }
+  },
+  "fields": ["description","mode","model","permission"],
+  "static": { "mode": "subagent" },
+  "models": {
+    "repo-scout": { "model": "anthropic/claude-haiku-4-20250514" },
+    "steps-planner": { "model": "anthropic/claude-haiku-4-20250514" },
+    "steps-reconciler": { "model": "anthropic/claude-haiku-4-20250514" },
+    "steps-plan-reviewer": { "model": "anthropic/claude-sonnet-4-20250514" },
+    "steps-impl-reviewer": { "model": "anthropic/claude-sonnet-4-20250514" },
+    "steps-implementer": { "model": "openai/gpt-5.1-codex" },
+    "steps-architect-pro": { "model": "anthropic/claude-sonnet-4-20250514" },
+    "step-verifier": { "model": "anthropic/claude-sonnet-4-20250514" },
+    "steps-fixer": { "model": "anthropic/claude-sonnet-4-20250514" }
+  }
+}

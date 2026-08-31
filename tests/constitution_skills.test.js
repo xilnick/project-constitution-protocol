@@ -83,6 +83,22 @@ test('Constitution Schema & Taxonomy Validation', async (t) => {
       'verification_command_resolution must be a non-empty ordered list'
     );
 
+    const stages = exec?.stages;
+    assert.ok(Array.isArray(stages) && stages.length > 0, 'execution.stages must be a non-empty array');
+    const stageIds = stages.map((stage) => stage.id);
+    for (const stage of stages) {
+      assert.ok(typeof stage.skill === 'string' && stage.skill.length > 0, `stage ${stage.id} must name a skill`);
+      assert.ok(Array.isArray(stage.agents) && stage.agents.length > 0, `stage ${stage.id} must dispatch someone`);
+      assert.ok(typeof stage.produces === 'string' && stage.produces.length > 0, `stage ${stage.id} must produce something`);
+      assert.ok('skip_when' in stage, `stage ${stage.id} must say when it is skippable, or null for never`);
+    }
+    // Two stages carry no skip_when: they are what makes skipping the others safe.
+    assert.deepStrictEqual(
+      stages.filter((stage) => stage.skip_when === null).map((stage) => stage.id),
+      ['implement', 'verify'],
+      'implement and verify must be the unskippable stages'
+    );
+
     const tiers = exec?.tiers;
     assert.ok(Array.isArray(tiers) && tiers.length > 0, 'execution.tiers must be a non-empty array');
     const ids = tiers.map((tier) => tier.id);
@@ -90,7 +106,11 @@ test('Constitution Schema & Taxonomy Validation', async (t) => {
       assert.match(tier.id, /^tier-/, `tier id ${tier.id} must start with tier-`);
       assert.ok(typeof tier.label === 'string' && tier.label.length > 0, 'label must be non-empty string');
       assert.ok(typeof tier.entry === 'string' && tier.entry.length > 0, 'entry must be non-empty string');
-      assert.ok(Array.isArray(tier.routes) && tier.routes.length > 0, `tier ${tier.id} must route somewhere`);
+      assert.ok(Array.isArray(tier.stages) && tier.stages.length > 0, `tier ${tier.id} must run some stage`);
+      for (const id of tier.stages) assert.ok(stageIds.includes(id), `tier ${tier.id} runs undeclared stage ${id}`);
+      for (const id of ['implement', 'verify']) {
+        assert.ok(tier.stages.includes(id), `tier ${tier.id} omits the unskippable stage ${id}`);
+      }
       // A tier whose escalates_to names nothing declared is a tier a failing gate cannot escape.
       if (tier.escalates_to !== null) {
         assert.ok(ids.includes(tier.escalates_to), `tier ${tier.id} escalates to undeclared ${tier.escalates_to}`);

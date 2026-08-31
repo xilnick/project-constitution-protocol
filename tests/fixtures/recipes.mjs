@@ -16,6 +16,7 @@ export const REQUIREMENT_ID = CONSTITUTION.requirements[0].id;
 export const DEFERRED_ID = CONSTITUTION.deferred[0].id;
 export const SPEC_ENDPOINT = AUTH_SPEC.spec.endpoints[0].path;
 export const VERIFICATION_COMMAND = CONSTITUTION.constitution.verification_command;
+export const PROJECT_VERSION = CONSTITUTION.constitution.version;
 export const TIER_0_ESCALATES_TO = CONSTITUTION.constitution.execution.tiers[0].escalates_to;
 export const SPEC_SECTION = 'security_invariants';
 
@@ -24,14 +25,15 @@ export const SPEC_SECTION = 'security_invariants';
 // ---------------------------------------------------------------------------
 
 export const DOC_TOOLS = ['yq', 'git', 'sh', 'node'];
-export const LIVE_TOOLS = ['tokensave', 'rtk', 'jq'];
-export const ALLOWED_HEADS = ['yq', 'jq', 'tokensave', 'node'];
+export const LIVE_TOOLS = ['tokensave', 'rtk', 'jq', 'ast-grep'];
+export const ALLOWED_HEADS = ['yq', 'jq', 'tokensave', 'node', 'ast-grep'];
 export const COMMAND_SPAN_CLIS = ['yq', 'jq', 'tokensave', 'rtk', 'npm', 'node'];
 export const RTK_VERBS = ['proxy'];
 export const RTK_VERBS_FLOOR = ['proxy', 'run', 'git', 'npm', 'grep'];
-export const TOKENSAVE_VERBS = ['tool'];
+// The tokensave surface the skills document; a verb used in prose that is not here is undeclared.
+export const TOKENSAVE_VERBS = ['tool', 'status', 'install', 'branch', 'sync', 'doctor'];
 export const TOKENSAVE_READONLY_TOOLS = [
-  'find_exact_symbol', 'entities', 'callers', 'callees', 'impact', 'body', 'status',
+  'find_exact_symbol', 'entities', 'callers', 'callees', 'impact', 'body', 'status', 'branch_list',
 ];
 
 export const TOKENSAVE_TOOL_PARAMS = {
@@ -42,6 +44,7 @@ export const TOKENSAVE_TOOL_PARAMS = {
   impact: { required: ['node_id'], optional: ['max_depth'] },
   body: { required: ['symbol'], optional: ['limit'] },
   status: { required: [], optional: [] },
+  branch_list: { required: [], optional: [] },
 };
 
 // Derived from pcp.js source, never from the graph: if the graph disagrees, the graph is wrong.
@@ -72,6 +75,7 @@ export const COMPLEXITY_TIERS = [
 ];
 
 // The declared ladder, reached by property access so there is one copy of it in the suite.
+export const EXECUTION_STAGES = CONSTITUTION.constitution.execution.stages;
 export const EXECUTION_TIERS = CONSTITUTION.constitution.execution.tiers;
 export const ESCALATION_TRIGGERS = CONSTITUTION.constitution.execution.escalation_triggers;
 
@@ -187,11 +191,13 @@ export const LIVE_CHECKS = [
   'D:ci-impact.u', 'D:ci-body.1', 'D:ci-status.1',
   'D:cq-security.3', 'D:cq-decision.2', 'D:cq-caveat.2',
   'D:cq-requirement.3', 'D:cq-deferred.2',
-  'X2', 'X3', 'X4', 'X5', 'X7', 'X8', 'X9', 'X12',
+  'X2', 'X3', 'X4', 'X5', 'X12',
+  'X14', 'X15', 'X16', 'X17', 'X18', 'X20', 'X22',
+  'D:ts-branch-list.1', 'D:st-structural.1', 'D:st-slices.3',
 ];
 
-export const DOC_CHECK_COUNT = 63;
-export const FULL_CHECK_COUNT = 88;
+export const DOC_CHECK_COUNT = 78;
+export const FULL_CHECK_COUNT = 110;
 
 // ---------------------------------------------------------------------------
 // The five recipe-bearing files
@@ -201,6 +207,8 @@ export const RECIPE_FILES = [
   { key: 'constitution-query', path: 'plugins/pcp/skills/constitution-query/SKILL.md' },
   { key: 'code-intelligence', path: 'plugins/pcp/skills/code-intelligence/SKILL.md' },
   { key: 'adr-manager', path: 'plugins/pcp/skills/adr-manager/SKILL.md' },
+  { key: 'tb-tokensave', path: 'plugins/toolbelt/skills/tokensave/SKILL.md' },
+  { key: 'tb-search', path: 'plugins/toolbelt/skills/search-tools/SKILL.md' },
   { key: 'AGENTS', path: 'AGENTS.md' },
   { key: 'ai-docs-README', path: 'ai-docs/README.md' },
 ];
@@ -226,7 +234,7 @@ export const RUNNABLE_RECIPES = [
     }],
   },
   {
-    id: 'ci-entities', file: 'code-intelligence', fenceIndex: 2, unit: false,
+    id: 'ci-entities', file: 'code-intelligence', fenceIndex: 1, unit: false,
     commands: [{
       text: 'tokensave tool entities --file plugins/pcp/skills/pcp/scripts/pcp.js',
       assert: [
@@ -236,7 +244,7 @@ export const RUNNABLE_RECIPES = [
     }],
   },
   {
-    id: 'ci-callers', file: 'code-intelligence', fenceIndex: 4, unit: true,
+    id: 'ci-callers', file: 'code-intelligence', fenceIndex: 2, unit: true,
     commands: [{
       text: 'NODE_ID=$(tokensave tool find_exact_symbol --name ensureDir | jq -r ".matches[0].id")\n'
         + 'tokensave tool callers --node-id "$NODE_ID"',
@@ -247,7 +255,7 @@ export const RUNNABLE_RECIPES = [
     }],
   },
   {
-    id: 'ci-callees', file: 'code-intelligence', fenceIndex: 6, unit: true,
+    id: 'ci-callees', file: 'code-intelligence', fenceIndex: 3, unit: true,
     commands: [{
       text: 'NODE_ID=$(tokensave tool find_exact_symbol --name handleInit | jq -r ".matches[0].id")\n'
         + 'tokensave tool callees --node-id "$NODE_ID" --max-depth 1',
@@ -258,7 +266,7 @@ export const RUNNABLE_RECIPES = [
     }],
   },
   {
-    id: 'ci-impact', file: 'code-intelligence', fenceIndex: 8, unit: true,
+    id: 'ci-impact', file: 'code-intelligence', fenceIndex: 4, unit: true,
     commands: [{
       text: 'NODE_ID=$(tokensave tool find_exact_symbol --name ensureDir | jq -r ".matches[0].id")\n'
         + 'tokensave tool impact --node-id "$NODE_ID"',
@@ -269,7 +277,7 @@ export const RUNNABLE_RECIPES = [
     }],
   },
   {
-    id: 'ci-body', file: 'code-intelligence', fenceIndex: 10, unit: false,
+    id: 'ci-body', file: 'code-intelligence', fenceIndex: 5, unit: false,
     commands: [{
       text: 'tokensave tool body --symbol ensureDir',
       assert: [
@@ -280,7 +288,7 @@ export const RUNNABLE_RECIPES = [
     }],
   },
   {
-    id: 'ci-status', file: 'code-intelligence', fenceIndex: 12, unit: false,
+    id: 'ci-status', file: 'code-intelligence', fenceIndex: 6, unit: false,
     commands: [{
       text: 'tokensave tool status',
       assert: [
@@ -390,6 +398,30 @@ export const RUNNABLE_RECIPES = [
   },
 
   {
+    id: 'ts-branch-list', file: 'tb-tokensave', fenceIndex: 0, unit: false,
+    commands: [{
+      text: 'tokensave tool branch_list',
+      // The tracked set and its staleness are the two things the skill tells you to read first.
+      assert: [{ jsonEq: ['current_branch', 'main'] }],
+    }],
+  },
+  {
+    id: 'st-structural', file: 'tb-search', fenceIndex: 0, unit: false,
+    commands: [{
+      text: "ast-grep run --pattern 'console.log($$$ARGS)' --lang js plugins/",
+      assert: [{ contains: 'plugins/' }],
+    }],
+  },
+  {
+    id: 'st-slices', file: 'tb-search', fenceIndex: 1, unit: false,
+    commands: [
+      { text: "yq '. | keys' ai-docs/constitution.yaml", assert: [{ contains: 'constitution' }, { maxTokens: TOKEN_BUDGET }] },
+      { text: "yq '.constitution.version' ai-docs/constitution.yaml", assert: [{ contains: PROJECT_VERSION }, { maxTokens: TOKEN_BUDGET }] },
+      { text: "jq -r '.plugins[].name' .claude-plugin/marketplace.json", assert: [{ contains: 'toolbelt' }, { maxTokens: TOKEN_BUDGET }] },
+    ],
+  },
+
+  {
     id: 'adr-verify', file: 'adr-manager', fenceIndex: 2, unit: true,
     commands: [{
       text: [
@@ -417,16 +449,33 @@ export const RUNNABLE_RECIPES = [
 ];
 
 // ---------------------------------------------------------------------------
+// Table 1b — bash blocks that must never execute. Graded by shape: every command's head and verb
+// is declared, so a mutating example still cannot drift into something undeclared.
+// ---------------------------------------------------------------------------
+
+export const UNSAFE_BLOCKS = [
+  {
+    id: 'ts-repair', file: 'tb-tokensave', fenceIndex: 1, info: 'bash',
+    reason: 'copies and rewrites branch index databases',
+    heads: ['tokensave', 'git'], verbs: ['branch', 'sync', 'doctor', 'rev-parse'],
+  },
+  {
+    id: 'ts-install', file: 'tb-tokensave', fenceIndex: 2, info: 'bash',
+    reason: "rewrites the user's agent configuration and permissions",
+    heads: ['tokensave'], verbs: ['install'],
+  },
+  {
+    id: 'st-proxy', file: 'tb-search', fenceIndex: 2, info: 'bash',
+    reason: 'runs the whole suite, which from inside the suite is recursion',
+    heads: ['rtk'], verbs: ['proxy'],
+  },
+];
+
+// ---------------------------------------------------------------------------
 // Table 2 — non-runnable blocks, every one with a real validator
 // ---------------------------------------------------------------------------
 
 export const STATIC_BLOCKS = [
-  { id: 'ci-mcp-find', check: 'S1', file: 'code-intelligence', fenceIndex: 1, info: 'json', tool: 'find_exact_symbol', argKeys: ['name'] },
-  { id: 'ci-mcp-entities', check: 'S2', file: 'code-intelligence', fenceIndex: 3, info: 'json', tool: 'entities', argKeys: ['file'] },
-  { id: 'ci-mcp-callers', check: 'S3', file: 'code-intelligence', fenceIndex: 5, info: 'json', tool: 'callers', argKeys: ['node_id'] },
-  { id: 'ci-mcp-callees', check: 'S4', file: 'code-intelligence', fenceIndex: 7, info: 'json', tool: 'callees', argKeys: ['node_id', 'max_depth'] },
-  { id: 'ci-mcp-impact', check: 'S5', file: 'code-intelligence', fenceIndex: 9, info: 'json', tool: 'impact', argKeys: ['node_id'] },
-  { id: 'ci-mcp-body', check: 'S6', file: 'code-intelligence', fenceIndex: 11, info: 'json', tool: 'body', argKeys: ['symbol'] },
   { id: 'adr-template', check: 'S7', file: 'adr-manager', fenceIndex: 0, info: 'markdown', headings: ADR_TEMPLATE_HEADINGS },
   { id: 'adr-entry-yaml', check: 'S8', file: 'adr-manager', fenceIndex: 1, info: 'yaml', topKeys: ['decisions'], entryKeys: DECISION_ENTRY_KEYS },
 ];
@@ -441,10 +490,17 @@ export const COMMAND_SPANS = [
   { check: 'X3', file: 'code-intelligence', text: 'tokensave tool', kind: 'verb', cli: 'tokensave', verb: 'tool' },
   { check: 'X4', file: 'code-intelligence', text: 'tokensave tool <command> [args]', kind: 'verb-placeholder', cli: 'tokensave', verb: 'tool' },
   { check: 'X5', file: 'code-intelligence', text: 'tokensave: { tool: "<command>" }', kind: 'mcp-form', cli: 'tokensave' },
-  { check: 'X6', file: 'AGENTS', text: 'npm test', kind: 'npm-script', cli: 'npm', verb: 'test' },
-  { check: 'X7', file: 'AGENTS', text: 'tokensave', occurrence: 1, kind: 'binary', cli: 'tokensave' },
-  { check: 'X8', file: 'AGENTS', text: 'rtk proxy <cmd>', kind: 'verb', cli: 'rtk', verb: 'proxy' },
-  { check: 'X9', file: 'AGENTS', text: 'tokensave tool status', kind: 'verb-tool', cli: 'tokensave', verb: 'tool', tool: 'status' },
+  { check: 'X6', file: 'AGENTS', text: 'npm test', occurrence: 1, kind: 'npm-script', cli: 'npm', verb: 'test' },
+  { check: 'X6b', file: 'AGENTS', text: 'npm test', occurrence: 2, kind: 'npm-script', cli: 'npm', verb: 'test' },
+  { check: 'X21', file: 'AGENTS', text: 'npm run render', kind: 'npm-script', cli: 'npm', verb: 'render' },
+  { check: 'X22', file: 'AGENTS', text: 'tokensave', kind: 'binary', cli: 'tokensave' },
+  { check: 'X14', file: 'tb-tokensave', text: 'tokensave tool status', kind: 'verb-tool', cli: 'tokensave', verb: 'tool', tool: 'status' },
+  { check: 'X15', file: 'tb-tokensave', text: 'tokensave status', kind: 'verb', cli: 'tokensave', verb: 'status' },
+  { check: 'X16', file: 'tb-tokensave', text: 'tokensave install', kind: 'verb', cli: 'tokensave', verb: 'install' },
+  { check: 'X17', file: 'tb-search', text: 'tokensave', occurrence: 1, kind: 'binary', cli: 'tokensave' },
+  { check: 'X18', file: 'tb-search', text: 'tokensave', occurrence: 2, kind: 'binary', cli: 'tokensave' },
+  { check: 'X19', file: 'tb-search', text: 'yq', kind: 'binary', cli: 'yq' },
+  { check: 'X20', file: 'tb-search', text: 'jq', kind: 'binary', cli: 'jq' },
   { check: 'X11', file: 'ai-docs-README', text: 'yq', kind: 'binary', cli: 'yq' },
   { check: 'X12', file: 'ai-docs-README', text: 'jq', kind: 'binary', cli: 'jq' },
   { check: 'X13', file: 'ai-docs-README', text: 'npm test', kind: 'npm-script', cli: 'npm', verb: 'test' },

@@ -3,7 +3,8 @@ set -euo pipefail
 
 # tests/install-smoke.sh
 # Acceptance gate for Phase 3: installability & discovery across throwaway HOME
-# Tests that marketplace installation delivers all 5 skills and recipes run from an unrelated dir.
+# Tests that marketplace installation delivers every shipped skill and that the recipes run from
+# an unrelated directory.
 
 REPO_ROOT="$(pwd)"
 TEST_HOME="$(mktemp -d -t pcp-install-smoke-XXXXXX)"
@@ -15,20 +16,30 @@ trap cleanup EXIT
 echo "==> 1. Setting up throwaway HOME: $TEST_HOME"
 mkdir -p "$TEST_HOME/.claude/plugins/pcp"
 mkdir -p "$TEST_HOME/.claude/plugins/steps"
+mkdir -p "$TEST_HOME/.claude/plugins/toolbelt"
 
 echo "==> 2. Installing marketplace plugins into throwaway HOME"
 cp -r "$REPO_ROOT/plugins/pcp/"* "$TEST_HOME/.claude/plugins/pcp/"
 cp -r "$REPO_ROOT/plugins/steps/"* "$TEST_HOME/.claude/plugins/steps/"
+cp -r "$REPO_ROOT/plugins/toolbelt/"* "$TEST_HOME/.claude/plugins/toolbelt/"
 mkdir -p "$TEST_HOME/.claude-plugin"
 cp "$REPO_ROOT/.claude-plugin/marketplace.json" "$TEST_HOME/.claude-plugin/marketplace.json"
 
-echo "==> 3. Asserting all 5 skills are discovered"
+echo "==> 3. Asserting every shipped skill is discovered"
 SKILLS=(
   "$TEST_HOME/.claude/plugins/pcp/skills/pcp/SKILL.md"
   "$TEST_HOME/.claude/plugins/pcp/skills/constitution-query/SKILL.md"
   "$TEST_HOME/.claude/plugins/pcp/skills/code-intelligence/SKILL.md"
   "$TEST_HOME/.claude/plugins/pcp/skills/adr-manager/SKILL.md"
   "$TEST_HOME/.claude/plugins/steps/skills/steps/SKILL.md"
+  "$TEST_HOME/.claude/plugins/steps/skills/steps-plan/SKILL.md"
+  "$TEST_HOME/.claude/plugins/steps/skills/steps-review/SKILL.md"
+  "$TEST_HOME/.claude/plugins/steps/skills/steps-implement/SKILL.md"
+  "$TEST_HOME/.claude/plugins/steps/skills/steps-verify/SKILL.md"
+  "$TEST_HOME/.claude/plugins/steps/skills/steps-fix/SKILL.md"
+  "$TEST_HOME/.claude/plugins/toolbelt/skills/parallel/SKILL.md"
+  "$TEST_HOME/.claude/plugins/toolbelt/skills/tokensave/SKILL.md"
+  "$TEST_HOME/.claude/plugins/toolbelt/skills/search-tools/SKILL.md"
 )
 
 for skill in "${SKILLS[@]}"; do
@@ -78,6 +89,8 @@ cat << 'DOCEOF' > "$CONSUMER_DIR/ai-docs/decisions/ADR-0001-init.md"
 Initial architecture for consumer application.
 DOCEOF
 
+TOKENSAVE_BIN="$(command -v tokensave || echo /nonexistent)"
+
 echo "==> 5. Testing recipe execution from unrelated directory (NO cd into repo)"
 (
   cd "$CONSUMER_DIR"
@@ -117,10 +130,34 @@ echo "==> 5. Testing recipe execution from unrelated directory (NO cd into repo)
     echo "  [PASS] code-intelligence: verified skill instructions intact"
   fi
 
-  # Skill 5: steps
+  # Skill 5: steps, and the five stages it composes
   STEPS_SKILL="$TEST_HOME/.claude/plugins/steps/skills/steps/SKILL.md"
   if grep -q "Separation of duties" "$STEPS_SKILL"; then
     echo "  [PASS] steps: verified protocol instructions intact"
+  fi
+  for stage in plan review implement verify fix; do
+    if grep -q "Why the stage exists" "$TEST_HOME/.claude/plugins/steps/skills/steps-$stage/SKILL.md"; then
+      echo "  [PASS] steps-$stage: stage is invocable on its own"
+    else
+      echo "ERROR: steps-$stage did not survive the install" >&2
+      exit 1
+    fi
+  done
+
+  # The toolbelt skills: each one's own recipe, run from here rather than from the repo
+  if grep -q "one message, one wave" -i "$TEST_HOME/.claude/plugins/toolbelt/skills/parallel/SKILL.md"; then
+    echo "  [PASS] parallel: verified fan-out instructions intact"
+  fi
+  if "$TOKENSAVE_BIN" tool branch_list >/dev/null 2>&1; then
+    echo "  [PASS] tokensave: branch_list runs from an unrelated directory"
+  else
+    echo "  [SKIP] tokensave: no graph in this workspace, which is the documented empty case"
+  fi
+  if yq '. | keys' ai-docs/constitution.yaml | grep -q constitution; then
+    echo "  [PASS] search-tools: yq slice recipe runs against the consumer project"
+  else
+    echo "ERROR: search-tools yq recipe failed in the consumer project" >&2
+    exit 1
   fi
 )
 

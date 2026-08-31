@@ -17,14 +17,22 @@ This repository is a Claude Code **plugin marketplace**, not a single skill. It 
     `description` is the only place its activation rule is written; do not restate it here.
 - `plugins/steps/` — the phased-execution plugin.
   - `.claude-plugin/plugin.json`
-  - `skills/steps/SKILL.md` — the protocol, and the source of truth for the agents.
+  - `skills/steps/SKILL.md` — the orchestrator: separation of duties, the stage composition, the
+    complexity gate, the artifacts.
+  - `skills/steps-{plan,review,implement,verify,fix}/` — the five stages, each invocable on its own.
   - `MODEL_ROUTING.md` — role→tier→model class, the complexity gate, the escalation triggers, and
     the per-harness model bindings.
-  - `agents/` — `steps-planner`, `steps-plan-reviewer`, `steps-reconciler`, `steps-implementer`,
-    `steps-impl-reviewer`, `steps-fixer`, `steps-architect-pro`, `repo-scout`, `step-verifier`.
-  - `harnesses/` — per-harness agent manifests: `codex/`, `claude-code/`, `opencode/`, `droid/`,
-    `antigravity/`.
-- `ai-docs/` — the queried constitution: `constitution.yaml`, `decisions/`, `specs/`.
+  - `roles/`, `partials/` — **the canonical source** for the nine role briefs: per-role prose plus
+    the shared rules, included once and composed at render time.
+  - `tools/render.mjs` — renders `agents/` and every `harnesses/` manifest from `roles/`, `partials/`
+    and each harness's `profile.json`. Run `npm run render`; `npm test` runs `--check`.
+  - `agents/`, `harnesses/*/` — **rendered output**, committed because installs copy it. Never edit
+    by hand: the render check will fail and your edit will be overwritten.
+- `plugins/toolbelt/` — the habits that decide what an agent costs.
+  - `skills/parallel/`, `skills/tokensave/`, `skills/search-tools/`
+- `ai-docs/` — the queried constitution: `constitution.yaml`, `decisions/`, `specs/`. Its
+  `constitution.execution` block declares the tier ladder, the stages each tier runs, and the
+  escalation triggers.
 - `tests/` — `pcp_skill.test.js` (the `pcp` CLI), `constitution_skills.test.js` (constitution
   schema, skill frontmatter, ADR synchronization), `recipe-exec.test.js` (every documented recipe,
   executed), and `lib/repo-guard.mjs --selftest`. The default run covers those four; the mutation
@@ -44,30 +52,30 @@ suite's `skillDir` constant both point there; move the skill and both must move 
   undiscoverable.
 - Reviewer and planner agents are given no `Edit` tool. The tool model cannot scope `Write` to a
   path, so each such agent's body states the restriction instead.
-- The steps role briefs in `agents/` are canonical. The manifests under `harnesses/` are generated
-  from them and differ only in frontmatter, an H1 title line, and harness tool names (Droid's
-  `Create` and `Execute` for `Write` and `Bash`). A role change belongs in `agents/` first, then is
-  regenerated into `harnesses/`.
+- A role change belongs in `plugins/steps/roles/<role>.md`, or in `partials/` when it is a rule every
+  role shares. Tool names, models and capability fields belong in a harness's `profile.json`, never
+  in a rendered file: each harness's write capability is derived from the role's `writes` class, so
+  one profile rule fixes every manifest at once.
 - Model routing is specified in `MODEL_ROUTING.md`; the `model`/`model_reasoning_effort` field of
   every harness manifest must agree with its tables.
 
 ## Execution
 
-The steps protocol governs execution: `plugins/steps/skills/steps/SKILL.md` for the phase loop,
-`plugins/steps/MODEL_ROUTING.md` for the complexity gate and the escalation ladder. The tiers and
-their escalation triggers are declared once, in `ai-docs/constitution.yaml` under
-`constitution.execution`; those docs are that block's prose. Do not restate the ladder anywhere
-else — a fifth copy is how the four drifted apart.
+The steps protocol governs execution: `plugins/steps/skills/steps/SKILL.md` composes the phases and
+`plugins/steps/MODEL_ROUTING.md` holds the complexity gate and the escalation ladder. The tiers, the
+stages each tier runs, and the escalation triggers are declared once, in `ai-docs/constitution.yaml`
+under `constitution.execution`; those docs are that block's prose. Do not restate the ladder anywhere
+else — a fifth copy is how the four drifted apart. A stage is loaded when the tier calls for it, not
+by default: implement and verify run always, the rest earn their place.
 
 ## Strict Tool Routing
 
-1. **Progressive disclosure.** No repository-wide grep, deep recursive file scans, or raw full-file
-   dumping. Inspect symbols, call graphs, and module dependencies through `tokensave` or the RTK
-   CLI; query governance through the `constitution-query` skill.
-2. **RTK fallback.** When a filtered or semantic command truncates, drops, or omits required
-   execution logs or compiler diagnostics, re-run it as `rtk proxy <cmd>` to inspect the complete
-   output.
-3. **Index staleness.** Check with `tokensave tool status`; refresh the index when modifications
-   exceed the staleness cooldown, or when a lookup fails to resolve a newly introduced export.
-4. **The gate.** Before completing a phase or committing, run the resolved verification command
-   (`npm test` here — resolution order in `MODEL_ROUTING.md`) and confirm exit code 0.
+The habits themselves live in the `toolbelt` skills — `parallel` for fan-out, `tokensave` for the
+code graph and its staleness, `search-tools` for text, structure and structured data. They are not
+restated here. What is local to this repository:
+
+- The verification command is `npm test`, and it must exit 0 before a phase is complete or anything
+  is committed. `MODEL_ROUTING.md` holds the resolution order for projects that name it differently.
+- Rendered files (`plugins/steps/agents/`, `plugins/steps/harnesses/*/`) are never edited directly.
+- Governance queries go through `constitution-query`; `ai-docs/constitution.yaml` is the source, and
+  `.pcp/` is the pcp CLI's machine-local sandbox rather than governance.

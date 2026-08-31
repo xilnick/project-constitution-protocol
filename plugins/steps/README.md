@@ -21,23 +21,21 @@ Then `/steps`, optionally with a roadmap path or a phase number to resume from:
 /steps 3
 ```
 
-## The phase loop
+## The stages
 
-Per phase, in order:
+A phase composes five stages, and only two of them always run:
 
-0. **Scout** — one `repo-scout` builds the phase's Context Digest for the planner.
-1. **Plan** — one planner writes `PLAN.md`: work items, each with a gate that fails now.
-2. **Review the plan** — two or three reviewers, one lens each, in one wave.
-3. **Reconcile** — a separate agent folds every finding into `PLAN.md` v2 and dispositions each one
-   in `RECONCILIATION.md`. Nothing is dropped silently.
-4. **Implement** — one implementer executes v2 item by item.
-5. **Review the implementation** — reviewers in one wave, one lens each, reading the actual files.
-6. **Code-review pass** — reuse, simplification, efficiency, dead state.
-7. **Fix** — one agent per area, in parallel, under strict file ownership.
-8. **Verify yourself** — the orchestrator runs every gate. A green report it did not reproduce is
-   not a green gate.
-9. **Record** — roadmap and intent record updated with numbers measured this session.
-10. **Commit** — one commit per phase.
+| Stage | Skill | Produces | Runs when |
+|---|---|---|---|
+| Plan | `steps-plan` | `PLAN.md`, each item with a gate that fails now | the change is more than one command can adjudicate |
+| Review | `steps-review` | `REVIEW-<lens>.md`, `RECONCILIATION.md`, `IMPL-REVIEW-<lens>.md` | a gate could pass while the work is wrong |
+| Implement | `steps-implement` | code | always |
+| Verify | `steps-verify` | gate-results report | always |
+| Fix | `steps-fix` | code, one agent per area | a review returned a blocker, or the circuit breaker tripped |
+
+Which stages a phase runs is declared in `ai-docs/constitution.yaml` under
+`constitution.execution`, with the prose in [`MODEL_ROUTING.md`](MODEL_ROUTING.md). Each stage is
+invocable on its own, so `steps-verify` alone is a legitimate way to use this plugin.
 
 ## Artifacts
 
@@ -63,10 +61,13 @@ pausing moves it whole into `iterations/<timestamp>-<slug>/` so a new one can st
 
 `steps-planner`, `steps-plan-reviewer`, `steps-reconciler`, `steps-implementer`,
 `steps-impl-reviewer`, `steps-fixer`, `steps-architect-pro`, `repo-scout`, `step-verifier`. Each is
-a standing brief for its role and can be dispatched directly, not only through `/steps`.
-`repo-scout` builds the pre-planning Context Digest; `step-verifier` runs the gates independently
-after implementation; `steps-architect-pro` is the heavy Tier-2 planner for architectural phases
-and a plan-review critic on Tier 1.5 (Middle) phases, and it never writes code.
+a standing brief for its role and can be dispatched directly, not only through a stage.
+
+The briefs are **rendered**: `roles/` holds each role's own prose, `partials/` holds the rules they
+share, and `tools/render.mjs` composes `agents/` and every manifest under `harnesses/` from those
+plus each harness's `profile.json`. Edit the source, run `npm run render`; `npm test` fails if the
+committed output drifts. A role's write class in the source is what decides its tool surface,
+permission map or sandbox on each harness — one place, five harnesses.
 
 ## Model routing and harnesses
 

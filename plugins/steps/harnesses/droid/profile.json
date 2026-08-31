@@ -1,0 +1,32 @@
+{
+  "key": "droid",
+  "label": "Factory Droid",
+  "out": "harnesses/droid/droids/{name}.md",
+  "format": "md",
+  "h1": true,
+  "vars": { "write_tool": "Create", "exec_tool": "Execute" },
+  "toolStyle": "csv",
+  "tools": {
+    "none":   ["Read","LS","Grep","Glob","WebSearch","TodoWrite","Execute"],
+    "report": ["Read","LS","Grep","Glob","WebSearch","TodoWrite","Execute","Create"],
+    "code":   ["Read","LS","Grep","Glob","Create","Edit","Execute","TodoWrite","WebSearch"]
+  },
+  "fields": ["name","description","tools","model","reasoningEffort","color"],
+  "skillCopy": {
+    "from": "skills/steps/SKILL.md",
+    "to": "harnesses/droid/skills/steps/SKILL.md",
+    "overlay": "harnesses/droid/overlay.md",
+    "before": "## Rules that were paid for"
+  },
+  "models": {
+    "repo-scout": { "model": "custom:~deepseek/deepseek-v4-flash-latest", "effort": "low" },
+    "steps-planner": { "model": "custom:z-ai/glm-5.3-flash-0", "effort": "medium" },
+    "steps-reconciler": { "model": "custom:z-ai/glm-5.3-flash-0", "effort": "medium" },
+    "steps-plan-reviewer": { "model": "custom:minimax/minimax-m3-0", "effort": "high" },
+    "steps-impl-reviewer": { "model": "custom:minimax/minimax-m3-0", "effort": "high" },
+    "steps-implementer": { "model": "custom:~deepseek/deepseek-v4-flash-latest", "effort": "medium" },
+    "steps-architect-pro": { "model": "custom:qwen/qwen-3.8-max-0", "effort": "high" },
+    "step-verifier": { "model": "custom:minimax/minimax-m3-0", "effort": "medium" },
+    "steps-fixer": { "model": "custom:deepseek/deepseek-v4-pro-0813-0", "effort": "high" }
+  }
+}

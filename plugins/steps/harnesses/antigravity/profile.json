@@ -1,0 +1,27 @@
+{
+  "key": "antigravity",
+  "label": "Antigravity",
+  "out": "harnesses/antigravity/.agents/agents/{name}.md",
+  "format": "md",
+  "h1": true,
+  "vars": { "write_tool": "replace_file_content", "exec_tool": "run_command" },
+  "toolStyle": "list",
+  "tools": {
+    "none":   ["view_file","grep_search","run_command"],
+    "report": ["view_file","grep_search","run_command","replace_file_content"],
+    "code":   ["view_file","grep_search","run_command","replace_file_content"]
+  },
+  "fields": ["name","description","tools","subagent","mainAgent","model","permissionMode","commandExecutionPolicy"],
+  "static": { "subagent": true, "mainAgent": false, "permissionMode": "acceptEdits", "commandExecutionPolicy": "eager" },
+  "models": {
+    "repo-scout": { "model": "flash" },
+    "steps-planner": { "model": "flash" },
+    "steps-reconciler": { "model": "flash" },
+    "steps-plan-reviewer": { "model": "pro" },
+    "steps-impl-reviewer": { "model": "pro" },
+    "steps-implementer": { "model": "flash" },
+    "steps-architect-pro": { "model": "pro" },
+    "step-verifier": { "model": "pro" },
+    "steps-fixer": { "model": "pro" }
+  }
+}
