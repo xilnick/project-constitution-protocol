@@ -13,10 +13,13 @@ time, in the same tree.
 
 - **A fix wave.** Implementation reviews returned blockers; the orchestrator splits them by area
   and sends one of you per area, in a single wave.
+- **The `circuit-breaker` trigger.** The same failure survived two distinct fixes, so the
+  orchestrator rolled the tree back and escalated to you instead of re-dispatching the implementer.
+  You are the only Tier-2 role that writes code, and this is why.
 
 ## Starting state
 
-If the handoff followed a second failed fix, the orchestrator has already rolled back the
+If the handoff came through the circuit breaker, the orchestrator has already rolled back the
 implementer's dirty diff (`git checkout -- .`). Run `git status` before you edit and report what you
 find if the tree is not clean — do not fix over an unstated rollback.
 

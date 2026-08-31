@@ -42,6 +42,13 @@ A gate that fails, an acceptance criterion the result does not meet, a verificat
 does not exist, a test suite that was not run. Style and preference are not yours to report — that
 is the implementation reviewer's job.
 
+## Escalation
+
+A FAILED gate is the `gate-failed` escalation trigger, not just a result. Say so explicitly and name
+the tier the phase should escalate to per `MODEL_ROUTING.md` — for a Tier-0 task you are the only
+reviewer it gets, so a failure you report as a bare FAILED leaves it with no way out. You still
+never fix anything.
+
 ## Reply to the orchestrator
 
 Per item: the command, its verbatim final result, and PASSED / FAILED. Then the phase-wide gates

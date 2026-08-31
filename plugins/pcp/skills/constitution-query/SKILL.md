@@ -98,6 +98,17 @@ yq '.spec | keys' ai-docs/specs/auth-spec.yaml
 yq '.spec.endpoints[] | select(.path == "/api/v1/auth/login")' ai-docs/specs/auth-spec.yaml
 ```
 
+### 7. Execution Gate & Tier Ladder
+Query the verification command every phase must pass, and one tier of the execution ladder. Never
+retrieve `.constitution.execution` whole — the full block exceeds the payload bound:
+```bash
+# The gate
+yq '.constitution.verification_command' ai-docs/constitution.yaml
+
+# One tier: what it routes to, and where a failure escalates
+yq '.constitution.execution.tiers[] | select(.id == "tier-0")' ai-docs/constitution.yaml
+```
+
 ---
 
 ## Invariants & Guardrails

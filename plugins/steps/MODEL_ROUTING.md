@@ -25,30 +25,52 @@ binding table below.
 
 ## Complexity gate
 
-The orchestrator routes **planning** per phase, never per item:
+The orchestrator routes **planning** per phase, never per item. The ladder itself is declared in
+`ai-docs/constitution.yaml` under `constitution.execution.tiers`; this table is its prose.
 
-- **Tier 0 (Fast-Track / Planning Bypass)** — Micro or trivial edits such as typos, single-line or isolated bug fixes, or simple documentation/config tweaks. Tier 0 completely bypasses the multi-agent planning and review waves, routing execution directly to `steps-implementer` (Tier 1 fast cheap coder), immediately followed by the automated verification gate (`verification_command`). The orchestrator never touches code directly.
-- **Tier 1 (Standard)** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (Tier 1).
-- **Tier 1.5 (Middle)** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
-  plan-review lens (critic, never author), keeping the wave at three reviewers or fewer.
-- **Tier 2 (Architectural)** — DB migration, protocol change, cross-cutting refactor, distributed logic or
-  race-condition reasoning: `steps-architect-pro` (Tier 2). Rare by design; routing the architect
-  for a standard phase is a defect, not thoroughness.
+| Tier | Entry | Plans with | Escalates to |
+|---|---|---|---|
+| **Tier 0 (Fast-Track / Planning Bypass)** | a typo, an isolated single-line fix, a doc or config tweak | nobody — straight to `steps-implementer`, then the verification gate | Tier 1 |
+| **Tier 1 (Standard)** | CRUD, a component edit, a local fix, a dependency bump | `steps-planner` | Tier 1.5 |
+| **Tier 1.5 (Middle)** | more than standard, short of architectural | `steps-planner`, plus `steps-architect-pro` as one extra plan-review lens — critic, never author, wave kept to three reviewers or fewer | Tier 2 |
+| **Tier 2 (Architectural)** | DB migration, protocol change, cross-cutting refactor, distributed logic or race-condition reasoning | `steps-architect-pro` | — |
 
-Implementation is **always** `steps-implementer` (Tier 1). The only Tier-2 model that writes code
-is `steps-fixer`, and only as the deadlock escape: the same failure has survived two distinct
-fixes, the implementer stops and reports verbatim, and the orchestrator escalates instead of
-re-dispatching the flash coder.
+Tier 2 is rare by design: routing the architect for a standard phase is a defect, not thoroughness.
+Implementation is **always** `steps-implementer` (Tier 1). The only Tier-2 model that writes code is
+`steps-fixer`, and only as the deadlock escape.
 
-### Dynamic Workflow Escalation & Composable Pipelines
+### Escalation
 
-The execution loop scales dynamically based on runtime signals rather than rigid ceremony:
-1. **Incremental Escalation Ladder**: Tasks begin at the lowest viable tier (e.g. Tier 0 direct implementation for fast fixes). If the automated verification gate fails or surfaces unpredicted architectural coupling, the orchestrator escalates execution up the ladder to Tier 1 (structured planning), Tier 1.5 (plan review + architect critique), or Tier 2 (full architectural wave).
-2. **Dynamic Circuit Breaker**: If implementation encounters two consecutive failing gate attempts, the dirty tree is reverted (`git checkout -- .`) and escalated to `steps-fixer` (Tier 2) or `steps-architect-pro` for re-planning.
-3. **Composable Phase Building Blocks**: Roles can be combined as needed for the problem:
-   - *Direct Implement & Verify*: `steps-implementer` ➔ `verification_command`.
-   - *Plan & Execute*: `steps-planner` ➔ `steps-implementer` ➔ `step-verifier`.
-   - *Full Reconciled Wave*: `steps-planner`/`steps-architect-pro` ➔ Reviewers (2-3 lenses) ➔ `steps-reconciler` ➔ `steps-implementer` ➔ `steps-impl-reviewer` ➔ `step-verifier`.
+A phase starts at the lowest tier its entry criterion admits, and climbs when a runtime signal says
+that tier was the wrong bet. The triggers are declared in
+`constitution.execution.escalation_triggers`:
+
+| Trigger | Detected by | Action |
+|---|---|---|
+| `gate-failed` | `step-verifier` | report the failing gate verbatim and name the tier to escalate to; never fix it |
+| `hidden-coupling` | `steps-implementer` | stop varying details, report the verbatim error, request escalation |
+| `circuit-breaker` | orchestrator | on the second distinct failure, roll back (`git checkout -- .`) and dispatch `steps-fixer` |
+
+Escalating adds the roles the tier was missing rather than restarting the phase: a Tier-0 task whose
+gate fails becomes a Tier-1 phase with a plan; a Tier-1 phase that surfaces an invariant nobody
+planned for gains the architect as a critic lens. Roles compose to the tier, not the other way
+round — `steps-implementer` ➔ gate at Tier 0, `steps-planner` ➔ `steps-implementer` ➔
+`step-verifier` at Tier 1, the full reconciled wave above it.
+
+The orchestrator records the tier it chose, and any escalation with its trigger, in
+`ORCHESTRATOR-LOG.md`. For a Tier-0 task that log line is the only artifact, so it is not optional.
+
+### The verification gate
+
+Tier 0's only reviewer is the verification command, so it has to resolve to something real. Resolve
+it in the order declared in `constitution.execution.verification_command_resolution`:
+
+1. `constitution.verification_command` in `ai-docs/constitution.yaml`.
+2. The gate command named in `.factory/CONSTITUTION.md` or `CONSTITUTION.md`.
+3. The project's own test script (`npm test` or equivalent).
+
+If none of the three resolves, Tier 0 is unavailable: the phase starts at Tier 1, where the plan
+supplies per-item gates instead.
 
 ## Hard rules
 
@@ -57,12 +79,9 @@ The execution loop scales dynamically based on runtime signals rather than rigid
   findings — never raw file dumps. Tier-2 returns structured reasoning plus the plan.
 - Every agent runs each gate read-only and records its current (failing) output as evidence; no
   gate is reported as passing before implementation.
-- Constitution check (graceful degradation): the plan reviewer checks `.factory/CONSTITUTION.md`
-  or `CONSTITUTION.md` if present — a violation is a blocker; if absent, it falls back to a basic
-  engineering audit without failing the pipeline.
-- Circuit breaker with git checkpoints: record git state before each step; on the second distinct
-  failure, roll back (`git checkout -- .`) and escalate to `steps-fixer` with the full logs. This
-  is distinct from the normal fix wave for reviewer-found blockers.
+- Constitution check (graceful degradation): the plan reviewer checks `ai-docs/constitution.yaml`,
+  `.factory/CONSTITUTION.md` or `CONSTITUTION.md` if present — a violation is a blocker; if none
+  exists, it falls back to a basic engineering audit without failing the pipeline.
 
 ## Per-harness bindings
 

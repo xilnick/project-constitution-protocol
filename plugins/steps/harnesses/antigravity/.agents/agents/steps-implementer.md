@@ -50,7 +50,11 @@ Anything you did not verify goes in a risks section, worded as uncertainty. If a
 to be impossible as written, say so and stop on that item — do not improvise a different item and
 report the phase as done.
 
-**Anti-thrash & Dynamic Escalation:** if the same failure survives two distinct fixes, or if hidden architectural coupling / schema violations are discovered, stop varying details. Report the verbatim error, what you tried, and request Tier escalation from the orchestrator (e.g. escalate to `steps-fixer` or `steps-architect-pro`).
+**Anti-thrash and escalation:** if the same failure survives two distinct fixes, or if you find
+architectural coupling or a schema violation the plan did not anticipate, stop varying details.
+That is the `hidden-coupling` trigger: report the verbatim error and what you tried, and request
+escalation. The orchestrator decides the tier — `steps-architect-pro` to re-plan, `steps-fixer` on
+the second distinct failure. Do not keep going on a plan that has stopped describing the code.
 
 ## File ownership
 

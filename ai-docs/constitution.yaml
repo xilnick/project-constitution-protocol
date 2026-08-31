@@ -23,6 +23,42 @@ constitution:
         domain: "hygiene"
         rule: "Context exploration must use progressive disclosure via tokensave or RTK tools; broad repository-wide grep or full-file dumping is prohibited."
         enforcement: "strict"
+  execution:
+    verification_command_resolution:
+      - "constitution.verification_command in ai-docs/constitution.yaml"
+      - "the gate command named in .factory/CONSTITUTION.md or CONSTITUTION.md"
+      - "the project's own test script (npm test or equivalent)"
+    tiers:
+      - id: "tier-0"
+        label: "Tier 0 (Fast-Track / Planning Bypass)"
+        entry: "Micro or trivial edit: a typo, an isolated single-line fix, a documentation or config tweak."
+        routes: ["steps-implementer", "verification_command"]
+        escalates_to: "tier-1"
+      - id: "tier-1"
+        label: "Tier 1 (Standard)"
+        entry: "CRUD, a component edit, a local fix, a dependency bump."
+        routes: ["steps-planner", "steps-implementer", "step-verifier"]
+        escalates_to: "tier-1.5"
+      - id: "tier-1.5"
+        label: "Tier 1.5 (Middle)"
+        entry: "More than standard, short of architectural: plan cheap, then add the architect as one critic lens."
+        routes: ["steps-planner", "steps-architect-pro", "steps-implementer", "step-verifier"]
+        escalates_to: "tier-2"
+      - id: "tier-2"
+        label: "Tier 2 (Architectural)"
+        entry: "DB migration, protocol change, cross-cutting refactor, distributed logic or race-condition reasoning."
+        routes: ["steps-architect-pro", "steps-implementer", "steps-fixer"]
+        escalates_to: null
+    escalation_triggers:
+      - id: "gate-failed"
+        detected_by: "step-verifier"
+        action: "Report the failing gate verbatim and name the tier to escalate to; never fix it."
+      - id: "hidden-coupling"
+        detected_by: "steps-implementer"
+        action: "Stop varying details, report the verbatim error, and request escalation."
+      - id: "circuit-breaker"
+        detected_by: "orchestrator"
+        action: "On the second distinct failure roll back with git checkout -- . and dispatch steps-fixer."
 
 decisions:
   - id: "d-8f3a"

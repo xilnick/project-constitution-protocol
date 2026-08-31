@@ -15,6 +15,8 @@ export const CAVEAT_ID = CONSTITUTION.caveats[0].id;
 export const REQUIREMENT_ID = CONSTITUTION.requirements[0].id;
 export const DEFERRED_ID = CONSTITUTION.deferred[0].id;
 export const SPEC_ENDPOINT = AUTH_SPEC.spec.endpoints[0].path;
+export const VERIFICATION_COMMAND = CONSTITUTION.constitution.verification_command;
+export const TIER_0_ESCALATES_TO = CONSTITUTION.constitution.execution.tiers[0].escalates_to;
 export const SPEC_SECTION = 'security_invariants';
 
 // ---------------------------------------------------------------------------
@@ -61,11 +63,107 @@ export const ADR_TEMPLATE_HEADINGS = [
   { level: 3, text: 'Negative / Caveats' },
 ];
 
+// Property access, not a second list: a tier renamed in the golden constitution renames it here.
 export const COMPLEXITY_TIERS = [
-  'Tier 0 (Fast-Track / Planning Bypass)',
-  'Tier 1 (Standard)',
-  'Tier 1.5 (Middle)',
-  'Tier 2 (Architectural)',
+  CONSTITUTION.constitution.execution.tiers[0].label,
+  CONSTITUTION.constitution.execution.tiers[1].label,
+  CONSTITUTION.constitution.execution.tiers[2].label,
+  CONSTITUTION.constitution.execution.tiers[3].label,
+];
+
+// The declared ladder, reached by property access so there is one copy of it in the suite.
+export const EXECUTION_TIERS = CONSTITUTION.constitution.execution.tiers;
+export const ESCALATION_TRIGGERS = CONSTITUTION.constitution.execution.escalation_triggers;
+
+// Where each escalation trigger must be named. The orchestrator has no brief; the protocol is its brief.
+export const ESCALATION_TRIGGER_BRIEFS = {
+  'step-verifier': 'plugins/steps/agents/step-verifier.md',
+  'steps-implementer': 'plugins/steps/agents/steps-implementer.md',
+  orchestrator: 'plugins/steps/skills/steps/SKILL.md',
+};
+
+// A harness skill copy is the canonical protocol verbatim plus exactly one extra section.
+export const HARNESS_SKILL_OVERLAYS = [
+  {
+    path: 'plugins/steps/harnesses/droid/skills/steps/SKILL.md',
+    canonical: 'plugins/steps/skills/steps/SKILL.md',
+    overlayHeading: 'Droid specifics',
+  },
+];
+
+// The model bindings, declared here so the manifests and MODEL_ROUTING.md are graded against a
+// third thing rather than against each other.
+export const HARNESS_BINDINGS = [
+  {
+    key: 'droid',
+    heading: 'Droid (`harnesses/droid/`)',
+    manifest: 'plugins/steps/harnesses/droid/droids/%s.md',
+    roles: {
+      'repo-scout': { model: 'custom:~deepseek/deepseek-v4-flash-latest', effort: 'low' },
+      'steps-planner': { model: 'custom:z-ai/glm-5.3-flash-0', effort: 'medium' },
+      'steps-reconciler': { model: 'custom:z-ai/glm-5.3-flash-0', effort: 'medium' },
+      'steps-plan-reviewer': { model: 'custom:minimax/minimax-m3-0', effort: 'high' },
+      'steps-impl-reviewer': { model: 'custom:minimax/minimax-m3-0', effort: 'high' },
+      'steps-implementer': { model: 'custom:~deepseek/deepseek-v4-flash-latest', effort: 'medium' },
+      'steps-architect-pro': { model: 'custom:qwen/qwen-3.8-max-0', effort: 'high' },
+      'step-verifier': { model: 'custom:minimax/minimax-m3-0', effort: 'medium' },
+      'steps-fixer': { model: 'custom:deepseek/deepseek-v4-pro-0813-0', effort: 'high' },
+    },
+  },
+  {
+    key: 'codex',
+    heading: 'Codex CLI (`harnesses/codex/`)',
+    manifest: 'plugins/steps/harnesses/codex/.codex/agents/%s.toml',
+    roles: {
+      'repo-scout': { model: 'gpt-5.6-luna', effort: 'low' },
+      'steps-planner': { model: 'gpt-5.6-terra', effort: 'medium' },
+      'steps-reconciler': { model: 'gpt-5.6-terra', effort: 'medium' },
+      'steps-plan-reviewer': { model: 'gpt-5.6-terra', effort: 'high' },
+      'steps-impl-reviewer': { model: 'gpt-5.6-terra', effort: 'high' },
+      'steps-implementer': { model: 'gpt-5.6-luna', effort: 'medium' },
+      'steps-architect-pro': { model: 'gpt-5.6', effort: 'high' },
+      'step-verifier': { model: 'gpt-5.6-terra', effort: 'medium' },
+      'steps-fixer': { model: 'gpt-5.6', effort: 'max' },
+    },
+  },
+  {
+    key: 'opencode',
+    heading: 'OpenCode (`harnesses/opencode/`)',
+    manifest: 'plugins/steps/harnesses/opencode/.opencode/agents/%s.md',
+    roles: {
+      'repo-scout': { model: 'anthropic/claude-haiku-4-20250514', effort: null },
+      'steps-planner': { model: 'anthropic/claude-haiku-4-20250514', effort: null },
+      'steps-reconciler': { model: 'anthropic/claude-haiku-4-20250514', effort: null },
+      'steps-plan-reviewer': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
+      'steps-impl-reviewer': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
+      'steps-implementer': { model: 'openai/gpt-5.1-codex', effort: null },
+      'steps-architect-pro': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
+      'step-verifier': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
+      'steps-fixer': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
+    },
+  },
+  {
+    key: 'antigravity',
+    heading: 'Antigravity (`harnesses/antigravity/`)',
+    manifest: 'plugins/steps/harnesses/antigravity/.agents/agents/%s.md',
+    roles: {
+      'repo-scout': { model: 'flash', effort: null },
+      'steps-planner': { model: 'flash', effort: null },
+      'steps-reconciler': { model: 'flash', effort: null },
+      'steps-plan-reviewer': { model: 'pro', effort: null },
+      'steps-impl-reviewer': { model: 'pro', effort: null },
+      'steps-implementer': { model: 'flash', effort: null },
+      'steps-architect-pro': { model: 'pro', effort: null },
+      'step-verifier': { model: 'pro', effort: null },
+      'steps-fixer': { model: 'pro', effort: null },
+    },
+  },
+];
+
+// The docs that must carry the tier labels and nothing else about the ladder.
+export const TIER_TABLE_DOCS = [
+  { path: 'plugins/steps/skills/steps/SKILL.md', heading: 'Model routing' },
+  { path: 'plugins/steps/harnesses/droid/skills/steps/SKILL.md', heading: 'Model routing' },
 ];
 
 export const LABEL_RESIDUAL_RE = /middle-complexity|\*\*Middle\*\*/;
@@ -89,13 +187,11 @@ export const LIVE_CHECKS = [
   'D:ci-impact.u', 'D:ci-body.1', 'D:ci-status.1',
   'D:cq-security.3', 'D:cq-decision.2', 'D:cq-caveat.2',
   'D:cq-requirement.3', 'D:cq-deferred.2',
-  'D:rd-security.2', 'D:rd-decision.2', 'D:rd-caveat.2',
-  'D:rd-requirement.2', 'D:rd-deferred.2',
-  'X2', 'X3', 'X4', 'X5', 'X7', 'X8', 'X9', 'X10', 'X12',
+  'X2', 'X3', 'X4', 'X5', 'X7', 'X8', 'X9', 'X12',
 ];
 
-export const DOC_CHECK_COUNT = 69;
-export const FULL_CHECK_COUNT = 100;
+export const DOC_CHECK_COUNT = 63;
+export const FULL_CHECK_COUNT = 88;
 
 // ---------------------------------------------------------------------------
 // The five recipe-bearing files
@@ -280,6 +376,20 @@ export const RUNNABLE_RECIPES = [
   },
 
   {
+    id: 'cq-execution', file: 'constitution-query', fenceIndex: 6, unit: false,
+    commands: [
+      {
+        text: "yq '.constitution.verification_command' ai-docs/constitution.yaml",
+        assert: [{ contains: VERIFICATION_COMMAND }, { maxTokens: TOKEN_BUDGET }],
+      },
+      {
+        text: "yq '.constitution.execution.tiers[] | select(.id == \"tier-0\")' ai-docs/constitution.yaml",
+        assert: [{ contains: TIER_0_ESCALATES_TO }, { maxTokens: TOKEN_BUDGET }],
+      },
+    ],
+  },
+
+  {
     id: 'adr-verify', file: 'adr-manager', fenceIndex: 2, unit: true,
     commands: [{
       text: [
@@ -304,78 +414,6 @@ export const RUNNABLE_RECIPES = [
     }],
   },
 
-  {
-    id: 'rd-security', file: 'ai-docs-README', fenceIndex: 0, unit: false,
-    commands: [
-      {
-        text: "yq '.constitution.security.rules[] | select(.domain == \"auth\")' ai-docs/constitution.yaml",
-        assert: [{ contains: SEC_RULE_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-      {
-        text: "yq -o=json ai-docs/constitution.yaml | jq '.constitution.security.rules[] | select(.domain == \"auth\")'",
-        assert: [{ contains: SEC_RULE_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-    ],
-  },
-  {
-    id: 'rd-decision', file: 'ai-docs-README', fenceIndex: 1, unit: false,
-    commands: [
-      {
-        text: "yq '.decisions[] | select(.id == \"d-8f3a\")' ai-docs/constitution.yaml",
-        assert: [{ contains: DECISION_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-      {
-        text: "yq -o=json ai-docs/constitution.yaml | jq '.decisions[] | select(.id == \"d-8f3a\")'",
-        assert: [{ contains: DECISION_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-    ],
-  },
-  {
-    id: 'rd-caveat', file: 'ai-docs-README', fenceIndex: 2, unit: false,
-    commands: [
-      {
-        text: "yq '.caveats[] | select(.id == \"c-e9a2\")' ai-docs/constitution.yaml",
-        assert: [{ contains: CAVEAT_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-      {
-        text: "yq -o=json ai-docs/constitution.yaml | jq '.caveats[] | select(.id == \"c-e9a2\")'",
-        assert: [{ contains: CAVEAT_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-    ],
-  },
-  {
-    id: 'rd-requirement', file: 'ai-docs-README', fenceIndex: 3, unit: false,
-    commands: [
-      {
-        text: "yq '.requirements[] | select(.cluster == \"billing\")' ai-docs/constitution.yaml",
-        assert: [{ contains: REQUIREMENT_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-      {
-        text: "yq -o=json ai-docs/constitution.yaml | jq '.requirements[] | select(.cluster == \"billing\")'",
-        assert: [{ contains: REQUIREMENT_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-    ],
-  },
-  {
-    id: 'rd-deferred', file: 'ai-docs-README', fenceIndex: 4, unit: false,
-    commands: [
-      {
-        text: "yq '.deferred[] | select(.id == \"l-e404\")' ai-docs/constitution.yaml",
-        assert: [{ contains: DEFERRED_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-      {
-        text: "yq -o=json ai-docs/constitution.yaml | jq '.deferred[] | select(.id == \"l-e404\")'",
-        assert: [{ contains: DEFERRED_ID }, { maxTokens: TOKEN_BUDGET }],
-      },
-    ],
-  },
-  {
-    id: 'rd-spec', file: 'ai-docs-README', fenceIndex: 5, unit: false,
-    commands: [
-      { text: CQ_SPEC_KEYS, assert: [{ contains: SPEC_SECTION }, { maxTokens: TOKEN_BUDGET }] },
-      { text: CQ_SPEC_ENDPOINT, assert: [{ contains: SPEC_ENDPOINT }, { maxTokens: TOKEN_BUDGET }] },
-    ],
-  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -407,7 +445,6 @@ export const COMMAND_SPANS = [
   { check: 'X7', file: 'AGENTS', text: 'tokensave', occurrence: 1, kind: 'binary', cli: 'tokensave' },
   { check: 'X8', file: 'AGENTS', text: 'rtk proxy <cmd>', kind: 'verb', cli: 'rtk', verb: 'proxy' },
   { check: 'X9', file: 'AGENTS', text: 'tokensave tool status', kind: 'verb-tool', cli: 'tokensave', verb: 'tool', tool: 'status' },
-  { check: 'X10', file: 'AGENTS', text: 'tokensave', occurrence: 2, kind: 'binary', cli: 'tokensave' },
   { check: 'X11', file: 'ai-docs-README', text: 'yq', kind: 'binary', cli: 'yq' },
   { check: 'X12', file: 'ai-docs-README', text: 'jq', kind: 'binary', cli: 'jq' },
   { check: 'X13', file: 'ai-docs-README', text: 'npm test', kind: 'npm-script', cli: 'npm', verb: 'test' },

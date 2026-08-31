@@ -24,6 +24,11 @@ import {
   COMMAND_SPANS,
   COMMAND_SPAN_CLIS,
   COMPLEXITY_TIERS,
+  ESCALATION_TRIGGERS,
+  ESCALATION_TRIGGER_BRIEFS,
+  EXECUTION_TIERS,
+  HARNESS_BINDINGS,
+  HARNESS_SKILL_OVERLAYS,
   DOC_CHECK_COUNT,
   DOC_TOOLS,
   FULL_CHECK_COUNT,
@@ -45,6 +50,7 @@ import {
   TOKENSAVE_VERBS,
   TOKEN_BUDGET,
   TOKEN_BUDGET_DOC_SITES,
+  TIER_TABLE_DOCS,
   TOKEN_BUDGET_GATE_SITES,
 } from './fixtures/recipes.mjs';
 
@@ -415,8 +421,13 @@ function sectionLines(doc, headingText) {
   return doc.bodyLines.slice(h.index + 1, next ? next.index : doc.bodyLines.length);
 }
 
+// Both shapes the docs use: a `- **Tier N (...)**` bullet and a `| **Tier N (...)** |` table row.
+// Restricted to tier labels so a section may also carry ordinary bolded bullets.
 function tierLabels(lines) {
-  return lines.map((l) => /^- \*\*(.+?)\*\*/.exec(l)).filter(Boolean).map((m) => m[1]);
+  return lines
+    .map((l) => /^(?:- |\| )\*\*(Tier .+?)\*\*/.exec(l.trim()))
+    .filter(Boolean)
+    .map((m) => m[1]);
 }
 
 function markdownFilesUnder(dir, skip) {
@@ -431,6 +442,10 @@ function markdownFilesUnder(dir, skip) {
   };
   walk(dir);
   return out;
+}
+
+function escapeForRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function countMatches(text, re) {
@@ -814,9 +829,25 @@ add('E3a', 'MODEL_ROUTING.md complexity gate lists the declared tiers', () => {
   if (!eqArray(labels, COMPLEXITY_TIERS)) throw new Error(`labels ${JSON.stringify(labels)} !== ${JSON.stringify(COMPLEXITY_TIERS)}`);
 });
 
-add('E3b', 'AGENTS.md adaptive complexity gate lists the declared tiers', () => {
-  const labels = tierLabels(sectionLines(docFor('AGENTS'), 'Adaptive Complexity Gate'));
-  if (!eqArray(labels, COMPLEXITY_TIERS)) throw new Error(`labels ${JSON.stringify(labels)} !== ${JSON.stringify(COMPLEXITY_TIERS)}`);
+add('E3b', 'AGENTS.md points at the declared ladder instead of restating it', () => {
+  const text = fs.readFileSync(repoPath('AGENTS.md'), 'utf8');
+  const restated = COMPLEXITY_TIERS.filter((label) => text.includes(label));
+  if (restated.length) throw new Error(`AGENTS.md restates ${JSON.stringify(restated)}`);
+  const bare = countMatches(text, /\bTier [0-9]/g);
+  if (bare) throw new Error(`AGENTS.md names a tier ${bare} time(s); the ladder lives in one place`);
+  for (const pointer of ['constitution.execution', 'plugins/steps/MODEL_ROUTING.md']) {
+    if (!text.includes(pointer)) throw new Error(`AGENTS.md does not point at ${pointer}`);
+  }
+});
+
+add('E3d', 'every tier table carries exactly the declared labels', () => {
+  for (const d of TIER_TABLE_DOCS) {
+    const doc = parseDoc(fs.readFileSync(repoPath(d.path), 'utf8'));
+    const labels = tierLabels(sectionLines(doc, d.heading));
+    if (!eqArray(labels, COMPLEXITY_TIERS)) {
+      throw new Error(`${d.path} lists ${JSON.stringify(labels)} !== ${JSON.stringify(COMPLEXITY_TIERS)}`);
+    }
+  }
 });
 
 add('E3c', 'the old routing vocabulary survives only where Phase 3 owns it', () => {
@@ -830,6 +861,65 @@ add('E3c', 'the old routing vocabulary survives only where Phase 3 owns it', () 
     .reduce((n, f) => n + countMatches(fs.readFileSync(f, 'utf8'), LABEL_RESIDUAL_RE), 0);
   if (canonical !== CANONICAL_LABEL_RESIDUAL) throw new Error(`canonical residual ${canonical}, declared ${CANONICAL_LABEL_RESIDUAL}`);
   if (harness !== HARNESS_LABEL_RESIDUAL) throw new Error(`harness residual ${harness}, declared ${HARNESS_LABEL_RESIDUAL}`);
+});
+
+add('E5', 'the ladder has an exit and every trigger is named in the brief that detects it', () => {
+  const ids = EXECUTION_TIERS.map((tier) => tier.id);
+  const dangling = EXECUTION_TIERS.filter((tier) => tier.escalates_to !== null && !ids.includes(tier.escalates_to));
+  if (dangling.length) throw new Error(`tier(s) escalate nowhere declared: ${JSON.stringify(dangling.map((t) => t.id))}`);
+  if (EXECUTION_TIERS.filter((tier) => tier.escalates_to === null).length !== 1) {
+    throw new Error('the ladder must have exactly one top tier');
+  }
+  for (const trigger of ESCALATION_TRIGGERS) {
+    const brief = ESCALATION_TRIGGER_BRIEFS[trigger.detected_by];
+    if (!brief) throw new Error(`no brief declared for detected_by '${trigger.detected_by}'`);
+    if (!fs.readFileSync(repoPath(brief), 'utf8').includes(trigger.id)) {
+      throw new Error(`${brief} never names the '${trigger.id}' trigger it is declared to detect`);
+    }
+  }
+});
+
+add('E6', 'each harness skill copy is the canonical protocol plus its declared overlay', () => {
+  for (const o of HARNESS_SKILL_OVERLAYS) {
+    const canonical = fs.readFileSync(repoPath(o.canonical), 'utf8');
+    const copy = fs.readFileSync(repoPath(o.path), 'utf8');
+    const heading = `## ${o.overlayHeading}`;
+    const start = copy.indexOf(heading);
+    if (start < 0) throw new Error(`${o.path} has no '${heading}' section`);
+    const next = copy.indexOf('\n## ', start);
+    if (next < 0) throw new Error(`${o.path}: the overlay is the last section, so nothing follows it`);
+    const stripped = copy.slice(0, start) + copy.slice(next + 1);
+    if (stripped !== canonical) throw new Error(`${o.path} minus its overlay is not ${o.canonical} verbatim`);
+  }
+});
+
+add('E7', 'each harness manifest and MODEL_ROUTING.md agree with the declared binding', () => {
+  const doc = parseDoc(fs.readFileSync(repoPath('plugins/steps/MODEL_ROUTING.md'), 'utf8'));
+  for (const h of HARNESS_BINDINGS) {
+    const rows = sectionLines(doc, h.heading).filter((l) => l.trim().startsWith('|')).slice(2);
+    const inDoc = new Map();
+    for (const row of rows) {
+      const cells = row.split('|').slice(1, -1).map((c) => c.trim());
+      const model = /`([^`]+)`/.exec(cells[1] ?? '')?.[1] ?? null;
+      const effort = cells.length > 2 ? (/`([^`]+)`/.exec(cells[2] ?? '')?.[1] ?? null) : null;
+      for (const m of cells[0].matchAll(/`([^`]+)`/g)) inDoc.set(m[1], { model, effort });
+    }
+    for (const [role, want] of Object.entries(h.roles)) {
+      const row = inDoc.get(role);
+      if (!row) throw new Error(`MODEL_ROUTING.md '${h.heading}' has no row for ${role}`);
+      if (row.model !== want.model) throw new Error(`${h.key}/${role}: doc says ${row.model}, declared ${want.model}`);
+      if (row.effort !== want.effort) throw new Error(`${h.key}/${role}: doc effort ${row.effort}, declared ${want.effort}`);
+      const rel = h.manifest.replace('%s', role);
+      const text = fs.readFileSync(repoPath(rel), 'utf8');
+      if (!new RegExp(`^\\s*model\\s*[:=]\\s*"?${escapeForRegex(want.model)}"?\\s*$`, 'm').test(text)) {
+        throw new Error(`${rel} does not bind model ${want.model}`);
+      }
+      if (want.effort !== null
+        && !new RegExp(`(?:reasoningEffort|model_reasoning_effort)\\s*[:=]\\s*"?${want.effort}"?`).test(text)) {
+        throw new Error(`${rel} does not set reasoning effort ${want.effort}`);
+      }
+    }
+  }
 });
 
 add('E4', 'every stated token bound is the enforced one', () => {

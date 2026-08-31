@@ -8,8 +8,9 @@ manifests that let each harness dispatch those roles with the right model and to
   the per-harness binding tables. Every manifest's model field below must agree with it.
 - **Protocol**: `../skills/steps/SKILL.md`.
 
-The manifests were generated from the canonical briefs; only the frontmatter (tools, model, file
-format) differs per harness. The non-Droid model ids are **example defaults** — replace them with
+The manifests were generated from the canonical briefs. What differs per harness is the frontmatter
+(tools, model, file format), an H1 title line where the format wants one, and harness tool names.
+The role text itself does not. The non-Droid model ids are **example defaults** — replace them with
 the models your providers actually expose.
 
 ## Claude Code (native)
@@ -25,10 +26,19 @@ disabled. Dispatch `explore` for scouting; `repo-scout` ships for the other harn
 ```
 droid/droids/*.md            → ~/.factory/droids/
 droid/skills/steps/          → ~/.factory/skills/steps/
+../MODEL_ROUTING.md          → ~/.factory/skills/steps/
 ```
+
+The routing doc is the third line because the skill text cites it and it lives outside the copied
+subtree; without it a Droid install has a skill pointing at a file that is not there.
 
 The droid files already carry concrete `model:` ids (`custom:*`) and Droid tool names
 (`Read`, `LS`, `Grep`, `Glob`, `Create`, `Edit`, `Execute`, `WebSearch`, `TodoWrite`).
+
+`droid/skills/steps/SKILL.md` is the canonical protocol verbatim plus one `## Droid specifics`
+section — the model bindings, the tool-name mapping, and which models accept images. Droid is the
+only harness that ships its own skill copy, because it is the only one whose model ids are real
+rather than examples; edit the canonical file and re-insert the overlay, never the copy alone.
 
 ## Codex CLI (OpenAI)
 

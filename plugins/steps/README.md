@@ -25,6 +25,7 @@ Then `/steps`, optionally with a roadmap path or a phase number to resume from:
 
 Per phase, in order:
 
+0. **Scout** — one `repo-scout` builds the phase's Context Digest for the planner.
 1. **Plan** — one planner writes `PLAN.md`: work items, each with a gate that fails now.
 2. **Review the plan** — two or three reviewers, one lens each, in one wave.
 3. **Reconcile** — a separate agent folds every finding into `PLAN.md` v2 and dispositions each one
@@ -42,14 +43,21 @@ Per phase, in order:
 
 ```
 .plans/
+  INDEX.md               the iteration registry: id, created, status, goal, current phase
   PHASES.md              the phase list, with what is out of scope and why
-  ORCHESTRATOR-LOG.md    cross-phase findings, ownership decisions, per-phase status
+  ORCHESTRATOR-LOG.md    cross-phase findings, ownership decisions, per-phase tier and status
+  STATUS.md              current phase, what is done, why paused
   phase-N/
     PLAN.md              v2 after reconciliation, in place
     RECONCILIATION.md    a row per review finding, with its disposition
     REVIEW-<lens>.md
     IMPL-REVIEW-<lens>.md
+  iterations/<id>/       paused iterations, each a full snapshot plus STATUS.md
+  archive/<id>/          finished iterations
 ```
+
+Several roadmaps can be in flight: the active iteration is the flat `.plans/` working copy, and
+pausing moves it whole into `iterations/<timestamp>-<slug>/` so a new one can start beside it.
 
 ## Agents
 
@@ -70,10 +78,15 @@ Codex CLI, Claude Code, OpenCode, Factory Droid, and Antigravity live under
 
 ## When not to use it
 
-This is heavy machinery. A phase costs six or more agent dispatches, a directory of artifacts, and
-a good deal of wall-clock time, and it buys one thing: defects caught by someone other than the
-author. If the change is a single file, a rename, a config tweak, a dependency bump, or anything
-you can hold in your head and verify in one command, the protocol costs more than the defect it
-would have found. Use it when the work spans several phases, when a gate can be weakened without
-anyone noticing, or when a defect surfacing late would waste more than the overhead — and skip it
-otherwise. A protocol applied where it is not needed teaches people to skip it where it is.
+The full wave is heavy machinery. A reviewed phase costs six or more agent dispatches, a directory
+of artifacts, and a good deal of wall-clock time, and it buys one thing: defects caught by someone
+other than the author.
+
+The complexity gate is what keeps that cost proportionate. A typo, a rename, a config tweak, or
+anything you can verify in one command enters at Tier 0 — the implementer and its gate, no plan and
+no review wave — and climbs only when a gate actually fails. Reach for the full wave when the work
+spans several phases, when a gate could be weakened without anyone noticing, or when a defect
+surfacing late would cost more than the overhead.
+
+What the protocol will not do is decide for you that a roadmap is worth running. A protocol applied
+where it is not needed teaches people to skip it where it is.

@@ -21,12 +21,15 @@ never re-run a search you delegated. Ask for conclusions, not file dumps.
 
 | Role | Writes | Never does |
 |---|---|---|
+| Scout | Context Digest (report) | Touch code, propose a plan |
 | Planner | `PLAN.md` | Touch code |
+| Architect (planner variant, complexity gate) | `PLAN.md`, or `REVIEW-<lens>.md` as a critic | Touch code |
 | Plan reviewer (one per lens) | `REVIEW-<lens>.md` | Touch code, review its own plan |
 | Reconciler | `PLAN.md` v2, `RECONCILIATION.md` | Touch code |
 | Implementer | code | Review itself, commit, weaken a gate |
 | Implementation reviewer (one per lens) | `IMPL-REVIEW-<lens>.md` | Touch code |
 | Fix agent (one per area) | code, in its own files only | Touch another agent's files |
+| Verifier | gate-results report | Touch code, fix what it finds |
 | Orchestrator | phase list, log, commits | Any of the above |
 
 ## Starting
@@ -57,7 +60,11 @@ Do not begin phase 1 until both are answered.
 
 ## The phase loop
 
-For each phase, in order. Do not skip a step because the phase looks small — except for Tier 0 Fast-Track tasks (micro/trivial edits) which bypass planning and reviews directly to `steps-implementer` followed by automated verification — the steps that catch things are the ones that feel redundant.
+For each phase, in order. Do not skip a step because the phase looks small: the steps that catch
+things are the ones that feel redundant. A Tier-0 task is the single exception, and not because it
+is small — it is the case where the verification gate alone can show the work right or wrong, so it
+runs `steps-implementer` and that gate. A gate that fails proves the task was never Tier 0:
+escalate rather than review after the fact (see *Model routing*).
 
 0. **Scout.** One `repo-scout` builds the phase's Context Digest — target files, interfaces and
    types, entrypoints and data flow, reusable utilities — to feed the planner.
@@ -103,27 +110,35 @@ role's brief into it — the roles are the protocol, the named agents are only a
 ## Model routing
 
 The protocol routes its nine roles across two model tiers: cheap fast models do the volume work,
-heavy models plan and critique but never touch code. The single source of truth — role→tier→model
-class, the complexity gate, and the concrete per-harness model bindings — is `MODEL_ROUTING.md` at
-the plugin root. The agent manifests for each harness live under `harnesses/` at the plugin root.
+heavy models plan and critique but never touch code. `MODEL_ROUTING.md` at the plugin root is the
+single source of truth — role→tier→model class, the complexity gate, the escalation triggers, and
+the concrete per-harness bindings. The agent manifests for each harness live under `harnesses/`.
+
+| Tier | Plans with | Escalates to |
+|---|---|---|
+| **Tier 0 (Fast-Track / Planning Bypass)** | nobody — `steps-implementer`, then the verification gate | Tier 1 |
+| **Tier 1 (Standard)** | `steps-planner` | Tier 1.5 |
+| **Tier 1.5 (Middle)** | `steps-planner`, with `steps-architect-pro` as one extra plan-review lens | Tier 2 |
+| **Tier 2 (Architectural)** | `steps-architect-pro` | — |
+
+Pick the tier once per phase, at the start; implementation is always `steps-implementer`. A phase
+begins at the lowest tier that fits and climbs when a runtime signal says that was the wrong bet:
+`gate-failed` from the verifier, `hidden-coupling` from the implementer, or `circuit-breaker` —
+yours — on the second distinct failure, which rolls the tree back (`git checkout -- .`) and
+dispatches `steps-fixer` rather than the flash coder a third time. Escalating adds the roles the
+tier was missing; it does not restart the phase. Record the tier and every escalation in
+`ORCHESTRATOR-LOG.md`: for a Tier-0 task that line is the only artifact.
 
 - **Scouting** (before planning): `repo-scout` builds a Context Digest that feeds the planner. In
   Claude Code, the built-in `explore` agent already fills this role and is prioritized there —
   dispatch `explore` for scouting instead of `repo-scout`, and never forbid it.
-- **Complexity gate** (orchestrator, once per phase): Tier 0 Fast-Track tasks (micro/trivial edits)
-  bypass planning and reviews directly to `steps-implementer` followed by automated verification;
-  standard phases go to `steps-planner`; architectural phases go to `steps-architect-pro`;
-  Tier 1.5 (Middle) phases plan cheap and then get `steps-architect-pro` as an extra plan-review
-  lens. Implementation is always `steps-implementer`.
-- **Constitution check** (graceful degradation): the plan reviewer checks `.factory/CONSTITUTION.md`
-  or `CONSTITUTION.md` if present — a violation is a blocker; if absent, it falls back to a basic
-  engineering audit and the pipeline does not fail for the absence of a constitution.
-- **Dynamic Workflow Escalation & Composable Pipelines:** Execution scales dynamically based on runtime signals. Trivial tasks start at Tier 0 (direct implementation + automated verification). When gates fail or hidden coupling is discovered, the orchestrator escalates execution to Tier 1 (plan & implement) or Tier 1.5/Tier 2 (review waves, reconciler, architect critique, or deadlock fixers). Composable patterns (e.g. Implement ➔ Reconcile ➔ Verify) are valid when resolving emergent documentation drift.
+- **Constitution check** (graceful degradation): the plan reviewer checks `ai-docs/constitution.yaml`,
+  `.factory/CONSTITUTION.md` or `CONSTITUTION.md` if present — a violation is a blocker; if none
+  exists, it falls back to a basic engineering audit and the pipeline does not fail for the absence
+  of a constitution.
 - **Hard rules:** Tier-2 models never write code except `steps-fixer` (the deadlock escape).
   Tier-2 context is distilled Tier-1 conclusions, never raw dumps. Every gate is run read-only and
-  its current output recorded as evidence. The circuit breaker records git state before each step;
-  on the second distinct failure it rolls back (`git checkout -- .`) and escalates to `steps-fixer`,
-  distinct from the normal fix wave.
+  its current output recorded as evidence.
 
 ## Rules that were paid for
 
@@ -209,7 +224,7 @@ A brief is self-contained. The agent sees none of your conversation.
 .plans/
   INDEX.md                 the iteration registry: id, created, status, goal, current phase
   PHASES.md                the active iteration's phase list, with what is out of scope and why
-  ORCHESTRATOR-LOG.md      cross-phase findings, ownership decisions, per-phase status
+  ORCHESTRATOR-LOG.md      cross-phase findings, ownership decisions, per-phase tier and status
   STATUS.md                current phase, what is done, why paused
   phase-N/
     PLAN.md                v2 after reconciliation, in place
@@ -226,6 +241,9 @@ A brief is self-contained. The agent sees none of your conversation.
 another — a defect two phases discovered independently, a decision about which phase owns a fix,
 a number that turns out to mean something other than what it says — it goes there, with the
 ownership call made explicitly. Otherwise it is rediscovered, or worse, fixed twice.
+
+It also carries one line per phase: the tier chosen, why, and any escalation with its trigger. A
+Tier-0 task produces no `phase-N/` directory, so that line is its entire record.
 
 ## Iterations, pausing, and resuming
 

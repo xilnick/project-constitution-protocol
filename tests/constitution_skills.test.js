@@ -75,6 +75,42 @@ test('Constitution Schema & Taxonomy Validation', async (t) => {
     assert.ok(checkIds.includes('qual-hygiene-01'), 'Must include qual-hygiene-01');
   });
 
+  await t.test('execution block declares the tier ladder and its escalation triggers', async () => {
+    const parsed = parseYaml('ai-docs/constitution.yaml');
+    const exec = parsed.constitution?.execution;
+    assert.ok(
+      Array.isArray(exec?.verification_command_resolution) && exec.verification_command_resolution.length > 0,
+      'verification_command_resolution must be a non-empty ordered list'
+    );
+
+    const tiers = exec?.tiers;
+    assert.ok(Array.isArray(tiers) && tiers.length > 0, 'execution.tiers must be a non-empty array');
+    const ids = tiers.map((tier) => tier.id);
+    for (const tier of tiers) {
+      assert.match(tier.id, /^tier-/, `tier id ${tier.id} must start with tier-`);
+      assert.ok(typeof tier.label === 'string' && tier.label.length > 0, 'label must be non-empty string');
+      assert.ok(typeof tier.entry === 'string' && tier.entry.length > 0, 'entry must be non-empty string');
+      assert.ok(Array.isArray(tier.routes) && tier.routes.length > 0, `tier ${tier.id} must route somewhere`);
+      // A tier whose escalates_to names nothing declared is a tier a failing gate cannot escape.
+      if (tier.escalates_to !== null) {
+        assert.ok(ids.includes(tier.escalates_to), `tier ${tier.id} escalates to undeclared ${tier.escalates_to}`);
+      }
+    }
+    assert.equal(
+      tiers.filter((tier) => tier.escalates_to === null).length,
+      1,
+      'exactly one tier is the top of the ladder'
+    );
+
+    const triggers = exec?.escalation_triggers;
+    assert.ok(Array.isArray(triggers) && triggers.length > 0, 'escalation_triggers must be a non-empty array');
+    for (const trigger of triggers) {
+      assert.ok(typeof trigger.id === 'string' && trigger.id.length > 0, 'trigger id must be non-empty string');
+      assert.ok(typeof trigger.detected_by === 'string' && trigger.detected_by.length > 0, 'detected_by must name a role');
+      assert.ok(typeof trigger.action === 'string' && trigger.action.length > 0, 'action must be non-empty string');
+    }
+  });
+
   await t.test('taxonomy shortcodes conform to required attributes and patterns', async () => {
     const parsed = parseYaml('ai-docs/constitution.yaml');
 

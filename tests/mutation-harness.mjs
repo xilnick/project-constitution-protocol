@@ -55,6 +55,7 @@ const CONSTITUTION_LEAVES = [
   'constitution block attributes match schema specifications',
   'security.rules array contains valid enforcement entries',
   'quality.pre_commit_checks array contains qual-gate-01 and qual-hygiene-01',
+  'execution block declares the tier ladder and its escalation triggers',
   'taxonomy shortcodes conform to required attributes and patterns',
   'ai-docs/constitution.yaml matches the declared golden document',
 ];
@@ -266,7 +267,7 @@ const MUTATIONS = [
     // rather than capped: mustFail plus an equal max pins the set exactly.
     mustFail: [...CONSTITUTION_LEAVES, ...AUTH_SPEC_LEAVES, PATH_PROBE_LEAF, ...RETRIEVES, ...BOUNDS, ...SUITE4_YQ],
     mustPass: [...SKILL_LEAVES],
-    max: 26,
+    max: 27,
   },
   {
     id: 'canary-missing-key',
@@ -286,7 +287,100 @@ const MUTATIONS = [
     // takes down a closed, nameable set of leaves.
     mustFail: [...CONSTITUTION_LEAVES, ...CONSTITUTION_SLICES, ...SUITE4_YQ],
     mustPass: [...SUITE3],
-    max: 21,
+    max: 22,
+  },
+
+    {
+    id: 'tier-label-drifts-from-declared',
+    outcome: 'RED',
+    ops: [
+      {
+        file: 'plugins/steps/skills/steps/SKILL.md',
+        kind: 'replace',
+        anchor: '| **Tier 1.5 (Middle)** |',
+        replacement: '| **Tier 1.5 (Mid)** |',
+      },
+      {
+        file: 'plugins/steps/harnesses/droid/skills/steps/SKILL.md',
+        kind: 'replace',
+        anchor: '| **Tier 1.5 (Middle)** |',
+        replacement: '| **Tier 1.5 (Mid)** |',
+      },
+    ],
+    signature: 'FAIL E3d — every tier table carries exactly the declared labels',
+    mustFail: [],
+    mustPass: [...SUITE3],
+    max: 0,
+  },
+  {
+    id: 'tier-label-reworded-in-constitution',
+    outcome: 'RED',
+    ops: [{
+      file: CONSTITUTION,
+      kind: 'replace',
+      anchor: '        label: "Tier 1.5 (Middle)"',
+      replacement: '        label: "Tier 1.5 (Intermediate)"',
+    }],
+    signature: 'golden document mismatch: ai-docs/constitution.yaml',
+    mustFail: ['ai-docs/constitution.yaml matches the declared golden document'],
+    mustPass: [...SUITE3],
+    max: 1,
+  },
+  {
+    id: 'harness-skill-drifts-from-canonical',
+    outcome: 'RED',
+    ops: [{
+      file: 'plugins/steps/harnesses/droid/skills/steps/SKILL.md',
+      kind: 'replace',
+      anchor: 'heavy models plan and critique but never touch code.',
+      replacement: 'heavy models plan and critique but never write code.',
+    }],
+    signature: 'FAIL E6 — each harness skill copy is the canonical protocol plus its declared overlay',
+    mustFail: [],
+    mustPass: [...SUITE3],
+    max: 0,
+  },
+  {
+    id: 'verifier-escalation-clause-deleted',
+    outcome: 'RED',
+    ops: [{
+      file: 'plugins/steps/agents/step-verifier.md',
+      kind: 'replace',
+      anchor: 'A FAILED gate is the `gate-failed` escalation trigger, not just a result.',
+      replacement: 'A FAILED gate is a result.',
+    }],
+    signature: 'FAIL E5 — the ladder has an exit and every trigger is named in the brief that detects it',
+    mustFail: [],
+    mustPass: [...SUITE3],
+    max: 0,
+  },
+  {
+    id: 'manifest-model-drifts-from-routing',
+    outcome: 'RED',
+    ops: [{
+      file: 'plugins/steps/harnesses/codex/.codex/agents/steps-fixer.toml',
+      kind: 'replace',
+      anchor: 'model = "gpt-5.6"',
+      replacement: 'model = "gpt-5.6-terra"',
+    }],
+    signature: 'FAIL E7 — each harness manifest and MODEL_ROUTING.md agree with the declared binding',
+    mustFail: [],
+    mustPass: [...SUITE3],
+    max: 0,
+  },
+  {
+    id: 'routing-table-model-drifts',
+    outcome: 'RED',
+    ops: [{
+      file: 'plugins/steps/MODEL_ROUTING.md',
+      kind: 'replace',
+      anchor: '| `steps-architect-pro`, `steps-fixer` | `pro` |',
+      replacement: '| `steps-architect-pro`, `steps-fixer` | `flash` |',
+    }],
+    signature: 'FAIL E7 — each harness manifest and MODEL_ROUTING.md agree with the declared binding',
+    mustFail: [],
+    mustPass: [...SUITE3],
+    max: 0,
   },
 
   // Negative controls. A suite that pins bytes or hashes goes RED here and fails the phase.
@@ -336,7 +430,7 @@ const MUTATIONS = [
 const READ_PATHS = [
   'ai-docs/',
   'plugins/pcp/skills/',
-  'plugins/steps/skills/rogue/',
+  'plugins/steps/',
 ];
 
 function resolveTool(name) {

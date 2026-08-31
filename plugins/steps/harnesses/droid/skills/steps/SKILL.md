@@ -23,7 +23,7 @@ never re-run a search you delegated. Ask for conclusions, not file dumps.
 |---|---|---|
 | Scout | Context Digest (report) | Touch code, propose a plan |
 | Planner | `PLAN.md` | Touch code |
-| Architect (planner variant, complexity gate) | `PLAN.md` or `REVIEW-<lens>.md` (critic) | Touch code |
+| Architect (planner variant, complexity gate) | `PLAN.md`, or `REVIEW-<lens>.md` as a critic | Touch code |
 | Plan reviewer (one per lens) | `REVIEW-<lens>.md` | Touch code, review its own plan |
 | Reconciler | `PLAN.md` v2, `RECONCILIATION.md` | Touch code |
 | Implementer | code | Review itself, commit, weaken a gate |
@@ -60,7 +60,11 @@ Do not begin phase 1 until both are answered.
 
 ## The phase loop
 
-For each phase, in order. Do not skip a step because the phase looks small — except for Tier 0 Fast-Track tasks (micro/trivial edits) which bypass planning and reviews directly to `steps-implementer` followed by automated verification — the steps that catch things are the ones that feel redundant.
+For each phase, in order. Do not skip a step because the phase looks small: the steps that catch
+things are the ones that feel redundant. A Tier-0 task is the single exception, and not because it
+is small — it is the case where the verification gate alone can show the work right or wrong, so it
+runs `steps-implementer` and that gate. A gate that fails proves the task was never Tier 0:
+escalate rather than review after the fact (see *Model routing*).
 
 0. **Scout.** One `repo-scout` builds the phase's Context Digest — target files, interfaces and
    types, entrypoints and data flow, reusable utilities — to feed the planner.
@@ -99,15 +103,46 @@ turns run serially. Track phases with a todo list.
 | Fix | `steps-fixer` (one per area, strict ownership) | code, own files only |
 | Verify | `step-verifier` (one) | gate-results report |
 
-Those agent names ship with this skill; `steps-architect-pro`, `repo-scout`, and `step-verifier`
-ship with the Factory Droid installation. Where a harness does not have them, spawn a generic
-subagent per row and paste the role's brief into it — the roles are the protocol, the named agents
-are only a convenience.
+Those agent names ship with this skill, plus `steps-architect-pro`, `repo-scout`, and
+`step-verifier`. Where a harness does not have them, spawn a generic subagent per row and paste the
+role's brief into it — the roles are the protocol, the named agents are only a convenience.
 
-## Model routing (Factory Droid)
+## Model routing
 
-Each role runs on a fixed model tier. Cheap fast models do the volume work; heavy models plan and
-critique but never touch code.
+The protocol routes its nine roles across two model tiers: cheap fast models do the volume work,
+heavy models plan and critique but never touch code. `MODEL_ROUTING.md` at the plugin root is the
+single source of truth — role→tier→model class, the complexity gate, the escalation triggers, and
+the concrete per-harness bindings. The agent manifests for each harness live under `harnesses/`.
+
+| Tier | Plans with | Escalates to |
+|---|---|---|
+| **Tier 0 (Fast-Track / Planning Bypass)** | nobody — `steps-implementer`, then the verification gate | Tier 1 |
+| **Tier 1 (Standard)** | `steps-planner` | Tier 1.5 |
+| **Tier 1.5 (Middle)** | `steps-planner`, with `steps-architect-pro` as one extra plan-review lens | Tier 2 |
+| **Tier 2 (Architectural)** | `steps-architect-pro` | — |
+
+Pick the tier once per phase, at the start; implementation is always `steps-implementer`. A phase
+begins at the lowest tier that fits and climbs when a runtime signal says that was the wrong bet:
+`gate-failed` from the verifier, `hidden-coupling` from the implementer, or `circuit-breaker` —
+yours — on the second distinct failure, which rolls the tree back (`git checkout -- .`) and
+dispatches `steps-fixer` rather than the flash coder a third time. Escalating adds the roles the
+tier was missing; it does not restart the phase. Record the tier and every escalation in
+`ORCHESTRATOR-LOG.md`: for a Tier-0 task that line is the only artifact.
+
+- **Scouting** (before planning): `repo-scout` builds a Context Digest that feeds the planner. In
+  Claude Code, the built-in `explore` agent already fills this role and is prioritized there —
+  dispatch `explore` for scouting instead of `repo-scout`, and never forbid it.
+- **Constitution check** (graceful degradation): the plan reviewer checks `ai-docs/constitution.yaml`,
+  `.factory/CONSTITUTION.md` or `CONSTITUTION.md` if present — a violation is a blocker; if none
+  exists, it falls back to a basic engineering audit and the pipeline does not fail for the absence
+  of a constitution.
+- **Hard rules:** Tier-2 models never write code except `steps-fixer` (the deadlock escape).
+  Tier-2 context is distilled Tier-1 conclusions, never raw dumps. Every gate is run read-only and
+  its current output recorded as evidence.
+
+## Droid specifics
+
+`MODEL_ROUTING.md` binds the roles for every harness; on Factory Droid the binding is:
 
 | Role | Droid | Model | Tier |
 |---|---|---|---|
@@ -121,47 +156,15 @@ critique but never touch code.
 | Verifier | `step-verifier` | minimax-m3 | 1 |
 | Fixer | `steps-fixer` | deepseek-v4-pro | 2 |
 
-### Scouting (before planning)
+`steps-architect-pro`, `repo-scout` and `step-verifier` ship with the Droid installation. Droid has
+no `explore` agent, so scouting is always `repo-scout`. `MODEL_ROUTING.md` lives outside this skill
+directory in the repository, so copy it in beside `SKILL.md` when installing.
 
-The orchestrator dispatches `repo-scout` first to build a Context Digest — target files, interfaces
-and types, entrypoints and data flow, reusable utilities — that feeds the planner. It is read-only
-and never proposes a plan or writes code.
+**Tool names.** Droid manifests say `Create` where the protocol says `Write`, and `Execute` where it
+says `Bash`. The restriction is unchanged: a role with no `Edit` may create only its own report.
 
-### Complexity gate (orchestrator, once per phase)
-
-- **Tier 0 (Fast-Track / Planning Bypass)** — Micro or trivial tasks (e.g. typos, isolated single-line fixes, simple documentation/config tweaks). Completely bypasses planning and review waves directly to `steps-implementer` (Tier 1 fast cheap coder), immediately followed by the automated verification gate (`verification_command`). The orchestrator never touches code.
-- **Tier 1 (Standard)** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (glm-5.3-flash).
-- **Tier 1.5 (Middle)** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
-  plan-review lens (critic, never author), keeping the wave at three reviewers or fewer.
-- **Tier 2 (Architectural)** — DB migration, protocol change, cross-cutting refactor, distributed logic or
-  race-condition reasoning: `steps-architect-pro` (qwen3.8-max). This must stay rare; invoking the
-  architect for a standard phase is a routing defect, not thoroughness.
-
-### Constitution check (graceful degradation)
-
-Before approving a plan, the plan reviewer checks for `.factory/CONSTITUTION.md` or
-`CONSTITUTION.md`. If one exists, every step is checked against its rules (no direct mutations, no
-`any`, layer isolation, whatever the project's constitution says); a violation is a blocker, not a
-style note. If none exists, the reviewer falls back to a basic engineering audit — atomicity, test
-coverage, no regressions — and the pipeline does not fail for the absence of a constitution.
-
-### Hard rules
-
-- Tier-2 models never write code, with one deliberate exception: `steps-fixer` (deepseek-v4-pro) is
-  the deadlock escape hatch. `steps-architect-pro` plans and critiques only.
-- Context into a Tier-2 agent is distilled conclusions from Tier-1 work — paths, gate outputs,
-  findings — never raw file dumps. Tier-2 returns structured reasoning plus the plan: invariants,
-  ordering, failure modes, per-item gates.
-- `steps-architect-pro` runs every gate command read-only and records its current (failing) output
-  as evidence. No gate is reported as passing.
-- **Circuit breaker with git checkpoints.** Before each step is handed to the implementer, the
-  orchestrator records the git state (`git stash` or the current sha). Failure 1: the verbatim logs
-  go back to the implementer for a local fix. Failure 2: roll the dirty diff back
-  (`git checkout -- .`), then escalate to `steps-fixer` with the full log dump — never re-dispatch
-  the flash coder a third time. This is distinct from the normal fix wave, which handles
-  reviewer-found blockers.
-- **Multimodality:** glm-5.3-flash and qwen3.8-max accept images (screenshots, diagrams are allowed
-  in their briefs); deepseek-v4-flash and minimax-m3 are text-only — no images in their briefs.
+**Multimodality.** glm-5.3-flash and qwen3.8-max accept images, so screenshots and diagrams are
+allowed in their briefs. deepseek-v4-flash and minimax-m3 are text-only — no images in theirs.
 
 ## Rules that were paid for
 
@@ -247,7 +250,7 @@ A brief is self-contained. The agent sees none of your conversation.
 .plans/
   INDEX.md                 the iteration registry: id, created, status, goal, current phase
   PHASES.md                the active iteration's phase list, with what is out of scope and why
-  ORCHESTRATOR-LOG.md      cross-phase findings, ownership decisions, per-phase status
+  ORCHESTRATOR-LOG.md      cross-phase findings, ownership decisions, per-phase tier and status
   STATUS.md                current phase, what is done, why paused
   phase-N/
     PLAN.md                v2 after reconciliation, in place
@@ -264,6 +267,9 @@ A brief is self-contained. The agent sees none of your conversation.
 another — a defect two phases discovered independently, a decision about which phase owns a fix,
 a number that turns out to mean something other than what it says — it goes there, with the
 ownership call made explicitly. Otherwise it is rediscovered, or worse, fixed twice.
+
+It also carries one line per phase: the tier chosen, why, and any escalation with its trigger. A
+Tier-0 task produces no `phase-N/` directory, so that line is its entire record.
 
 ## Iterations, pausing, and resuming
 
