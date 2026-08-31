@@ -7,6 +7,8 @@ description: "Run a roadmap or multi-phase plan to completion under separation o
 
 A protocol for running a roadmap through to the end without the agent grading its own homework.
 
+## Separation of duties
+
 The central rule: **the agent that writes a thing never reviews it.** Everything else here follows
 from that, or from a defect that got through because it was violated.
 
@@ -58,8 +60,7 @@ Do not begin phase 1 until both are answered.
 
 ## The phase loop
 
-For each phase, in order. Do not skip a step because the phase looks small — the steps that catch
-things are the ones that feel redundant.
+For each phase, in order. Do not skip a step because the phase looks small — except for Tier 0 Fast-Track tasks (micro/trivial edits) which bypass planning and reviews directly to `steps-implementer` followed by automated verification — the steps that catch things are the ones that feel redundant.
 
 0. **Scout.** One `repo-scout` builds the phase's Context Digest — target files, interfaces and
    types, entrypoints and data flow, reusable utilities — to feed the planner.
@@ -91,7 +92,7 @@ turns run serially. Track phases with a todo list.
 |---|---|---|
 | Scout | `repo-scout` (one) | Context Digest |
 | Plan | `steps-planner` or `steps-architect-pro` (complexity gate, see *Model routing*) (one) | `.plans/phase-N/PLAN.md` |
-| Review plan | `steps-plan-reviewer` (2-3, one lens each; `steps-architect-pro` may join as a critic lens on middle-complexity phases) | `REVIEW-<lens>.md` |
+| Review plan | `steps-plan-reviewer` (2-3, one lens each; `steps-architect-pro` may join as a critic lens on Tier 1.5 (Middle) phases) | `REVIEW-<lens>.md` |
 | Reconcile | `steps-reconciler` (one) | `PLAN.md` v2, `RECONCILIATION.md` |
 | Implement | `steps-implementer` (one) | code |
 | Review implementation | `steps-impl-reviewer` (2-3, one lens each) | `IMPL-REVIEW-<lens>.md` |
@@ -128,12 +129,13 @@ and never proposes a plan or writes code.
 
 ### Complexity gate (orchestrator, once per phase)
 
-- **Standard** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (glm-5.3-flash).
-- **Architectural** — DB migration, protocol change, cross-cutting refactor, distributed logic or
+- **Tier 0 (Fast-Track / Planning Bypass)** — Micro or trivial tasks (e.g. typos, isolated single-line fixes, simple documentation/config tweaks). Completely bypasses planning and review waves directly to `steps-implementer` (Tier 1 fast cheap coder), immediately followed by the automated verification gate (`verification_command`). The orchestrator never touches code.
+- **Tier 1 (Standard)** — CRUD, a component edit, a local fix, a dependency bump: `steps-planner` (glm-5.3-flash).
+- **Tier 1.5 (Middle)** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
+  plan-review lens (critic, never author), keeping the wave at three reviewers or fewer.
+- **Tier 2 (Architectural)** — DB migration, protocol change, cross-cutting refactor, distributed logic or
   race-condition reasoning: `steps-architect-pro` (qwen3.8-max). This must stay rare; invoking the
   architect for a standard phase is a routing defect, not thoroughness.
-- **Middle** — plan cheap with `steps-planner`, then dispatch `steps-architect-pro` as an extra
-  plan-review lens (critic, never author). Keep that wave at three reviewers or fewer.
 
 ### Constitution check (graceful degradation)
 

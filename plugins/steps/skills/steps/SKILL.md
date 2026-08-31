@@ -118,6 +118,7 @@ the plugin root. The agent manifests for each harness live under `harnesses/` at
 - **Constitution check** (graceful degradation): the plan reviewer checks `.factory/CONSTITUTION.md`
   or `CONSTITUTION.md` if present — a violation is a blocker; if absent, it falls back to a basic
   engineering audit and the pipeline does not fail for the absence of a constitution.
+- **Dynamic Workflow Escalation & Composable Pipelines:** Execution scales dynamically based on runtime signals. Trivial tasks start at Tier 0 (direct implementation + automated verification). When gates fail or hidden coupling is discovered, the orchestrator escalates execution to Tier 1 (plan & implement) or Tier 1.5/Tier 2 (review waves, reconciler, architect critique, or deadlock fixers). Composable patterns (e.g. Implement ➔ Reconcile ➔ Verify) are valid when resolving emergent documentation drift.
 - **Hard rules:** Tier-2 models never write code except `steps-fixer` (the deadlock escape).
   Tier-2 context is distilled Tier-1 conclusions, never raw dumps. Every gate is run read-only and
   its current output recorded as evidence. The circuit breaker records git state before each step;

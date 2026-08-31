@@ -71,7 +71,7 @@ export const COMPLEXITY_TIERS = [
 export const LABEL_RESIDUAL_RE = /middle-complexity|\*\*Middle\*\*/;
 export const CANONICAL_LABEL_RESIDUAL = 0;
 // Counted, not ignored: adding one fails E3c and so does closing them all, so Phase 3 has to decide.
-export const HARNESS_LABEL_RESIDUAL = 8;
+export const HARNESS_LABEL_RESIDUAL = 0;
 
 export const TOKEN_BUDGET = 200;
 // The denominators. Without them "every occurrence equals 200" is satisfied by zero occurrences.
@@ -102,9 +102,9 @@ export const FULL_CHECK_COUNT = 100;
 // ---------------------------------------------------------------------------
 
 export const RECIPE_FILES = [
-  { key: 'constitution-query', path: '.agents/skills/constitution-query/SKILL.md' },
-  { key: 'code-intelligence', path: '.agents/skills/code-intelligence/SKILL.md' },
-  { key: 'adr-manager', path: '.agents/skills/adr-manager/SKILL.md' },
+  { key: 'constitution-query', path: 'plugins/pcp/skills/constitution-query/SKILL.md' },
+  { key: 'code-intelligence', path: 'plugins/pcp/skills/code-intelligence/SKILL.md' },
+  { key: 'adr-manager', path: 'plugins/pcp/skills/adr-manager/SKILL.md' },
   { key: 'AGENTS', path: 'AGENTS.md' },
   { key: 'ai-docs-README', path: 'ai-docs/README.md' },
 ];

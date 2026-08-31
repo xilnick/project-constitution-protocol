@@ -40,6 +40,16 @@ is `steps-fixer`, and only as the deadlock escape: the same failure has survived
 fixes, the implementer stops and reports verbatim, and the orchestrator escalates instead of
 re-dispatching the flash coder.
 
+### Dynamic Workflow Escalation & Composable Pipelines
+
+The execution loop scales dynamically based on runtime signals rather than rigid ceremony:
+1. **Incremental Escalation Ladder**: Tasks begin at the lowest viable tier (e.g. Tier 0 direct implementation for fast fixes). If the automated verification gate fails or surfaces unpredicted architectural coupling, the orchestrator escalates execution up the ladder to Tier 1 (structured planning), Tier 1.5 (plan review + architect critique), or Tier 2 (full architectural wave).
+2. **Dynamic Circuit Breaker**: If implementation encounters two consecutive failing gate attempts, the dirty tree is reverted (`git checkout -- .`) and escalated to `steps-fixer` (Tier 2) or `steps-architect-pro` for re-planning.
+3. **Composable Phase Building Blocks**: Roles can be combined as needed for the problem:
+   - *Direct Implement & Verify*: `steps-implementer` ➔ `verification_command`.
+   - *Plan & Execute*: `steps-planner` ➔ `steps-implementer` ➔ `step-verifier`.
+   - *Full Reconciled Wave*: `steps-planner`/`steps-architect-pro` ➔ Reviewers (2-3 lenses) ➔ `steps-reconciler` ➔ `steps-implementer` ➔ `steps-impl-reviewer` ➔ `step-verifier`.
+
 ## Hard rules
 
 - Tier-2 models never write code, with one exception: `steps-fixer`.

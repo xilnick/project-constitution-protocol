@@ -258,7 +258,7 @@ test('Modular Skills Discoverability & Frontmatter Conformance', async (t) => {
   }
 
   await t.test('every SKILL.md on disk is declared in the skill inventory', async () => {
-    const discovered = [...discoverSkillFiles('plugins'), ...discoverSkillFiles('.agents')].sort();
+    const discovered = [...discoverSkillFiles('plugins')].sort();
     const declared = SKILL_INVENTORY.map(s => s.relPath).sort();
     const undeclared = discovered.filter(p => !declared.includes(p));
     const missing = declared.filter(p => !discovered.includes(p));
@@ -418,9 +418,9 @@ test('Bidirectional ADR Synchronization & Structural Headers', async (t) => {
   await t.test('status values on both sides are in the declared vocabulary', async () => {
     // Checked against the test-local constant, never sourced from it: an agent
     // following its own skill doc could otherwise move the doc and the artifacts together.
-    const skillRaw = fsSync.readFileSync('.agents/skills/adr-manager/SKILL.md', 'utf8');
+    const skillRaw = fsSync.readFileSync('plugins/pcp/skills/adr-manager/SKILL.md', 'utf8');
     const advertised = /^- \*\*Status\*\*:\s*(\w+(?:\s*\|\s*\w+)+)\s*$/m.exec(skillRaw);
-    assert.ok(advertised, '.agents/skills/adr-manager/SKILL.md must advertise the Status vocabulary');
+    assert.ok(advertised, 'plugins/pcp/skills/adr-manager/SKILL.md must advertise the Status vocabulary');
     assert.deepStrictEqual(
       advertised[1].split('|').map(v => v.trim().toLowerCase()).sort(),
       [...ADR_STATUSES].sort(),

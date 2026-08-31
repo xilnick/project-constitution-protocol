@@ -1,11 +1,12 @@
 # Status
 
 - **Iteration**: `gate-repair-installability`
-- **Current Phase**: Phase 2 — **complete and committed**; Phase 3 next
+- **Current Phase**: Phase 3 — **complete and verified**; Iteration complete
 - **Done**:
   - Phase 1 (gate made able to fail). Gates re-measured: `npm test` 66/66; `node tests/mutation-harness.mjs` 16/16 conformant.
   - Phase 2 (make every documented recipe execute). Gates re-measured: `npm test` 66/66 (0 fail / 0 skipped / 0 todo) + hermetic runner (69/69 ok); `npm run test:recipes` 100/100 checks ok (0 fail / 0 blocked); `node tests/mutation-harness.mjs` 16/16 conformant.
-- **Pending**: Phase 3 (make the skills reachable when installed).
+  - Phase 3 (make skills reachable when installed). Gates re-measured: `bash tests/install-smoke.sh` 5/5 skills discovered & recipes executed in throwaway HOME; all harnesses aligned with Tier 1.5 (Middle) and dynamic workflow escalation.
+- **Pending**: None (all phases in iteration complete).
 - **Protocol answers (apply to every remaining phase)**: one commit per phase on
   `steps/harness-portability`, no push; run all three phases this pass.
 - **Open, owned by nobody yet**:

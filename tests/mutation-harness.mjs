@@ -25,9 +25,9 @@ const RETRIEVES = CASES.map((c) => `retrieves ${c}`);
 const BOUNDS = CASES.map((c) => `bounds the ${c} payload`);
 
 const SKILL_PATHS = [
-  '.agents/skills/constitution-query/SKILL.md',
-  '.agents/skills/code-intelligence/SKILL.md',
-  '.agents/skills/adr-manager/SKILL.md',
+  'plugins/pcp/skills/constitution-query/SKILL.md',
+  'plugins/pcp/skills/code-intelligence/SKILL.md',
+  'plugins/pcp/skills/adr-manager/SKILL.md',
   'plugins/pcp/skills/pcp/SKILL.md',
   'plugins/steps/skills/steps/SKILL.md',
   'plugins/steps/harnesses/droid/skills/steps/SKILL.md',
@@ -237,13 +237,13 @@ const MUTATIONS = [
     id: 'skill-heading-renamed',
     outcome: 'RED',
     ops: [{
-      file: '.agents/skills/adr-manager/SKILL.md',
+      file: 'plugins/pcp/skills/adr-manager/SKILL.md',
       kind: 'replace',
       anchor: '\n## Operational Guardrails\n',
       replacement: '\n## Operational Guardrailz\n',
     }],
     signature: 'required heading: Operational Guardrails',
-    mustFail: ['validates skill frontmatter and sections: .agents/skills/adr-manager/SKILL.md'],
+    mustFail: ['validates skill frontmatter and sections: plugins/pcp/skills/adr-manager/SKILL.md'],
     mustPass: [INVENTORY_LEAF, ...SKILL_LEAVES.filter((n) => !n.endsWith('adr-manager/SKILL.md'))],
     max: 2,
   },
@@ -321,7 +321,7 @@ const MUTATIONS = [
   {
     id: 'crlf-frontmatter',
     outcome: 'SURVIVED',
-    ops: [{ file: '.agents/skills/constitution-query/SKILL.md', kind: 'toCRLF' }],
+    ops: [{ file: 'plugins/pcp/skills/constitution-query/SKILL.md', kind: 'toCRLF' }],
     signature: null,
     mustFail: [],
     mustPass: [],
@@ -335,7 +335,7 @@ const MUTATIONS = [
 // mutation means, and residue under them at exit is a failed restore.
 const READ_PATHS = [
   'ai-docs/',
-  '.agents/skills/',
+  'plugins/pcp/skills/',
   'plugins/steps/skills/rogue/',
 ];
 

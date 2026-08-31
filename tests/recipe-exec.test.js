@@ -441,9 +441,9 @@ function countMatches(text, re) {
 // deduplicating by offset makes the site count a count of sites, not of patterns.
 function tokenBudgetSites() {
   const files = [
-    '.agents/skills/constitution-query/SKILL.md',
-    '.agents/skills/adr-manager/SKILL.md',
-    '.agents/skills/code-intelligence/SKILL.md',
+    'plugins/pcp/skills/constitution-query/SKILL.md',
+    'plugins/pcp/skills/adr-manager/SKILL.md',
+    'plugins/pcp/skills/code-intelligence/SKILL.md',
     'ai-docs/README.md',
   ];
   const sites = [];

@@ -232,17 +232,17 @@ export const GOLDEN_DECISIONS = {
 
 export const SKILL_INVENTORY = [
   {
-    relPath: ".agents/skills/constitution-query/SKILL.md",
+    relPath: "plugins/pcp/skills/constitution-query/SKILL.md",
     expectedName: "constitution-query",
     requiredHeadings: ["Progressive Disclosure","Shortcode Taxonomy","Query Recipes"],
   },
   {
-    relPath: ".agents/skills/code-intelligence/SKILL.md",
+    relPath: "plugins/pcp/skills/code-intelligence/SKILL.md",
     expectedName: "code-intelligence",
     requiredHeadings: ["Progressive Disclosure","Tool Invocation Modes","Navigation & Inspection Recipes","Agent Operational Rules"],
   },
   {
-    relPath: ".agents/skills/adr-manager/SKILL.md",
+    relPath: "plugins/pcp/skills/adr-manager/SKILL.md",
     expectedName: "adr-manager",
     requiredHeadings: ["Lifecycle & Workflow","Canonical ADR Template","Bidirectional Synchronization","Operational Guardrails"],
   },

@@ -50,9 +50,9 @@ The repository exposes modular skills for governance, semantic discovery, and AD
 | Skill | Path | Description & Activation Rule |
 |---|---|---|
 | `pcp` | `plugins/pcp/skills/pcp/SKILL.md` | Root marketplace skill for project constitution protocol management and atom minting. |
-| `constitution-query` | `.agents/skills/constitution-query/SKILL.md` | Project governance & decisions. Query active constraints, security rules, and requirements before planning or executing changes. |
-| `code-intelligence` | `.agents/skills/code-intelligence/SKILL.md` | Semantic graph exploration & token-efficient targeting. Map codebase dependencies, symbols, and cross-file relationships using progressive disclosure. |
-| `adr-manager` | `.agents/skills/adr-manager/SKILL.md` | Architectural decision record lifecycle. Mint, update, link, and retire ADR documents matching the structured schema. |
+| `constitution-query` | `plugins/pcp/skills/constitution-query/SKILL.md` | Project governance & decisions. Query active constraints, security rules, and requirements before planning or executing changes. |
+| `code-intelligence` | `plugins/pcp/skills/code-intelligence/SKILL.md` | Semantic graph exploration & token-efficient targeting. Map codebase dependencies, symbols, and cross-file relationships using progressive disclosure. |
+| `adr-manager` | `plugins/pcp/skills/adr-manager/SKILL.md` | Architectural decision record lifecycle. Mint, update, link, and retire ADR documents matching the structured schema. |
 
 ## Strict Tool Routing & Gap Closures
 
