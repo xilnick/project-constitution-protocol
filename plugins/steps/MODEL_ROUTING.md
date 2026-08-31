@@ -150,6 +150,6 @@ session model:
 |---|---|
 | `repo-scout` | `flash` |
 | `steps-planner`, `steps-reconciler`, `steps-implementer` | `flash` |
-| `steps-plan-reviewer`, `steps-impl-reviewer` | `pro` |
-| `step-verifier` | `pro` |
-| `steps-architect-pro`, `steps-fixer` | `pro` |
+| `steps-plan-reviewer`, `steps-impl-reviewer` | `flash` |
+| `step-verifier` | `flash` |
+| `steps-architect-pro`, `steps-fixer` | `flash` |

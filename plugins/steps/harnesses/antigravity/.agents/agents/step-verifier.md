@@ -8,7 +8,7 @@ tools:
   - replace_file_content
 subagent: true
 mainAgent: false
-model: pro
+model: flash
 permissionMode: acceptEdits
 commandExecutionPolicy: eager
 ---
