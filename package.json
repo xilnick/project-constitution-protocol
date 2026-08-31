@@ -4,8 +4,12 @@
   "description": "Project Constitution Protocol custom agent skill repository",
   "type": "module",
   "main": "plugins/pcp/skills/pcp/scripts/pcp.js",
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "test": "node --test tests/pcp_skill.test.js tests/constitution_skills.test.js"
+    "test": "node --test tests/pcp_skill.test.js tests/constitution_skills.test.js && node tests/lib/repo-guard.mjs --selftest",
+    "test:mutation": "node tests/mutation-harness.mjs"
   },
   "keywords": [
     "pcp",

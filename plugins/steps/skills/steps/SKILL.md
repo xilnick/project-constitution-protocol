@@ -7,6 +7,8 @@ description: "Run a roadmap or multi-phase plan to completion under separation o
 
 A protocol for running a roadmap through to the end without the agent grading its own homework.
 
+## Separation of duties
+
 The central rule: **the agent that writes a thing never reviews it.** Everything else here follows
 from that, or from a defect that got through because it was violated.
 
