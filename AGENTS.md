@@ -22,12 +22,11 @@ This repository is a Claude Code **plugin marketplace**, not a single skill. It 
   - `skills/steps-{plan,review,implement,verify,fix}/` — the five stages, each invocable on its own.
   - `MODEL_ROUTING.md` — role→tier→model class, the complexity gate, the escalation triggers, and
     the per-harness model bindings.
-  - `roles/`, `partials/` — **the canonical source** for the nine role briefs: per-role prose plus
-    the shared rules, included once and composed at render time.
+  - `roles/`, `partials/` — **the canonical source** for the nine role briefs (`@pcp:d-82a0`).
   - `tools/render.mjs` — renders `agents/` and every `harnesses/` manifest from `roles/`, `partials/`
     and each harness's `profile.json`. Run `npm run render`; `npm test` runs `--check`.
-  - `agents/`, `harnesses/*/` — **rendered output**, committed because installs copy it. Never edit
-    by hand: the render check will fail and your edit will be overwritten.
+  - `agents/`, `harnesses/*/` — **rendered output**, committed because installs copy it
+    (`@pcp:c-6307`).
 - `plugins/toolbelt/` — the habits that decide what an agent costs.
   - `.claude-plugin/plugin.json`
   - `skills/parallel/`, `skills/tokensave/`, `skills/search-tools/`
@@ -44,29 +43,27 @@ suite's `skillDir` constant both point there; move the skill and both must move 
 
 ### Conventions
 
-- `plugins/steps/skills/steps/SKILL.md` is canonical for the steps protocol. The agent briefs are
-  the mechanism it describes — they must agree with it and must not restate it at length. Neither
-  plugin ships a `commands/` directory: the skills are the entrypoints, and `/steps` invokes the
-  steps skill itself.
+Each rule below is enforced here; the reasoning behind it is one `pcp read` away, never restated.
+
+- `plugins/steps/skills/steps/SKILL.md` is canonical for the steps protocol; the agent briefs are the
+  mechanism it describes and must not restate it at length (`@pcp:d-83c2`). Neither plugin ships a
+  `commands/` directory — the skills are the entrypoints, `/steps` invokes the steps skill itself,
+  and the repo-root `.claude/commands/pcp.md` is the one alias.
 - Agent frontmatter follows the shape used by the official `feature-dev` plugin: `name`,
-  `description`, `tools`, `model`, `color`. Wrong frontmatter makes the artifact silently
-  undiscoverable.
-- Reviewer and planner agents are given no `Edit` tool. The tool model cannot scope `Write` to a
-  path, so each such agent's body states the restriction instead.
-- A role change belongs in `plugins/steps/roles/<role>.md`, or in `partials/` when it is a rule every
-  role shares. Tool names, models and capability fields belong in a harness's `profile.json`, never
-  in a rendered file: each harness's write capability is derived from the role's `writes` class, so
-  one profile rule fixes every manifest at once.
+  `description`, `tools`, `model`, `color` (`@pcp:c-6c09`).
+- Reviewer and planner agents are given no `Edit` tool, and each such agent's body states the
+  restriction (`@pcp:d-f3ba`).
+- A role change belongs in `plugins/steps/roles/<role>.md`, or in `partials/` when every role shares
+  it; tool names, models and capability fields belong in a harness's `profile.json` (`@pcp:d-82a0`).
 - Model routing is specified in `MODEL_ROUTING.md`; the `model`/`model_reasoning_effort` field of
   every harness manifest must agree with its tables.
 
 ## Execution
 
 The steps protocol governs execution: `plugins/steps/skills/steps/SKILL.md` composes the phases and
-`plugins/steps/MODEL_ROUTING.md` holds the complexity gate and the escalation ladder. The tiers, the
-stages each tier runs, and the escalation triggers are declared once, in `ai-docs/constitution.yaml`
-under `constitution.execution`; those docs are that block's prose. Do not restate the ladder anywhere
-else — a fifth copy is how the four drifted apart. A stage is loaded when the tier calls for it, not
+`plugins/steps/MODEL_ROUTING.md` holds the complexity gate and the escalation ladder. Both are prose
+for a single declaration — `ai-docs/constitution.yaml` under `constitution.execution` — which is the
+only place the ladder is written (`@pcp:d-83c2`). A stage is loaded when the gate calls for it, not
 by default: implement and verify run always, the rest earn their place.
 
 ## Strict Tool Routing
@@ -75,8 +72,9 @@ The habits themselves live in the `toolbelt` skills — `parallel` for fan-out, 
 code graph and its staleness, `search-tools` for text, structure and structured data. They are not
 restated here. What is local to this repository:
 
-- The verification command is `npm test`, and it must exit 0 before a phase is complete or anything
-  is committed. `MODEL_ROUTING.md` holds the resolution order for projects that name it differently.
-- Rendered files (`plugins/steps/agents/`, `plugins/steps/harnesses/*/`) are never edited directly.
+- The verification command is `npm test` (`@pcp:d-b9e6`); `MODEL_ROUTING.md` holds the resolution
+  order for projects that name it differently.
+- Rendered files (`plugins/steps/agents/`, `plugins/steps/harnesses/*/`) are never edited directly
+  (`@pcp:c-6307`).
 - Governance queries go through `constitution-query`; `ai-docs/constitution.yaml` is the source, and
   `.pcp/` is the pcp CLI's machine-local sandbox rather than governance.
