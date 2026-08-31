@@ -1,5 +1,7 @@
 {
   "enabledPlugins": {
-    "pcp@pcp": true
+    "pcp@pcp": true,
+    "steps@pcp": true,
+    "toolbelt@pcp": true
   }
 }
