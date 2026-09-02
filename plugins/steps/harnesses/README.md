@@ -65,17 +65,22 @@ opencode/.opencode/agents/*.md → ~/.config/opencode/agents/   (global)
 Markdown agents; the filename is the agent name. `model` uses `provider/model-id`; read-only roles
 get `permission.edit: deny` with `bash` allowed so they can run gates.
 
-## Antigravity (Google)
+## Antigravity CLI (`agy`)
 
 ```
-antigravity/.agents/agents/*.md → ~/.gemini/config/agents/          (global)
-                                  <workspace>/.agents/agents/       (workspace)
+agy plugin install plugins/steps/harnesses/antigravity
 ```
+
+The Antigravity harness renders as a plugin bundle: `plugin.json` plus `agents/` (the nine roles),
+`skills/` (the orchestrator and five stages), and `MODEL_ROUTING.md` at the bundle root, so the
+skill's "plugin root" reference resolves after install. `agy plugin install` stages it under
+`~/.gemini/antigravity-cli/plugins/steps/`; `agy plugin uninstall steps` reverses it.
 
 YAML-frontmatter subagents (`name`, `description`, `tools`, `subagent`, `mainAgent`, `model`,
-`permissionMode`, `commandExecutionPolicy`). `model` is `flash` or `pro`. Tool names are
-`view_file`, `grep_search`, `run_command`, `replace_file_content`. For autonomous background
-runs every agent carries `permissionMode: acceptEdits` (auto-approve file edits) and
+`commandExecutionPolicy`). `model` is a tier — `inherit`, `flash`, or `pro`; the low/medium/high
+thinking level is not a subagent field, it is the session's `--effort` (or the `/model` variant
+`gemini-3.8-flash-low|medium|high`). Tool names are `view_file`, `grep_search`, `run_command`,
+`replace_file_content`. Every agent carries `subagent: true`, `mainAgent: false`, and
 `commandExecutionPolicy: eager` (auto-run shell commands; high-risk commands stay gated). Set the
 CLI `agentMode` to `accept-edits` and `toolPermission` to `proceed-in-sandbox` in
 `~/.gemini/antigravity-cli/settings.json` so subagents inherit it.

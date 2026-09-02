@@ -346,6 +346,10 @@ test('Modular Skills Discoverability & Frontmatter Conformance', async (t) => {
           `required heading: ${heading} — missing, empty, or only present inside a fenced block in ${skill.relPath}`
         );
       }
+      if (skill.mirrors) {
+        const source = await fs.readFile(skill.mirrors, 'utf8');
+        assert.equal(content, source, `Skill ${skill.relPath} must byte-match its source ${skill.mirrors}`);
+      }
     });
   }
 });

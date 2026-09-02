@@ -143,6 +143,12 @@ for (const profile of profiles) {
     outputs.push({ rel: profile.out.replace('{name}', role.facts.name), text: renderRole(profile, role) });
   }
   if (profile.skillCopy) outputs.push(skillCopy(profile));
+  if (profile.bundle) {
+    outputs.push({ rel: `${profile.bundle.root}/plugin.json`, text: JSON.stringify(profile.bundle.pluginJson, null, 2) + '\n' });
+    for (const c of profile.bundle.copies) {
+      outputs.push({ rel: `${profile.bundle.root}/${c.to}`, text: fs.readFileSync(path.join(ROOT, c.from), 'utf8') });
+    }
+  }
 }
 
 const drift = [];

@@ -383,7 +383,7 @@ export const WRITE_CLASS_EXPECTATIONS = [
   },
   {
     harness: "antigravity",
-    manifest: "plugins/steps/harnesses/antigravity/.agents/agents/{name}.md",
+    manifest: "plugins/steps/harnesses/antigravity/agents/{name}.md",
     tokens: { none: { absent: ["replace_file_content"] }, report: { present: ["replace_file_content"] }, code: { present: ["replace_file_content"] } },
   },
   {
@@ -497,5 +497,77 @@ export const SKILL_INVENTORY = [
     relPath: "plugins/steps/harnesses/droid/skills/steps/SKILL.md",
     expectedName: "steps",
     requiredHeadings: ["Roles","Separation of duties","The phase loop","Rules that were paid for","Droid specifics"],
+  },
+  {
+    relPath: "plugins/steps/harnesses/antigravity/skills/steps/SKILL.md",
+    expectedName: "steps",
+    requiredHeadings: ["Roles","Separation of duties","The phase loop","Rules that were paid for"],
+  },
+  {
+    relPath: "plugins/steps/harnesses/antigravity/skills/steps-plan/SKILL.md",
+    expectedName: "steps-plan",
+    requiredHeadings: ["Why the stage exists","When you need it","How to run it","Done when"],
+  },
+  {
+    relPath: "plugins/steps/harnesses/antigravity/skills/steps-review/SKILL.md",
+    expectedName: "steps-review",
+    requiredHeadings: ["Why the stage exists","When you need it","How to run it","Done when"],
+  },
+  {
+    relPath: "plugins/steps/harnesses/antigravity/skills/steps-implement/SKILL.md",
+    expectedName: "steps-implement",
+    requiredHeadings: ["Why the stage exists","How to run it","Escalation","Done when"],
+  },
+  {
+    relPath: "plugins/steps/harnesses/antigravity/skills/steps-verify/SKILL.md",
+    expectedName: "steps-verify",
+    requiredHeadings: ["Why the stage exists","How to run it","Escalation","Done when"],
+  },
+  {
+    relPath: "plugins/steps/harnesses/antigravity/skills/steps-fix/SKILL.md",
+    expectedName: "steps-fix",
+    requiredHeadings: ["Why the stage exists","When you need it","How to run it","Done when"],
+  },
+  {
+    relPath: "plugins/toolbelt/harnesses/antigravity/skills/parallel/SKILL.md",
+    expectedName: "parallel",
+    requiredHeadings: ["The mechanic that decides everything","Where the wins actually are","Splitting","When not to","Boundary"],
+    mirrors: "plugins/toolbelt/skills/parallel/SKILL.md",
+  },
+  {
+    relPath: "plugins/toolbelt/harnesses/antigravity/skills/tokensave/SKILL.md",
+    expectedName: "tokensave",
+    requiredHeadings: ["The habit","When the graph is lying to you","Living with the installer","Boundary"],
+    mirrors: "plugins/toolbelt/skills/tokensave/SKILL.md",
+  },
+  {
+    relPath: "plugins/toolbelt/harnesses/antigravity/skills/search-tools/SKILL.md",
+    expectedName: "search-tools",
+    requiredHeadings: ["The routing rule","Structural search and rewrite","Slices, not files","Boundary"],
+    mirrors: "plugins/toolbelt/skills/search-tools/SKILL.md",
+  },
+  {
+    relPath: "plugins/pcp/harnesses/antigravity/skills/pcp/SKILL.md",
+    expectedName: "pcp",
+    requiredHeadings: ["INVOCATION CONTRACT","CORE OPERATIONAL INVARIANTS","CLI MAINTENANCE SUBCOMMANDS","LIFECYCLE DEVELOPMENT GUARDRAILS"],
+    mirrors: "plugins/pcp/skills/pcp/SKILL.md",
+  },
+  {
+    relPath: "plugins/pcp/harnesses/antigravity/skills/constitution-query/SKILL.md",
+    expectedName: "constitution-query",
+    requiredHeadings: ["Progressive Disclosure","Shortcode Taxonomy","Query Recipes"],
+    mirrors: "plugins/pcp/skills/constitution-query/SKILL.md",
+  },
+  {
+    relPath: "plugins/pcp/harnesses/antigravity/skills/code-intelligence/SKILL.md",
+    expectedName: "code-intelligence",
+    requiredHeadings: ["Progressive Disclosure","Tool Invocation Modes","Navigation & Inspection Recipes","Agent Operational Rules"],
+    mirrors: "plugins/pcp/skills/code-intelligence/SKILL.md",
+  },
+  {
+    relPath: "plugins/pcp/harnesses/antigravity/skills/adr-manager/SKILL.md",
+    expectedName: "adr-manager",
+    requiredHeadings: ["Lifecycle & Workflow","Canonical ADR Template","Bidirectional Synchronization","Operational Guardrails"],
+    mirrors: "plugins/pcp/skills/adr-manager/SKILL.md",
   },
 ];

@@ -138,7 +138,7 @@ export const HARNESS_BINDINGS = [
   {
     key: 'antigravity',
     heading: 'Antigravity (`harnesses/antigravity/`)',
-    manifest: 'plugins/steps/harnesses/antigravity/.agents/agents/%s.md',
+    manifest: 'plugins/steps/harnesses/antigravity/agents/%s.md',
     roles: {
       'repo-scout': { model: 'flash', effort: null },
       'steps-planner': { model: 'flash', effort: null },

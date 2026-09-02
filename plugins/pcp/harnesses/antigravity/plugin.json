@@ -1,0 +1,4 @@
+{
+  "name": "pcp",
+  "description": "Project Constitution Protocol for Antigravity CLI: record decisions, constraints, rationale and lessons as short coded entries so intent survives context loss. Per-project by design — install it, then activate it from the project's AGENTS.md."
+}

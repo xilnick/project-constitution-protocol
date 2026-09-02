@@ -8,7 +8,6 @@ tools:
 subagent: true
 mainAgent: false
 model: flash
-permissionMode: acceptEdits
 commandExecutionPolicy: eager
 ---
 

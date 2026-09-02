@@ -1,7 +1,7 @@
 {
   "key": "antigravity",
   "label": "Antigravity",
-  "out": "harnesses/antigravity/.agents/agents/{name}.md",
+  "out": "harnesses/antigravity/agents/{name}.md",
   "format": "md",
   "h1": true,
   "vars": {
@@ -35,14 +35,28 @@
     "subagent",
     "mainAgent",
     "model",
-    "permissionMode",
     "commandExecutionPolicy"
   ],
   "static": {
     "subagent": true,
     "mainAgent": false,
-    "permissionMode": "acceptEdits",
     "commandExecutionPolicy": "eager"
+  },
+  "bundle": {
+    "root": "harnesses/antigravity",
+    "pluginJson": {
+      "name": "steps",
+      "description": "Run a roadmap phase by phase under separation of duties for Antigravity CLI: the steps orchestrator skill, its five stage skills, and the nine role subagents."
+    },
+    "copies": [
+      { "from": "skills/steps/SKILL.md", "to": "skills/steps/SKILL.md" },
+      { "from": "skills/steps-plan/SKILL.md", "to": "skills/steps-plan/SKILL.md" },
+      { "from": "skills/steps-review/SKILL.md", "to": "skills/steps-review/SKILL.md" },
+      { "from": "skills/steps-implement/SKILL.md", "to": "skills/steps-implement/SKILL.md" },
+      { "from": "skills/steps-verify/SKILL.md", "to": "skills/steps-verify/SKILL.md" },
+      { "from": "skills/steps-fix/SKILL.md", "to": "skills/steps-fix/SKILL.md" },
+      { "from": "MODEL_ROUTING.md", "to": "MODEL_ROUTING.md" }
+    ]
   },
   "models": {
     "repo-scout": {
