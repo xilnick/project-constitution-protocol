@@ -1,2 +1,4 @@
 
 .pcp/
+.worktrees/
+.tokensave/

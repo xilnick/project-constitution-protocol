@@ -22,15 +22,13 @@ back here. That is the ladder working, not a corner cut.
 
 ## How to run it
 
-1. One scout builds the Context Digest — `repo-scout`, or Claude Code's built-in `explore`, which is
-   the same role and is prioritised there.
-2. One planner writes `.plans/phase-N/PLAN.md`. Which planner is the complexity gate's call:
-   `steps-planner` for a standard phase, `steps-architect-pro` when the phase is architectural.
-   In Batch Ahead mode, Phase 0 plans all phases upfront; each plan explicitly lists its target
-   files so the orchestrator can compute non-overlapping parallel waves.
-3. The planner re-reads its own plan once before reporting: every item names its files and its gate,
-   and the ordering has no gaps or contradictions. A plan that fails its own self-check goes back to
-   step 2 before it ever reaches a reviewer.
+1. Scouting (optional): for complex phases, 1–3 scouts run in parallel across codebase (`explore`/`repo-scout`),
+   docs (`research`), or coupling, each returning a digest (≤ 3k tokens).
+2. One planner writes `.plans/phase-N/PLAN.md` (`steps-planner` or `steps-architect-pro`). The planner
+   defines `depends_on`, disjoint `owns` paths, and worktree needs. Each work item names its files,
+   its gate, and its prerequisite items.
+3. The planner re-reads its plan: items name files and gates, dependencies have no cycles, and file
+   ownership is declared. A plan failing self-check goes back to step 2 before reaching review.
 
 Both agents carry their own rules; this skill does not restate them.
 

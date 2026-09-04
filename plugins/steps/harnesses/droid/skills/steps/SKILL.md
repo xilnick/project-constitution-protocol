@@ -46,21 +46,27 @@ active iteration (a `PHASES.md` plus `phase-*/` directories) this is a resume, n
 `PHASES.md`, `ORCHESTRATOR-LOG.md`, and `STATUS.md` first and report which phases are already done
 before proposing anything. If neither exists, this is a fresh start.
 
-Then write `.plans/PHASES.md` — the ordered phases, each with a one-line acceptance criterion that
-is **checkable by a command**, plus a section naming what is out of scope and why. A phase whose
-criterion cannot be checked by running something is not a phase yet: split it or harness it.
-Present the list compactly; do not dump the file.
+Then write `.plans/PHASES.md` — the linked roadmap. Each phase declares: `id` (slug), `depends_on`
+(prerequisites or `[]`), `owns` (exclusive file patterns), `priority` (`P0`..`P2`), `isolation`
+(`single-tree` or `worktree`), `gate` (failing command), and `status` (`pending`..`done`).
+
+Present the table and ASCII/Mermaid DAG for **Review, Link & Prioritize**:
+1. **Cycle check**: Kahn's topological sort validates the DAG.
+2. **Disjoint ownership**: Candidate parallel phases must not share `owns` paths; factor shared
+   dependencies into a prerequisite micro-phase.
+3. **Wave assignment**: Phases with dependencies met form `Wave 0`; dependents form `Wave 1`, `Wave 2`...
+4. **User alignment**: Allow user to adjust links, priorities, or splits before launch.
 
 Then ask the three questions, in one message, once, and apply the answers to every remaining phase
 rather than asking again:
 
 1. **Commit per phase, or work on a branch?** If a branch, which name.
 2. **How much of the roadmap in this pass?** All of it, through phase N, or a budget.
-3. **Planning mode: JIT or Batch Ahead?** JIT plans each phase as you reach it. Batch Ahead runs Phase 0
-   to draft all phase plans upfront, checks each plan with `gap`, verifies cross-phase consistency, and
-   executes non-overlapping phases in parallel waves.
+3. **Planning mode: JIT or Batch Ahead?** JIT plans and reviews each wave as you reach it. Batch Ahead
+   runs Phase 0 to draft all phase plans upfront, checks each plan with `gap`, locks cross-phase
+   dependencies into the DAG, and executes non-overlapping phases in parallel waves.
 
-Do not begin phase 1 until all three are answered.
+Do not begin phase execution until all three are answered.
 
 ## The phase loop
 
@@ -87,45 +93,37 @@ Around the stages, the work that is yours alone:
 
 - **Pick the tier once**, at the start of the phase, and record it with your reason in
   `ORCHESTRATOR-LOG.md`. For a fast-track task that line is the only artifact.
-- **Reproduce the critical gates yourself** after the implementer or reviewer reports. A green you
-  did not run is not a green.
-- **Record** what you measured this session in the roadmap and the project's intent record — numbers
-  you ran, not numbers you copied.
-- **Commit** once per phase. Then the next phase.
+- **Reproduce critical gates yourself** after reports. A green you did not run is not a green.
+- **Record** what you measured this session in the roadmap and intent record — numbers you ran.
+- **Commit & Unblock**: Commit each verified phase diff (`git add <owns>`), update `STATUS.md` to
+  `done`, and unblock downstream phases. Failing phases stay `blocked`; independent tracks proceed.
 
-Dispatch each wave as **one message with several agent calls**; the same calls spread over turns run
-serially. Track phases with a todo list.
+Dispatch each wave as **one message with several agent calls**; sequential calls run serially.
 
 ## Model routing
 
 The protocol routes its six roles across two model tiers: cheap fast models do the volume work,
-heavy models plan and critique but never touch code. `MODEL_ROUTING.md` at the plugin root is the
-single source of truth — role→tier→model class, the complexity gate, the escalation triggers, and
-the concrete per-harness bindings. The agent manifests for each harness live under `harnesses/`.
+heavy models plan and critique but never touch code. `MODEL_ROUTING.md` is the single source of
+truth — role→tier→model class, complexity gate, escalation triggers, and per-harness bindings.
 
 | Tier | Plans with | Escalates to |
 |---|---|---|
-| **Tier 0 (Fast-Track / Planning Bypass)** | nobody — `steps-implementer`, then the verification gate | Tier 1 |
+| **Tier 0 (Fast-Track / Planning Bypass)** | nobody — `steps-implementer`, then verification gate | Tier 1 |
 | **Tier 1 (Standard)** | `steps-planner` | Tier 2 |
 | **Tier 2 (Architectural)** | `steps-architect-pro` | — |
 
-Pick the tier once per phase, at the start; implementation is always `steps-implementer`. A phase
-begins at the lowest tier that fits and climbs when a runtime signal says that was the wrong bet:
-`gate-failed` from the implementation reviewer, `hidden-coupling` from the implementer, or
-`circuit-breaker` — yours — on the second distinct failure, which rolls the tree back
-(`git checkout -- .`) and re-dispatches `steps-implementer` rather than the flash coder a third time.
-Escalating adds the roles the tier was missing; it does not restart the phase. Record the tier and
-every escalation in `ORCHESTRATOR-LOG.md`: for a Tier-0 task that line is the only artifact.
+Pick the tier once per phase; implementation is always `steps-implementer`. A phase climbs when a
+runtime signal says that was the wrong bet: `gate-failed` from impl-reviewer, `hidden-coupling` from
+implementer, or `circuit-breaker` — yours — on the second distinct failure, which rolls the tree
+back (`git checkout -- .`) and re-dispatches `steps-implementer`. Escalating adds missing roles.
 
-- **Scouting** (before planning): `repo-scout` builds a Context Digest that feeds the planner. In
-  Claude Code, the built-in `explore` agent already fills this role and is prioritized there —
-  dispatch `explore` for scouting instead of `repo-scout`, and never forbid it.
-- **Constitution check** (graceful degradation): the plan reviewer checks `ai-docs/constitution.yaml`,
-  `.factory/CONSTITUTION.md` or `CONSTITUTION.md` if present — a violation is a blocker; if none
-  exists, it falls back to a basic engineering audit and the pipeline does not fail for the absence
-  of a constitution.
+- **Scouting & Reconnaissance** (optional / escalation): For large features or unknowns, dispatch
+  1–3 scouts in parallel across codebase (`explore`/`repo-scout`), docs (`research`), and coupling.
+  Each digest is budgeted to ≤ 3k tokens. Missing context triggers a scout wave before drafting.
+- **Constitution check** (graceful degradation): the plan reviewer checks `ai-docs/constitution.yaml`
+  or `CONSTITUTION.md` if present; falls back to basic audit if missing.
 - **Hard rules:** Tier-2 models never write code. Tier-2 context is distilled Tier-1 conclusions,
-  never raw dumps. Every gate is run read-only and its current output recorded as evidence.
+  never raw dumps. Every gate is run read-only with current output recorded as evidence.
 
 ## Droid specifics
 
@@ -188,11 +186,18 @@ When two agents write code at once, give each an explicit ownership list:
 And tell each which gates to run and which to leave alone, so neither interprets the other's
 half-finished state as its own failure.
 
-In Batch Ahead planning, phases whose declared file ownership sets are disjoint can be executed in
-the same implementation wave. Each phase keeps its own gate and review file.
+In DAG planning, phases with disjoint file ownership run concurrently in parallel waves:
 
-Do not parallelise when one step's output feeds the next, when agents would edit the same files
-(use separate worktrees if they must), or when the action is irreversible — those stay with you.
+1. **Single-Tree Mode (Default)**: Parallel implementers work in the primary workspace with
+   disjoint `owns` paths. On verified gate, commit that phase's diff immediately:
+   `git add <owns> && git commit -m "feat(<phase-id>): <summary>"`.
+2. **Git Worktrees Mode (`isolation: worktree`)**: Used for build or filesystem isolation. Spawn via
+   `git worktree add -b <id> .worktrees/<id> <branch>` (`.worktrees/` gitignored). Implementer and
+   gate run inside the worktree. Fast-forward merge onto main (`git merge --ff-only <id>`); on
+   conflict abort (`git rebase --abort`) and halt. Cleanup with `git worktree remove --force .worktrees/<id>`.
+
+Do not parallelise when one phase's output feeds the next, or when shared files have not been
+extracted into a prior wave.
 
 ## Writing a brief
 
@@ -217,9 +222,9 @@ A brief is self-contained. The agent sees none of your conversation.
 ```
 .plans/
   INDEX.md                 the iteration registry: id, created, status, goal, current phase
-  PHASES.md                the active iteration's phase list, with what is out of scope and why
-  ORCHESTRATOR-LOG.md      cross-phase findings, ownership decisions, per-phase tier and status
-  STATUS.md                current phase, what is done, why paused
+  PHASES.md                the linked phase graph (DAG, depends_on, owns, waves, status)
+  ORCHESTRATOR-LOG.md      cross-phase findings, wave dispatches, ownership and rebase decisions
+  STATUS.md                current wave, phase states (ready, running, blocked, done), why paused
   phase-N/
     PLAN.md                the planner's plan, in place
     REVIEW.md              one plan-review verdict and its findings

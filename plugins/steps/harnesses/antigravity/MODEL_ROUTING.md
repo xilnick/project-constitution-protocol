@@ -51,12 +51,24 @@ that tier was the wrong bet. The triggers are declared in
 | `gate-failed` | `steps-impl-reviewer` | report the failing gate verbatim and name the tier to escalate to; never fix it |
 | `hidden-coupling` | `steps-implementer` | stop varying details, report the verbatim error, request escalation |
 | `circuit-breaker` | orchestrator | on the second distinct failure, roll back (`git checkout -- .`) and re-dispatch `steps-implementer` |
+| `missing-context` | orchestrator / planner | launch a multi-scout wave (1–3 scouts, ≤ 3k tokens each) before planning or escalating |
 
 Escalating adds the roles the tier was missing rather than restarting the phase: a Tier-0 task whose
-gate fails becomes a Tier-1 phase with a plan; a Tier-1 phase that surfaces an invariant nobody
-planned for is re-planned by the architect at Tier 2. Roles compose to the tier, not the other way
-round — `steps-implementer` ➔ gate at Tier 0, `steps-planner` ➔ `steps-plan-reviewer` ➔
-`steps-implementer` ➔ `steps-impl-reviewer` at Tier 1, the architect planning it at Tier 2.
+gate fails becomes a Tier-1 phase with a plan; missing context or broad unknowns trigger a parallel
+scout reconnaissance wave; a Tier-1 phase that surfaces an invariant nobody planned for is
+re-planned by the architect at Tier 2. Roles compose to the tier, not the other way round —
+`steps-implementer` ➔ gate at Tier 0, `steps-planner` ➔ `steps-plan-reviewer` ➔ `steps-implementer`
+➔ `steps-impl-reviewer` at Tier 1, the architect planning it at Tier 2.
+
+### Wave concurrency & isolation
+
+Independent phases resolved by Kahn's topological sort execute concurrently in parallel waves:
+- **Concurrency ceiling**: 3–5 parallel `steps-implementer` agents per wave to avoid context saturation.
+- **Scout wave ceiling**: 1–3 parallel scouts across codebase, external web docs, and subsystem coupling,
+  strictly budgeted to ≤ 2.5–3k tokens per digest.
+- **Single-Tree vs Worktree**: Single-tree execution requires strictly disjoint `owns` paths; worktree
+  execution (`isolation: worktree`) provides isolated git worktrees per phase, integrated sequentially
+  via rebase and fast-forward merge.
 
 The orchestrator records the tier it chose, and any escalation with its trigger, in
 `ORCHESTRATOR-LOG.md`. For a Tier-0 task that log line is the only artifact, so it is not optional.
