@@ -17,7 +17,7 @@ one starts.
 ## When you need it
 
 When the change is bigger than one verification gate can adjudicate. If a single command can show
-the work right or wrong, skip this stage: implement, then verify, and let a failing gate escalate you
+the work right or wrong, skip this stage: implement, then review, and let a failing gate escalate you
 back here. That is the ladder working, not a corner cut.
 
 ## How to run it
@@ -26,7 +26,11 @@ back here. That is the ladder working, not a corner cut.
    the same role and is prioritised there.
 2. One planner writes `.plans/phase-N/PLAN.md`. Which planner is the complexity gate's call:
    `steps-planner` for a standard phase, `steps-architect-pro` when the phase is architectural.
-   Routing the architect at a standard phase is a defect, not thoroughness.
+   In Batch Ahead mode, Phase 0 plans all phases upfront; each plan explicitly lists its target
+   files so the orchestrator can compute non-overlapping parallel waves.
+3. The planner re-reads its own plan once before reporting: every item names its files and its gate,
+   and the ordering has no gaps or contradictions. A plan that fails its own self-check goes back to
+   step 2 before it ever reaches a reviewer.
 
 Both agents carry their own rules; this skill does not restate them.
 

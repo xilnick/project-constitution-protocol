@@ -35,8 +35,7 @@ SKILLS=(
   "$TEST_HOME/.claude/plugins/steps/skills/steps-plan/SKILL.md"
   "$TEST_HOME/.claude/plugins/steps/skills/steps-review/SKILL.md"
   "$TEST_HOME/.claude/plugins/steps/skills/steps-implement/SKILL.md"
-  "$TEST_HOME/.claude/plugins/steps/skills/steps-verify/SKILL.md"
-  "$TEST_HOME/.claude/plugins/steps/skills/steps-fix/SKILL.md"
+  "$TEST_HOME/.claude/plugins/steps/skills/gap/SKILL.md"
   "$TEST_HOME/.claude/plugins/toolbelt/skills/parallel/SKILL.md"
   "$TEST_HOME/.claude/plugins/toolbelt/skills/tokensave/SKILL.md"
   "$TEST_HOME/.claude/plugins/toolbelt/skills/search-tools/SKILL.md"
@@ -130,12 +129,12 @@ echo "==> 5. Testing recipe execution from unrelated directory (NO cd into repo)
     echo "  [PASS] code-intelligence: verified skill instructions intact"
   fi
 
-  # Skill 5: steps, and the five stages it composes
+  # Skill 5: steps, and the three stages it composes
   STEPS_SKILL="$TEST_HOME/.claude/plugins/steps/skills/steps/SKILL.md"
   if grep -q "Separation of duties" "$STEPS_SKILL"; then
     echo "  [PASS] steps: verified protocol instructions intact"
   fi
-  for stage in plan review implement verify fix; do
+  for stage in plan review implement; do
     if grep -q "Why the stage exists" "$TEST_HOME/.claude/plugins/steps/skills/steps-$stage/SKILL.md"; then
       echo "  [PASS] steps-$stage: stage is invocable on its own"
     else

@@ -18,6 +18,11 @@ One `steps-implementer` executes the items in order. With no plan, the phase's o
 command is the whole item list — make the change, run it, report. The implementer does not review its
 own work and does not commit; the orchestrator does both.
 
+The implementer re-reads its own diff once before reporting: the change does what the plan asked,
+nothing more, nothing less, and no gate was weakened to make it green. That self-check is the first
+verification pass; on a planned phase a separate implementation reviewer is the second, on a
+fast-track change the orchestrator reproduces the gate itself.
+
 ## The rule that cannot bend
 
 Never make a gate pass by weakening it: no new skip entry, no loosened assertion, no narrowed glob,
@@ -37,4 +42,5 @@ recorded.
 
 ## Next
 
-`steps-verify`, always.
+`steps-review` when the phase was planned; a fast-track change goes straight to the orchestrator,
+which reproduces the gate and commits.

@@ -19,10 +19,10 @@ This repository is a Claude Code **plugin marketplace**, not a single skill. It 
   - `.claude-plugin/plugin.json`
   - `skills/steps/SKILL.md` — the orchestrator: separation of duties, the stage composition, the
     complexity gate, the artifacts.
-  - `skills/steps-{plan,review,implement,verify,fix}/` — the five stages, each invocable on its own.
+  - `skills/steps-{plan,review,implement}/` — the three stages, each invocable on its own.
   - `MODEL_ROUTING.md` — role→tier→model class, the complexity gate, the escalation triggers, and
     the per-harness model bindings.
-  - `roles/`, `partials/` — **the canonical source** for the nine role briefs (`@pcp:d-82a0`).
+  - `roles/`, `partials/` — **the canonical source** for the six role briefs (`@pcp:d-82a0`).
   - `tools/render.mjs` — renders `agents/` and every `harnesses/` manifest from `roles/`, `partials/`
     and each harness's `profile.json`. Run `npm run render`; `npm test` runs `--check`.
   - `agents/`, `harnesses/*/` — **rendered output**, committed because installs copy it
@@ -64,7 +64,7 @@ The steps protocol governs execution: `plugins/steps/skills/steps/SKILL.md` comp
 `plugins/steps/MODEL_ROUTING.md` holds the complexity gate and the escalation ladder. Both are prose
 for a single declaration — `ai-docs/constitution.yaml` under `constitution.execution` — which is the
 only place the ladder is written (`@pcp:d-83c2`). A stage is loaded when the gate calls for it, not
-by default: implement and verify run always, the rest earn their place.
+by default: implement runs always, the rest earn their place.
 
 ## Strict Tool Routing
 

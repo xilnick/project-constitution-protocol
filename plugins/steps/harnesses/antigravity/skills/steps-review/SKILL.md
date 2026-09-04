@@ -1,6 +1,6 @@
 ---
 name: steps-review
-description: "Review a plan or an implementation through one lens per reviewer, then fold every finding into a single coherent result. Use when a plan exists and must be checked before code is written, when an implementation is complete and nothing is committed yet, or when reviewers disagree and one side has to lose on evidence."
+description: "Review a plan or an implementation with a single reviewer holding a clean context, then hand the findings back for the author to apply. Use when a plan exists and must be checked before code is written, or when an implementation is complete and nothing is committed yet."
 ---
 
 # steps-review
@@ -20,22 +20,26 @@ single item carries a declared expected result that a gate can check on its own.
 
 ## How to run it
 
-1. Two or three reviewers in **one message**, **one lens each** — spreading them over turns runs them
-   serially. Typical lenses: *design and spec consistency*, *executability and gates*, *coverage*
-   before implementation; *correctness and regression*, *conformance and gate integrity*, *reuse and
-   dead state* after it. On a Tier 1.5 phase `steps-architect-pro` may join as one extra critic lens.
-2. One `steps-reconciler` folds every finding into `PLAN.md` v2 and records a disposition per finding
-   in `RECONCILIATION.md`. Nothing is dropped silently; v2 reads as one plan, never v1 plus errata.
+1. One reviewer at each review point, dispatched in a **fresh context**. `steps-plan-reviewer` checks
+   `PLAN.md` before implementation; `steps-impl-reviewer` checks the implementation after it, running
+   the gates itself rather than trusting the implementer's green. A single reviewer evaluates design,
+   gates, omissions, and anti-overengineering (`gap` skill) together.
+2. Findings go back to the author, not to a third party. Plan blockers return to `steps-planner`,
+   which rewrites the plan whole; implementation blockers return to `steps-implementer`, which fixes
+   the class of the defect and re-runs the gates.
 
 ## The two questions worth the wave
 
-Ask every plan reviewer: **what would a conformant-but-wrong implementation still pass?** Ask every
+Ask the plan reviewer: **what would a conformant-but-wrong implementation still pass?** Ask the
 implementation reviewer, of each gate file touched: **does this gate now check more, or less?**
 
 ## Done when
 
-Every review file has a verdict, every finding has exactly one disposition, and the counts match.
+The review file carries a verdict and every blocker names its evidence; blockers were handed back to
+the author for application.
 
 ## Next
 
-`steps-implement`, or `steps-fix` when the reviews returned blockers.
+`steps-implement` when the plan is approved, or back to `steps-plan` when the plan reviewer found
+blockers; after implementation, back to `steps-implement` when the implementation reviewer found
+blockers, otherwise commit.

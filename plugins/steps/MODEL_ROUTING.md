@@ -1,6 +1,6 @@
 # Model routing
 
-How the steps protocol maps its nine roles onto two model tiers, and how each harness binds
+How the steps protocol maps its six roles onto two model tiers, and how each harness binds
 those tiers to concrete models.
 
 The protocol is harness-agnostic. The roles, the phase loop, and the rules are the same
@@ -15,13 +15,10 @@ binding table below.
 |---|---|---|---|---|
 | `repo-scout` | 1 | cheap fast reader | Context Digest (report) | map the tree, interfaces, entrypoints, utilities |
 | `steps-planner` | 1 | cheap long-context reader | `PLAN.md` | read the tree, draft a plan with failing gates |
-| `steps-reconciler` | 1 | cheap long-context reader | `PLAN.md` v2, `RECONCILIATION.md` | fold review findings, dispositions |
+| `steps-plan-reviewer` | 1 | hard-reasoning reviewer | `REVIEW.md` | review a plan in a clean context, return a verdict |
 | `steps-implementer` | 1 | cheap fast coder | code | execute items, run gates, never weaken a gate |
-| `steps-plan-reviewer` | 1 | hard-reasoning reviewer | `REVIEW-<lens>.md` | one lens, verdict, catch a plan's holes |
-| `steps-impl-reviewer` | 1 | hard-reasoning reviewer | `IMPL-REVIEW-<lens>.md` | one lens, read real files, catch gate weakening |
-| `step-verifier` | 1 | hard-reasoning reviewer | gate-results report | run gates independently, check acceptance criteria |
-| `steps-architect-pro` | 2 | heavy architect (planning only) | `PLAN.md` or `REVIEW-<lens>.md` | invariants, ordering, failure modes, per-item gates |
-| `steps-fixer` | 2 | heavy debugger | code, own files only | deadlock escape, fix the class not the instance |
+| `steps-impl-reviewer` | 1 | hard-reasoning reviewer | `IMPL-REVIEW.md` | read real files, run gates, catch gate weakening |
+| `steps-architect-pro` | 2 | heavy architect (planning only) | `PLAN.md` | invariants, ordering, failure modes, per-item gates |
 
 ## Complexity gate
 
@@ -31,18 +28,17 @@ each one runs, and the escalation triggers — is declared in `ai-docs/constitut
 
 | Tier | Entry | Stages | Plans with | Escalates to |
 |---|---|---|---|---|
-| **Tier 0 (Fast-Track / Planning Bypass)** | a typo, an isolated single-line fix, a doc or config tweak | implement, verify | nobody | Tier 1 |
-| **Tier 1 (Standard)** | CRUD, a component edit, a local fix, a dependency bump | plan, implement, verify | `steps-planner` | Tier 1.5 |
-| **Tier 1.5 (Middle)** | more than standard, short of architectural | plan, review, implement, verify, fix | `steps-planner`, plus `steps-architect-pro` as one extra plan-review lens — critic, never author | Tier 2 |
-| **Tier 2 (Architectural)** | DB migration, protocol change, cross-cutting refactor, distributed logic or race-condition reasoning | plan, review, implement, verify, fix | `steps-architect-pro` | — |
+| **Tier 0 (Fast-Track / Planning Bypass)** | a typo, an isolated single-line fix, a doc or config tweak | implement | nobody | Tier 1 |
+| **Tier 1 (Standard)** | CRUD, a component edit, a local fix, a dependency bump | plan, review, implement | `steps-planner` | Tier 2 |
+| **Tier 2 (Architectural)** | DB migration, protocol change, cross-cutting refactor, distributed logic or race-condition reasoning | plan, review, implement | `steps-architect-pro` | — |
 
-Each stage is its own skill — `steps-plan`, `steps-review`, `steps-implement`, `steps-verify`,
-`steps-fix` — loaded when the tier calls for it. Implement and verify appear in every tier: they are
-what makes leaving the others out a decision rather than a gamble.
+Each stage is its own skill — `steps-plan`, `steps-review`, `steps-implement` — loaded when the
+tier calls for it. Implement appears in every tier: it is what makes leaving the others out a
+decision rather than a gamble. Review runs twice in a planned phase, once after the plan and once
+after the implementation, one reviewer each with a clean context.
 
 Tier 2 is rare by design: routing the architect for a standard phase is a defect, not thoroughness.
-Implementation is **always** `steps-implementer` (Tier 1). The only Tier-2 model that writes code is
-`steps-fixer`, and only as the deadlock escape.
+Implementation is **always** `steps-implementer` (Tier 1), and no Tier-2 model writes code.
 
 ### Escalation
 
@@ -52,23 +48,24 @@ that tier was the wrong bet. The triggers are declared in
 
 | Trigger | Detected by | Action |
 |---|---|---|
-| `gate-failed` | `step-verifier` | report the failing gate verbatim and name the tier to escalate to; never fix it |
+| `gate-failed` | `steps-impl-reviewer` | report the failing gate verbatim and name the tier to escalate to; never fix it |
 | `hidden-coupling` | `steps-implementer` | stop varying details, report the verbatim error, request escalation |
-| `circuit-breaker` | orchestrator | on the second distinct failure, roll back (`git checkout -- .`) and dispatch `steps-fixer` |
+| `circuit-breaker` | orchestrator | on the second distinct failure, roll back (`git checkout -- .`) and re-dispatch `steps-implementer` |
 
 Escalating adds the roles the tier was missing rather than restarting the phase: a Tier-0 task whose
 gate fails becomes a Tier-1 phase with a plan; a Tier-1 phase that surfaces an invariant nobody
-planned for gains the architect as a critic lens. Roles compose to the tier, not the other way
-round — `steps-implementer` ➔ gate at Tier 0, `steps-planner` ➔ `steps-implementer` ➔
-`step-verifier` at Tier 1, the full reconciled wave above it.
+planned for is re-planned by the architect at Tier 2. Roles compose to the tier, not the other way
+round — `steps-implementer` ➔ gate at Tier 0, `steps-planner` ➔ `steps-plan-reviewer` ➔
+`steps-implementer` ➔ `steps-impl-reviewer` at Tier 1, the architect planning it at Tier 2.
 
 The orchestrator records the tier it chose, and any escalation with its trigger, in
 `ORCHESTRATOR-LOG.md`. For a Tier-0 task that log line is the only artifact, so it is not optional.
 
 ### The verification gate
 
-Tier 0's only reviewer is the verification command, so it has to resolve to something real. Resolve
-it in the order declared in `constitution.execution.verification_command_resolution`:
+Tier 0's only review is the implementer's own self-check plus the verification command, so the
+command has to resolve to something real. Resolve it in the order declared in
+`constitution.execution.verification_command_resolution`:
 
 1. `constitution.verification_command` in `ai-docs/constitution.yaml`.
 2. The gate command named in `.factory/CONSTITUTION.md` or `CONSTITUTION.md`.
@@ -79,7 +76,7 @@ supplies per-item gates instead.
 
 ## Hard rules
 
-- Tier-2 models never write code, with one exception: `steps-fixer`.
+- Tier-2 models never write code.
 - Context into a Tier-2 agent is distilled conclusions from Tier-1 work — paths, gate outputs,
   findings — never raw file dumps. Tier-2 returns structured reasoning plus the plan.
 - Every agent runs each gate read-only and records its current (failing) output as evidence; no
@@ -102,57 +99,49 @@ session model:
 | Role | `model` |
 |---|---|
 | `repo-scout` | a fast cheap model (e.g. `claude-haiku-*`) |
-| `steps-planner`, `steps-reconciler` | a fast cheap model (e.g. `claude-haiku-*`) |
+| `steps-planner` | a fast cheap model (e.g. `claude-haiku-*`) |
 | `steps-plan-reviewer`, `steps-impl-reviewer` | a strong reasoning model (e.g. `claude-sonnet-*`) |
 | `steps-implementer` | a fast cheap model (e.g. `claude-haiku-*`) |
 | `steps-architect-pro` | your strongest model (e.g. `claude-opus-*`) |
-| `step-verifier` | a strong reasoning model (e.g. `claude-sonnet-*`) |
-| `steps-fixer` | your strongest model (e.g. `claude-opus-*`) |
 
 ### Droid (`harnesses/droid/`)
 
 | Role | `model` | `reasoningEffort` |
 |---|---|---|
 | `repo-scout` | `custom:~deepseek/deepseek-v4-flash-latest` | `low` |
-| `steps-planner`, `steps-reconciler` | `custom:z-ai/glm-5.3-flash-0` | `medium` |
+| `steps-planner` | `gpt-5.6-luna` | `medium` |
 | `steps-plan-reviewer`, `steps-impl-reviewer` | `custom:minimax/minimax-m3-0` | `high` |
 | `steps-implementer` | `custom:~deepseek/deepseek-v4-flash-latest` | `medium` |
 | `steps-architect-pro` | `custom:qwen/qwen-3.8-max-0` | `high` |
-| `step-verifier` | `custom:minimax/minimax-m3-0` | `medium` |
-| `steps-fixer` | `custom:deepseek/deepseek-v4-pro-0813-0` | `high` |
 
 ### Codex CLI (`harnesses/codex/`)
 
 | Role | `model` | `model_reasoning_effort` |
 |---|---|---|
 | `repo-scout` | `gpt-5.6-luna` | `low` |
-| `steps-planner`, `steps-reconciler` | `gpt-5.6-terra` | `medium` |
+| `steps-planner` | `gpt-5.6-terra` | `medium` |
 | `steps-plan-reviewer`, `steps-impl-reviewer` | `gpt-5.6-terra` | `high` |
 | `steps-implementer` | `gpt-5.6-luna` | `medium` |
 | `steps-architect-pro` | `gpt-5.6` | `high` |
-| `step-verifier` | `gpt-5.6-terra` | `medium` |
-| `steps-fixer` | `gpt-5.6` | `max` |
 
 ### OpenCode (`harnesses/opencode/`)
 
 | Role | `model` (`provider/model-id`) |
 |---|---|
 | `repo-scout` | `anthropic/claude-haiku-4-20250514` |
-| `steps-planner`, `steps-reconciler` | `anthropic/claude-haiku-4-20250514` |
+| `steps-planner` | `anthropic/claude-haiku-4-20250514` |
 | `steps-plan-reviewer`, `steps-impl-reviewer` | `anthropic/claude-sonnet-4-20250514` |
 | `steps-implementer` | `openai/gpt-5.1-codex` |
-| `step-verifier` | `anthropic/claude-sonnet-4-20250514` |
-| `steps-architect-pro`, `steps-fixer` | `anthropic/claude-sonnet-4-20250514` |
+| `steps-architect-pro` | `anthropic/claude-sonnet-4-20250514` |
 
 ### Antigravity (`harnesses/antigravity/`)
 
 | Role | `model` |
 |---|---|
 | `repo-scout` | `flash` |
-| `steps-planner`, `steps-reconciler`, `steps-implementer` | `flash` |
+| `steps-planner`, `steps-implementer` | `flash` |
 | `steps-plan-reviewer`, `steps-impl-reviewer` | `flash` |
-| `step-verifier` | `flash` |
-| `steps-architect-pro`, `steps-fixer` | `flash` |
+| `steps-architect-pro` | `flash` |
 
 Antigravity's `model` is a tier, not a model id: `inherit`, `flash`, or `pro`. The thinking level
 (low/medium/high) is session-level — `agy --effort`, or the `/model` variant

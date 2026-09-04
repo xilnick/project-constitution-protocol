@@ -40,6 +40,12 @@ What you could not verify goes in a Risks section as uncertainty — never as fa
 dropped. Numbers are re-measured with the command shown: a number copied from someone's report is an
 assertion wearing the costume of a measurement.
 
+## Self-review
+
+Before you report, re-read the plan you wrote: every item names its files and its gate, the ordering
+has no gap or contradiction, and no item makes a gate check less without flagging it as a decision.
+A gap you catch now costs one rewrite; a gap the reviewer catches costs a round trip.
+
 ## Never
 
 - Touch code, config, or any path outside `.plans/phase-N/`.

@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "pcp",
-  "description": "Protocols for agent-driven engineering: recording intent so it survives the session, and running a roadmap through plan, review, implement, verify without the agent grading its own homework.",
+  "description": "Protocols for agent-driven engineering: recording intent so it survives the session, and running a roadmap through plan, review, implement without the agent grading its own homework.",
   "owner": {
     "name": "The Sovereign Architect",
     "url": "https://github.com/xilnick"
@@ -16,7 +16,7 @@
     },
     {
       "name": "steps",
-      "description": "Run a roadmap phase by phase under separation of duties: plan, review the plan, implement, review the implementation, fix, verify. The agent that writes a thing never grades it.",
+      "description": "Run a roadmap phase by phase under separation of duties: plan, review the plan, implement, review the implementation. The agent that writes a thing never grades it.",
       "source": "./plugins/steps",
       "category": "workflow",
       "homepage": "https://github.com/xilnick/project-constitution-protocol/tree/main/plugins/steps"

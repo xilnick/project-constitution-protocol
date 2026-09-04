@@ -1,6 +1,6 @@
 # Harness wrappers
 
-The steps protocol is one protocol, nine roles. This directory holds the per-harness agent
+The steps protocol is one protocol, six roles. This directory holds the per-harness agent
 manifests that let each harness dispatch those roles with the right model and tool surface.
 
 - **Canonical roles**: `../agents/` — the role briefs, harness-independent in content.
@@ -53,7 +53,7 @@ codex/.codex/agents/*.toml   → ~/.codex/agents/          (personal)
 
 One TOML file per agent; each sets `name`, `description`, `developer_instructions`, `model`,
 `model_reasoning_effort`, and `sandbox_mode` (`read-only` for planners/reviewers,
-`workspace-write` for the coder and fixer).
+`workspace-write` for the coder).
 
 ## OpenCode (SST)
 
@@ -71,8 +71,8 @@ get `permission.edit: deny` with `bash` allowed so they can run gates.
 agy plugin install plugins/steps/harnesses/antigravity
 ```
 
-The Antigravity harness renders as a plugin bundle: `plugin.json` plus `agents/` (the nine roles),
-`skills/` (the orchestrator and five stages), and `MODEL_ROUTING.md` at the bundle root, so the
+The Antigravity harness renders as a plugin bundle: `plugin.json` plus `agents/` (the six roles),
+`skills/` (the orchestrator and three stages), and `MODEL_ROUTING.md` at the bundle root, so the
 skill's "plugin root" reference resolves after install. `agy plugin install` stages it under
 `~/.gemini/antigravity-cli/plugins/steps/`; `agy plugin uninstall steps` reverses it.
 

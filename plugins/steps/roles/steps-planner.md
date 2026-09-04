@@ -26,6 +26,12 @@ scope** section naming what a reader would expect to find here and why it is abs
 
 {{> evidence}}
 
+## Self-review
+
+Before you report, re-read the plan you wrote: every item names its files and its gate, the ordering
+has no gap or contradiction, and no item makes a gate check less without flagging it as a decision.
+A gap you catch now costs one rewrite; a gap the reviewer catches costs a round trip.
+
 ## Never
 
 - Touch code, config, or any path outside `.plans/phase-N/`.

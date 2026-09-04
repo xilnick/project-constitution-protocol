@@ -11,12 +11,9 @@
   "models": {
     "repo-scout": { "model": "gpt-5.6-luna", "effort": "low" },
     "steps-planner": { "model": "gpt-5.6-terra", "effort": "medium" },
-    "steps-reconciler": { "model": "gpt-5.6-terra", "effort": "medium" },
     "steps-plan-reviewer": { "model": "gpt-5.6-terra", "effort": "high" },
     "steps-impl-reviewer": { "model": "gpt-5.6-terra", "effort": "high" },
     "steps-implementer": { "model": "gpt-5.6-luna", "effort": "medium" },
-    "steps-architect-pro": { "model": "gpt-5.6", "effort": "high" },
-    "step-verifier": { "model": "gpt-5.6-terra", "effort": "medium" },
-    "steps-fixer": { "model": "gpt-5.6", "effort": "max" }
+    "steps-architect-pro": { "model": "gpt-5.6", "effort": "high" }
   }
 }

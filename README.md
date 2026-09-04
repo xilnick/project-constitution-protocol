@@ -29,7 +29,7 @@ Then enable it for the project by adding `"enabledPlugins": { "pcp@pcp": true }`
 | Plugin | What it does | Scope |
 |---|---|---|
 | [`pcp`](plugins/pcp) | Project Constitution Protocol. Record decisions, constraints, rationale and lessons as short coded entries anchored in source with `@pcp:<type>-<xxxx>`, so intent survives context loss instead of being restated in comments and chat. | per project |
-| [`steps`](plugins/steps) | Run a roadmap phase by phase under separation of duties — plan, review the plan, reconcile, implement, review the implementation, fix, verify, commit. The agent that writes a thing never grades it. Five stages, loaded when the phase needs them. | global |
+| [`steps`](plugins/steps) | Run a roadmap phase by phase under separation of duties — plan, review the plan, implement, review the implementation, commit. The agent that writes a thing never grades it. Three stages, loaded when the phase needs them. | global |
 | [`toolbelt`](plugins/toolbelt) | Fan independent work out into one wave, ask the code graph instead of reading files, and route each search to the tool that answers it cheapest. | global |
 
 They are independent. Install any one alone.
@@ -48,10 +48,10 @@ plugins/
   steps/
     .claude-plugin/plugin.json
     skills/steps/SKILL.md          the orchestrator
-    skills/steps-plan|-review|-implement|-verify|-fix/
-                                   the five stages, each invocable alone
+    skills/steps-plan|-review|-implement/
+                                   the three stages, each invocable alone
     MODEL_ROUTING.md               role→tier→model, complexity gate, escalation
-    roles/ partials/               canonical source for the nine role briefs
+    roles/ partials/               canonical source for the six role briefs
     tools/render.mjs               renders agents/ and harnesses/ from them
     agents/ harnesses/             rendered output — never edited by hand
   toolbelt/

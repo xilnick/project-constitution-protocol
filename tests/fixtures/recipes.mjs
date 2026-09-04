@@ -71,7 +71,6 @@ export const COMPLEXITY_TIERS = [
   CONSTITUTION.constitution.execution.tiers[0].label,
   CONSTITUTION.constitution.execution.tiers[1].label,
   CONSTITUTION.constitution.execution.tiers[2].label,
-  CONSTITUTION.constitution.execution.tiers[3].label,
 ];
 
 // The declared ladder, reached by property access so there is one copy of it in the suite.
@@ -81,7 +80,7 @@ export const ESCALATION_TRIGGERS = CONSTITUTION.constitution.execution.escalatio
 
 // Where each escalation trigger must be named. The orchestrator has no brief; the protocol is its brief.
 export const ESCALATION_TRIGGER_BRIEFS = {
-  'step-verifier': 'plugins/steps/agents/step-verifier.md',
+  'steps-impl-reviewer': 'plugins/steps/agents/steps-impl-reviewer.md',
   'steps-implementer': 'plugins/steps/agents/steps-implementer.md',
   orchestrator: 'plugins/steps/skills/steps/SKILL.md',
 };
@@ -93,14 +92,11 @@ export const HARNESS_BINDINGS = [
     manifest: 'plugins/steps/harnesses/droid/droids/%s.md',
     roles: {
       'repo-scout': { model: 'custom:~deepseek/deepseek-v4-flash-latest', effort: 'low' },
-      'steps-planner': { model: 'custom:z-ai/glm-5.3-flash-0', effort: 'medium' },
-      'steps-reconciler': { model: 'custom:z-ai/glm-5.3-flash-0', effort: 'medium' },
+      'steps-planner': { model: 'gpt-5.6-luna', effort: 'medium' },
       'steps-plan-reviewer': { model: 'custom:minimax/minimax-m3-0', effort: 'high' },
       'steps-impl-reviewer': { model: 'custom:minimax/minimax-m3-0', effort: 'high' },
       'steps-implementer': { model: 'custom:~deepseek/deepseek-v4-flash-latest', effort: 'medium' },
       'steps-architect-pro': { model: 'custom:qwen/qwen-3.8-max-0', effort: 'high' },
-      'step-verifier': { model: 'custom:minimax/minimax-m3-0', effort: 'medium' },
-      'steps-fixer': { model: 'custom:deepseek/deepseek-v4-pro-0813-0', effort: 'high' },
     },
   },
   {
@@ -110,13 +106,10 @@ export const HARNESS_BINDINGS = [
     roles: {
       'repo-scout': { model: 'gpt-5.6-luna', effort: 'low' },
       'steps-planner': { model: 'gpt-5.6-terra', effort: 'medium' },
-      'steps-reconciler': { model: 'gpt-5.6-terra', effort: 'medium' },
       'steps-plan-reviewer': { model: 'gpt-5.6-terra', effort: 'high' },
       'steps-impl-reviewer': { model: 'gpt-5.6-terra', effort: 'high' },
       'steps-implementer': { model: 'gpt-5.6-luna', effort: 'medium' },
       'steps-architect-pro': { model: 'gpt-5.6', effort: 'high' },
-      'step-verifier': { model: 'gpt-5.6-terra', effort: 'medium' },
-      'steps-fixer': { model: 'gpt-5.6', effort: 'max' },
     },
   },
   {
@@ -126,13 +119,10 @@ export const HARNESS_BINDINGS = [
     roles: {
       'repo-scout': { model: 'anthropic/claude-haiku-4-20250514', effort: null },
       'steps-planner': { model: 'anthropic/claude-haiku-4-20250514', effort: null },
-      'steps-reconciler': { model: 'anthropic/claude-haiku-4-20250514', effort: null },
       'steps-plan-reviewer': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
       'steps-impl-reviewer': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
       'steps-implementer': { model: 'openai/gpt-5.1-codex', effort: null },
       'steps-architect-pro': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
-      'step-verifier': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
-      'steps-fixer': { model: 'anthropic/claude-sonnet-4-20250514', effort: null },
     },
   },
   {
@@ -142,13 +132,10 @@ export const HARNESS_BINDINGS = [
     roles: {
       'repo-scout': { model: 'flash', effort: null },
       'steps-planner': { model: 'flash', effort: null },
-      'steps-reconciler': { model: 'flash', effort: null },
       'steps-plan-reviewer': { model: 'flash', effort: null },
       'steps-impl-reviewer': { model: 'flash', effort: null },
       'steps-implementer': { model: 'flash', effort: null },
       'steps-architect-pro': { model: 'flash', effort: null },
-      'step-verifier': { model: 'flash', effort: null },
-      'steps-fixer': { model: 'flash', effort: null },
     },
   },
 ];

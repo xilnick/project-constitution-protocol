@@ -20,8 +20,10 @@ searches, graph queries and agent dispatches almost always can.
 - **Discovery.** Every independent read, glob, grep or graph query for a task goes out together. If
   you know three files matter, you never fetch them one per turn.
 - **Lenses.** One reviewer per question-axis — correctness, security, drift from intent — beats one
-  reviewer asked for everything, and they run at once.
+  reviewer asked for everything, and they run at once. Grading a plan or implementation is the
+  exception: `steps-review` grades with one clean-context reviewer, never a lens per reviewer.
 - **Zones.** Repairs in non-overlapping directories are independent even though they are all edits.
+- **Multi-Phase Waves.** In Batch Ahead planning, phases with non-overlapping file ownership run concurrently.
 - **Aggregation.** When an answer needs computation over many files rather than a look at a few, one
   script that prints its result beats a dozen tool calls; write it, run it, keep the output small.
 
@@ -49,4 +51,5 @@ on it.
 ## Boundary
 
 While the `steps` protocol is running, its own fan-out and ownership rules govern the wave; this
-skill is the general case for everything else.
+skill is the general case for everything else. In particular, `steps-review` grades a plan or
+implementation with a single clean-context reviewer — never split a review verdict into lenses.

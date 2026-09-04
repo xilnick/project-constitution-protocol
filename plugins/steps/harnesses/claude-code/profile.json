@@ -15,12 +15,9 @@
   "models": {
     "repo-scout": { "model": "inherit" },
     "steps-planner": { "model": "inherit" },
-    "steps-reconciler": { "model": "inherit" },
     "steps-plan-reviewer": { "model": "inherit" },
     "steps-impl-reviewer": { "model": "inherit" },
     "steps-implementer": { "model": "inherit" },
-    "steps-architect-pro": { "model": "inherit" },
-    "step-verifier": { "model": "inherit" },
-    "steps-fixer": { "model": "inherit" }
+    "steps-architect-pro": { "model": "inherit" }
   }
 }

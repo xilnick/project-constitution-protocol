@@ -92,11 +92,11 @@ test('Constitution Schema & Taxonomy Validation', async (t) => {
       assert.ok(typeof stage.produces === 'string' && stage.produces.length > 0, `stage ${stage.id} must produce something`);
       assert.ok('skip_when' in stage, `stage ${stage.id} must say when it is skippable, or null for never`);
     }
-    // Two stages carry no skip_when: they are what makes skipping the others safe.
+    // One stage carries no skip_when: it is what makes skipping the others safe.
     assert.deepStrictEqual(
       stages.filter((stage) => stage.skip_when === null).map((stage) => stage.id),
-      ['implement', 'verify'],
-      'implement and verify must be the unskippable stages'
+      ['implement'],
+      'implement must be the unskippable stage'
     );
 
     const tiers = exec?.tiers;
@@ -108,7 +108,7 @@ test('Constitution Schema & Taxonomy Validation', async (t) => {
       assert.ok(typeof tier.entry === 'string' && tier.entry.length > 0, 'entry must be non-empty string');
       assert.ok(Array.isArray(tier.stages) && tier.stages.length > 0, `tier ${tier.id} must run some stage`);
       for (const id of tier.stages) assert.ok(stageIds.includes(id), `tier ${tier.id} runs undeclared stage ${id}`);
-      for (const id of ['implement', 'verify']) {
+      for (const id of ['implement']) {
         assert.ok(tier.stages.includes(id), `tier ${tier.id} omits the unskippable stage ${id}`);
       }
       // A tier whose escalates_to names nothing declared is a tier a failing gate cannot escape.

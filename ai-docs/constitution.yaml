@@ -28,6 +28,10 @@ constitution:
       - "constitution.verification_command in ai-docs/constitution.yaml"
       - "the gate command named in .factory/CONSTITUTION.md or CONSTITUTION.md"
       - "the project's own test script (npm test or equivalent)"
+    timeouts:
+      default_minutes: 15
+      max_minutes: 45
+      rule: "Every launched agent and gate command carries an explicit deadline and runs non-interactively; nothing waits on stdin without one."
     stages:
       - id: "plan"
         skill: "steps-plan"
@@ -36,55 +40,40 @@ constitution:
         skip_when: "the verification gate alone can show the work right or wrong"
       - id: "review"
         skill: "steps-review"
-        agents: ["steps-plan-reviewer", "steps-impl-reviewer", "steps-reconciler"]
-        produces: "REVIEW-<lens>.md, IMPL-REVIEW-<lens>.md, RECONCILIATION.md"
+        agents: ["steps-plan-reviewer", "steps-impl-reviewer"]
+        produces: "REVIEW.md, IMPL-REVIEW.md"
         skip_when: "there is no plan to review"
       - id: "implement"
         skill: "steps-implement"
         agents: ["steps-implementer"]
         produces: "code"
         skip_when: null
-      - id: "verify"
-        skill: "steps-verify"
-        agents: ["step-verifier"]
-        produces: "a gate-results report"
-        skip_when: null
-      - id: "fix"
-        skill: "steps-fix"
-        agents: ["steps-fixer"]
-        produces: "code, each agent in its own files"
-        skip_when: "no blocker was found and the circuit breaker did not trip"
     tiers:
       - id: "tier-0"
         label: "Tier 0 (Fast-Track / Planning Bypass)"
         entry: "Micro or trivial edit: a typo, an isolated single-line fix, a documentation or config tweak."
-        stages: ["implement", "verify"]
+        stages: ["implement"]
         escalates_to: "tier-1"
       - id: "tier-1"
         label: "Tier 1 (Standard)"
         entry: "CRUD, a component edit, a local fix, a dependency bump."
-        stages: ["plan", "implement", "verify"]
-        escalates_to: "tier-1.5"
-      - id: "tier-1.5"
-        label: "Tier 1.5 (Middle)"
-        entry: "More than standard, short of architectural: plan cheap, then add the architect as one critic lens."
-        stages: ["plan", "review", "implement", "verify", "fix"]
+        stages: ["plan", "review", "implement"]
         escalates_to: "tier-2"
       - id: "tier-2"
         label: "Tier 2 (Architectural)"
         entry: "DB migration, protocol change, cross-cutting refactor, distributed logic or race-condition reasoning."
-        stages: ["plan", "review", "implement", "verify", "fix"]
+        stages: ["plan", "review", "implement"]
         escalates_to: null
     escalation_triggers:
       - id: "gate-failed"
-        detected_by: "step-verifier"
+        detected_by: "steps-impl-reviewer"
         action: "Report the failing gate verbatim and name the tier to escalate to; never fix it."
       - id: "hidden-coupling"
         detected_by: "steps-implementer"
         action: "Stop varying details, report the verbatim error, and request escalation."
       - id: "circuit-breaker"
         detected_by: "orchestrator"
-        action: "On the second distinct failure roll back with git checkout -- . and dispatch steps-fixer."
+        action: "On the second distinct failure roll back with git checkout -- . and re-dispatch steps-implementer."
 
 decisions:
   - id: "d-8f3a"

@@ -1,7 +1,7 @@
 {
   "name": "steps",
   "version": "1.0.0",
-  "description": "Run a roadmap phase by phase under separation of duties: plan, review the plan, implement, review the implementation, fix, verify, commit. The agent that writes a thing never grades it.",
+  "description": "Run a roadmap phase by phase under separation of duties: plan, review the plan, implement, review the implementation, commit. The agent that writes a thing never grades it.",
   "author": {
     "name": "The Sovereign Architect",
     "url": "https://github.com/xilnick"

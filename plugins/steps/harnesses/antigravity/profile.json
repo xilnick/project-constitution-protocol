@@ -46,15 +46,14 @@
     "root": "harnesses/antigravity",
     "pluginJson": {
       "name": "steps",
-      "description": "Run a roadmap phase by phase under separation of duties for Antigravity CLI: the steps orchestrator skill, its five stage skills, and the nine role subagents."
+      "description": "Run a roadmap phase by phase under separation of duties for Antigravity CLI: the steps orchestrator skill, its three stage skills, and the six role subagents."
     },
     "copies": [
       { "from": "skills/steps/SKILL.md", "to": "skills/steps/SKILL.md" },
       { "from": "skills/steps-plan/SKILL.md", "to": "skills/steps-plan/SKILL.md" },
       { "from": "skills/steps-review/SKILL.md", "to": "skills/steps-review/SKILL.md" },
       { "from": "skills/steps-implement/SKILL.md", "to": "skills/steps-implement/SKILL.md" },
-      { "from": "skills/steps-verify/SKILL.md", "to": "skills/steps-verify/SKILL.md" },
-      { "from": "skills/steps-fix/SKILL.md", "to": "skills/steps-fix/SKILL.md" },
+      { "from": "skills/gap/SKILL.md", "to": "skills/gap/SKILL.md" },
       { "from": "MODEL_ROUTING.md", "to": "MODEL_ROUTING.md" }
     ]
   },
@@ -63,9 +62,6 @@
       "model": "flash"
     },
     "steps-planner": {
-      "model": "flash"
-    },
-    "steps-reconciler": {
       "model": "flash"
     },
     "steps-plan-reviewer": {
@@ -78,12 +74,6 @@
       "model": "flash"
     },
     "steps-architect-pro": {
-      "model": "flash"
-    },
-    "step-verifier": {
-      "model": "flash"
-    },
-    "steps-fixer": {
       "model": "flash"
     }
   }

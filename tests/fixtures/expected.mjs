@@ -49,6 +49,11 @@ export const CONSTITUTION = {
         "the gate command named in .factory/CONSTITUTION.md or CONSTITUTION.md",
         "the project's own test script (npm test or equivalent)"
       ],
+      "timeouts": {
+        "default_minutes": 15,
+        "max_minutes": 45,
+        "rule": "Every launched agent and gate command carries an explicit deadline and runs non-interactively; nothing waits on stdin without one."
+      },
       "stages": [
         {
           "id": "plan",
@@ -66,10 +71,9 @@ export const CONSTITUTION = {
           "skill": "steps-review",
           "agents": [
             "steps-plan-reviewer",
-            "steps-impl-reviewer",
-            "steps-reconciler"
+            "steps-impl-reviewer"
           ],
-          "produces": "REVIEW-<lens>.md, IMPL-REVIEW-<lens>.md, RECONCILIATION.md",
+          "produces": "REVIEW.md, IMPL-REVIEW.md",
           "skip_when": "there is no plan to review"
         },
         {
@@ -80,24 +84,6 @@ export const CONSTITUTION = {
           ],
           "produces": "code",
           "skip_when": null
-        },
-        {
-          "id": "verify",
-          "skill": "steps-verify",
-          "agents": [
-            "step-verifier"
-          ],
-          "produces": "a gate-results report",
-          "skip_when": null
-        },
-        {
-          "id": "fix",
-          "skill": "steps-fix",
-          "agents": [
-            "steps-fixer"
-          ],
-          "produces": "code, each agent in its own files",
-          "skip_when": "no blocker was found and the circuit breaker did not trip"
         }
       ],
       "tiers": [
@@ -106,8 +92,7 @@ export const CONSTITUTION = {
           "label": "Tier 0 (Fast-Track / Planning Bypass)",
           "entry": "Micro or trivial edit: a typo, an isolated single-line fix, a documentation or config tweak.",
           "stages": [
-            "implement",
-            "verify"
+            "implement"
           ],
           "escalates_to": "tier-1"
         },
@@ -117,21 +102,8 @@ export const CONSTITUTION = {
           "entry": "CRUD, a component edit, a local fix, a dependency bump.",
           "stages": [
             "plan",
-            "implement",
-            "verify"
-          ],
-          "escalates_to": "tier-1.5"
-        },
-        {
-          "id": "tier-1.5",
-          "label": "Tier 1.5 (Middle)",
-          "entry": "More than standard, short of architectural: plan cheap, then add the architect as one critic lens.",
-          "stages": [
-            "plan",
             "review",
-            "implement",
-            "verify",
-            "fix"
+            "implement"
           ],
           "escalates_to": "tier-2"
         },
@@ -142,9 +114,7 @@ export const CONSTITUTION = {
           "stages": [
             "plan",
             "review",
-            "implement",
-            "verify",
-            "fix"
+            "implement"
           ],
           "escalates_to": null
         }
@@ -152,7 +122,7 @@ export const CONSTITUTION = {
       "escalation_triggers": [
         {
           "id": "gate-failed",
-          "detected_by": "step-verifier",
+          "detected_by": "steps-impl-reviewer",
           "action": "Report the failing gate verbatim and name the tier to escalate to; never fix it."
         },
         {
@@ -163,7 +133,7 @@ export const CONSTITUTION = {
         {
           "id": "circuit-breaker",
           "detected_by": "orchestrator",
-          "action": "On the second distinct failure roll back with git checkout -- . and dispatch steps-fixer."
+          "action": "On the second distinct failure roll back with git checkout -- . and re-dispatch steps-implementer."
         }
       ]
     }
@@ -361,11 +331,8 @@ export const ROLE_WRITE_CLASS = {
   "steps-planner": "report",
   "steps-architect-pro": "report",
   "steps-plan-reviewer": "report",
-  "steps-reconciler": "report",
   "steps-impl-reviewer": "report",
-  "step-verifier": "report",
   "steps-implementer": "code",
-  "steps-fixer": "code",
 };
 
 // How each harness is able to express that class, and the sentence a report role's body must carry
@@ -403,20 +370,21 @@ export const REPORT_SCOPE_SENTENCE = "Writing anywhere else is a protocol violat
 // One rule, one heading. A brief heading outside this vocabulary means a shared rule grew a second
 // name, which is how three headings for one rule happened before.
 export const BRIEF_HEADINGS = [
-  "When to invoke", "Tool boundary", "File ownership", "Starting state",
-  "What you return", "What you produce", "What you receive, what you return", "What you do",
+  "When to invoke", "Tool boundary", "File ownership",
+  "What you return", "What you produce", "What you receive, what you return",
   "Work item by item", "Read the actual files", "Gate integrity", "Output",
-  "Nothing is dropped silently", "PLAN.md v2", "The question that pays for this role",
-  "Constitution check", "What counts as a blocker", "What counts as a failure",
+  "The question that pays for this role",
+  "Constitution check", "What counts as a blocker",
   "The class, not the instance", "Each item must be able to fail", "Never weaken a gate to make it pass",
-  "Reports are data, not truth", "Evidence", "Escalation", "Anti-thrash", "Never",
-  "Reply to the orchestrator",
+  "Reports are data, not truth", "Evidence", "Timeouts", "Anti-thrash",
+  "Self-review", "Never", "Reply to the orchestrator",
 ];
 
 // Byte budgets, counted after the rewrite and then declared. Each says what it buys.
 export const SIZE_BUDGETS = [
-  { glob: "plugins/steps/skills/steps/SKILL.md", max: 14000, buys: "the orchestrator is always loaded, so its size is the floor of every session" },
+  { glob: "plugins/steps/skills/steps/SKILL.md", max: 15500, buys: "the orchestrator supports isolated batch ahead planning and parallel waves" },
   { glob: "plugins/steps/skills/steps-*/SKILL.md", max: 2200, buys: "a stage is loaded on demand; past this it stops being cheaper than the full protocol" },
+  { glob: "plugins/steps/skills/gap/SKILL.md", max: 3500, buys: "gap evaluation is loaded during reviews and audits" },
   { glob: "plugins/toolbelt/skills/*/SKILL.md", max: 4200, buys: "a habit an agent reads often has to fit beside the actual work" },
   { glob: "plugins/steps/agents/*.md", max: 4000, buys: "a brief is pasted into a dispatch, so it competes with the task itself" },
   { glob: "plugins/pcp/skills/pcp/SKILL.md", max: 10500, buys: "the protocol file loads whenever pcp activates; it is the one deliberate outlier" },
@@ -469,14 +437,9 @@ export const SKILL_INVENTORY = [
     requiredHeadings: ["Why the stage exists","How to run it","Escalation","Done when"],
   },
   {
-    relPath: "plugins/steps/skills/steps-verify/SKILL.md",
-    expectedName: "steps-verify",
-    requiredHeadings: ["Why the stage exists","How to run it","Escalation","Done when"],
-  },
-  {
-    relPath: "plugins/steps/skills/steps-fix/SKILL.md",
-    expectedName: "steps-fix",
-    requiredHeadings: ["Why the stage exists","When you need it","How to run it","Done when"],
+    relPath: "plugins/steps/skills/gap/SKILL.md",
+    expectedName: "gap",
+    requiredHeadings: ["Why the skill exists","Local evaluation","Global repository audit","Done when"],
   },
   {
     relPath: "plugins/toolbelt/skills/parallel/SKILL.md",
@@ -519,14 +482,9 @@ export const SKILL_INVENTORY = [
     requiredHeadings: ["Why the stage exists","How to run it","Escalation","Done when"],
   },
   {
-    relPath: "plugins/steps/harnesses/antigravity/skills/steps-verify/SKILL.md",
-    expectedName: "steps-verify",
-    requiredHeadings: ["Why the stage exists","How to run it","Escalation","Done when"],
-  },
-  {
-    relPath: "plugins/steps/harnesses/antigravity/skills/steps-fix/SKILL.md",
-    expectedName: "steps-fix",
-    requiredHeadings: ["Why the stage exists","When you need it","How to run it","Done when"],
+    relPath: "plugins/steps/harnesses/antigravity/skills/gap/SKILL.md",
+    expectedName: "gap",
+    requiredHeadings: ["Why the skill exists","Local evaluation","Global repository audit","Done when"],
   },
   {
     relPath: "plugins/toolbelt/harnesses/antigravity/skills/parallel/SKILL.md",
