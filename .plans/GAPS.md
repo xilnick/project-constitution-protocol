@@ -44,6 +44,15 @@
   6. **Shift-Left Intake Rule**: Questions on existing codebase/knowledge are answered autonomously; questions on ambiguous user intent or desired outcome are asked immediately at intake.
 - **Post-Execution Sign-Off**: Repository-wide regression gate, architectural invariant audit, orphan/dead-code pruning, and final sign-off before archive.
 
+### 3. Dynamic Mid-Flight Planning & DAG Splicing Procedure
+- **Location**: [`plugins/steps/procedures/dynamic-planning.md`](file:///Users/purplelephant/projects/pcp/plugins/steps/procedures/dynamic-planning.md)
+- **Integration**: Referenced in [`steps/SKILL.md:102`](file:///Users/purplelephant/projects/pcp/plugins/steps/skills/steps/SKILL.md#L102).
+- **Contract Defined**:
+  - **Triage & Collision Check**: Instant path-check against active `owns` paths in current wave; non-colliding tasks plan in parallel without halting execution.
+  - **Single-Writer Constraint (`@pcp:c-6307`)**: Parallel planner outputs candidate `PLAN.md`; only the orchestrator modifies `.plans/PHASES.md`.
+  - **GAP Gate on New Scope**: New tasks pass local GAP review before DAG integration.
+  - **DAG Splicing**: Topological recalculation (Kahn's sort) prevents deadlocks and schedules new work in upcoming waves.
+
 ---
 
 ## 3. Findings & Observations

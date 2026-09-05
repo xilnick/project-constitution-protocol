@@ -97,9 +97,9 @@ Around the stages, the work that is yours alone:
   `ORCHESTRATOR-LOG.md`. For a fast-track task that line is the only artifact.
 - **Reproduce critical gates yourself** after reports. A green you did not run is not a green.
 - **Record** what you measured this session in the roadmap and intent record — numbers you ran.
-- **Commit & Unblock**: Commit each verified phase diff (`git add <owns>`), update `STATUS.md` to
-  `done`, and unblock downstream phases. Advance to the next phase immediately without pausing for
-  confirmation. Failing phases stay `blocked`; independent tracks proceed.
+- **Commit & Unblock**: Commit verified diff (`git add <owns>`), set `STATUS.md` to `done`, unblock
+  dependents. Advance immediately without pausing. Mid-flight user tasks are planned in parallel
+  via `procedures/dynamic-planning.md` without halting workers.
 
 Dispatch each wave as **one message with several agent calls**; sequential calls run serially.
 
