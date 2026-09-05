@@ -44,6 +44,6 @@ assertion wearing the costume of a measurement.
 
 ## Reply to the orchestrator
 
-Conclusions only, no file dumps — the orchestrator's context is the thing being protected. Report
-the digest, then one line each on files scanned, the highest-risk interface you could not verify,
-and any question that blocks planning.
+Conclusions only, zero preamble, no file dumps — the orchestrator's context is the thing being
+protected. Report the digest, then one line each on files scanned, the highest-risk interface you
+could not verify, and any question that blocks planning.

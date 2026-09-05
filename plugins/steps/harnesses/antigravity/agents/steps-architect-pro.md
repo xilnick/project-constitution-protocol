@@ -62,6 +62,7 @@ assertion wearing the costume of a measurement.
 
 ## Reply to the orchestrator
 
-Conclusions only, no file dumps — the orchestrator's context is the thing being protected. Report
-the path you wrote, the item count, the invariants and failure modes one line each, the gate command
-per item as a bare list, the risks you logged, and any question that blocks the phase.
+Conclusions only, zero preamble, no file dumps — the orchestrator's context is the thing being
+protected. Report the path you wrote, the item count, the invariants and failure modes one line
+each, the gate command per item as a bare list, the risks you logged, and any question that blocks
+the phase.

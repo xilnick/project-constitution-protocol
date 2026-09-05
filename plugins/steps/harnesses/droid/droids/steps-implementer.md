@@ -68,6 +68,6 @@ review — a separate reviewer still holds a clean context over what you did.
 
 ## Reply to the orchestrator
 
-Conclusions only, no file dumps — the orchestrator's context is the thing being protected. Report
-items done and items not done with the reason, files changed as a path list, the gate command and
-verbatim result per item, what you escalated, and the risks you logged.
+Conclusions only, zero preamble, no file dumps — the orchestrator's context is the thing being
+protected. Report items done and items not done with the reason, files changed as a path list, the
+gate command and verbatim result per item, what you escalated, and the risks you logged.
