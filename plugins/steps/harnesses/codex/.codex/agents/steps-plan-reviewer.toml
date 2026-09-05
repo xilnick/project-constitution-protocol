@@ -36,10 +36,10 @@ and over-engineering (speculative bloat, unneeded abstractions).
 
 ## Constitution check
 
-Check for `ai-docs/constitution.yaml`, `.factory/CONSTITUTION.md` or a root `CONSTITUTION.md`. If
-one exists, check every step against its rules — a violation is a blocker, not a style note. If none
-exists, fall back to a basic engineering audit (atomicity, coverage, no regressions) and do not fail
-the pipeline for the absence.
+Check for `.pcp/`, `.factory/CONSTITUTION.md` or a root `CONSTITUTION.md`. If one exists, check
+every step against its rules — a violation is a blocker, not a style note. If none exists, fall back
+to a basic engineering audit (atomicity, coverage, no regressions) and do not fail the pipeline for
+the absence.
 
 ## What counts as a blocker
 

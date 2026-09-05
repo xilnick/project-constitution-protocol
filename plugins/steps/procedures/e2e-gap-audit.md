@@ -6,7 +6,7 @@ A standard procedure for executing a holistic, cross-cutting GAP audit across al
 
 Local phase reviews (`REVIEW.md` and `IMPL-REVIEW.md`) inspect changes in isolation. They can pass cleanly while global defects accumulate:
 1. **Inter-phase omissions**: Requirements that fall between the cracks of two disjoint phase boundaries.
-2. **Specification drift**: Omission of endpoints, security invariants, or domain constraints declared in `ai-docs/specs/` or `ai-docs/constitution.yaml`.
+2. **Specification drift**: Omission of endpoints, security invariants, or domain constraints declared in the task specification or `.pcp/`.
 3. **Orphaned abstractions**: Helper utilities, dead branches, or redundant schemas introduced during intermediate phases that no longer serve any active code.
 4. **Regressions & whole-system breakage**: A change in an early phase that breaks assumptions in a downstream module not covered by that phase's isolated gate.
 
@@ -39,7 +39,7 @@ graph TD
 
 ### Pre-Flight Principle: Shift-Left Intent Clarification
 Clarification with the user follows a strict boundary rule:
-- **Codebase & Knowledge Questions (Self-Service)**: Any question regarding how the codebase functions, existing dependencies, architecture, or data models must be answered autonomously via code intelligence (`tokensave`, `asl-intel`), AST inspection, and `ai-docs/`. Never ask the user questions the codebase already answers.
+- **Codebase & Knowledge Questions (Self-Service)**: Any question regarding how the codebase functions, existing dependencies, architecture, or data models must be answered autonomously via code intelligence (`tokensave`, `asl-intel`), AST inspection, and `.pcp/`. Never ask the user questions the codebase already answers.
 - **Intent & Desired Outcome Ambiguities (Shift-Left)**: If the incoming prompt has genuine ambiguity regarding business intent, target behavior, or conflicting desired outcomes, ask immediately at intake. Resolving fundamental intent upfront avoids wasting planning cycles on the wrong problem.
 
 ---
@@ -62,7 +62,7 @@ Once all phase plans pass their local GAP reviews, the orchestrator/architect co
 
 ### Step 4: Global E2E GAP Gate
 A fresh-context reviewer conducts a holistic GAP review across all consolidated phase plans together:
-1. **Spec Traceability**: Verifies 100% coverage of `ai-docs/specs/` and `ai-docs/constitution.yaml` requirements across the combined plan.
+1. **Spec Traceability**: Verifies 100% coverage of task requirements, user goals, and `.pcp/` architectural decisions across the combined plan.
 2. **Cross-Boundary Omissions**: Detects missing migrations, initialization sequences, or unhandled failure flows between phases.
 3. **Global Over-Engineering Filter**: Verifies that the combined architecture maintains the Critic standard (simplest working system, zero speculative layers).
 4. **Sign-Off**: Emits `.plans/GAPS.md`. Verdict `approve` unlocks execution; `reject` returns cross-phase blockers to Step 3.

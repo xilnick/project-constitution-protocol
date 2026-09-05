@@ -123,7 +123,7 @@ back (`git checkout -- .`) and re-dispatches `steps-implementer`. Escalating add
 - **Scouting & Reconnaissance** (optional / escalation): For large features or unknowns, dispatch
   1–3 scouts in parallel across codebase (`explore`/`repo-scout`), docs (`research`), and coupling.
   Each digest is budgeted to ≤ 3k tokens. Missing context triggers a scout wave before drafting.
-- **Constitution check** (graceful degradation): the plan reviewer checks `ai-docs/constitution.yaml`
+- **Constitution check** (graceful degradation): the plan reviewer checks `.pcp/`
   or `CONSTITUTION.md` if present; falls back to basic audit if missing.
 - **Hard rules:** Tier-2 models never write code. Tier-2 context is distilled Tier-1 conclusions,
   never raw dumps. Every gate is run read-only with current output recorded as evidence.

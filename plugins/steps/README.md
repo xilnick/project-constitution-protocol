@@ -31,7 +31,7 @@ A phase composes three stages, and only one of them always runs:
 | Review | `steps-review` | `REVIEW.md`, `IMPL-REVIEW.md` | a gate could pass while the work is wrong |
 | Implement | `steps-implement` | code | always |
 
-Which stages a phase runs is declared in `ai-docs/constitution.yaml` under
+Which stages a phase runs is declared in `.pcp/` or the project constitution under
 `constitution.execution`, with the prose in [`MODEL_ROUTING.md`](MODEL_ROUTING.md). Each stage is
 invocable on its own, so `steps-review` alone is a legitimate way to use this plugin.
 

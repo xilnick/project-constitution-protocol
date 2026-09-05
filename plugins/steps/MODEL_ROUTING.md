@@ -23,7 +23,7 @@ binding table below.
 ## Complexity gate
 
 The orchestrator picks a tier per phase, never per item. The ladder itself — the tiers, the stages
-each one runs, and the escalation triggers — is declared in `ai-docs/constitution.yaml` under
+each one runs, and the escalation triggers — is declared in `.pcp/` or the project constitution under
 `constitution.execution`; this section is its prose.
 
 | Tier | Entry | Stages | Plans with | Escalates to |
@@ -79,7 +79,7 @@ Tier 0's only review is the implementer's own self-check plus the verification c
 command has to resolve to something real. Resolve it in the order declared in
 `constitution.execution.verification_command_resolution`:
 
-1. `constitution.verification_command` in `ai-docs/constitution.yaml`.
+1. `constitution.verification_command` in `.pcp/` or the project constitution.
 2. The gate command named in `.factory/CONSTITUTION.md` or `CONSTITUTION.md`.
 3. The project's own test script (`npm test` or equivalent).
 
@@ -93,7 +93,7 @@ supplies per-item gates instead.
   findings — never raw file dumps. Tier-2 returns structured reasoning plus the plan.
 - Every agent runs each gate read-only and records its current (failing) output as evidence; no
   gate is reported as passing before implementation.
-- Constitution check (graceful degradation): the plan reviewer checks `ai-docs/constitution.yaml`,
+- Constitution check (graceful degradation): the plan reviewer checks `.pcp/`,
   `.factory/CONSTITUTION.md` or `CONSTITUTION.md` if present — a violation is a blocker; if none
   exists, it falls back to a basic engineering audit without failing the pipeline.
 

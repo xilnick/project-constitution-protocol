@@ -62,7 +62,7 @@ Upon receiving mid-flight input, the orchestrator performs an instant path check
 The orchestrator dispatches a dedicated planning subagent (`steps-planner` or `steps-architect-pro`):
 - Provide:
   1. The new user requirement.
-  2. The current repository state and `ai-docs/constitution.yaml`.
+  2. The current repository state and architectural decisions in `.pcp/`.
   3. The active `.plans/PHASES.md` DAG.
 - The planner writes the candidate `.plans/phase-<id>/PLAN.md` adhering strictly to [`procedures/step-planning.md`](step-planning.md).
 

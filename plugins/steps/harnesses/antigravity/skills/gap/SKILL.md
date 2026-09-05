@@ -26,7 +26,7 @@ Use when reviewing a plan (`PLAN.md`) or an implementation diff before committin
 - **Verification integrity**: Does each item have an explicit, reproducible gate command that fails before and passes after?
 
 ### 2. Consistency Analysis (Invariants)
-- **Architecture**: Conforms to `ai-docs/constitution.yaml` rules, active ADRs (`@pcp:d-xxxx`), and established idioms.
+- **Architecture**: Conforms to `.pcp/` rules, active ADRs (`@pcp:d-xxxx`), and established idioms.
 - **Shared types**: Reuses existing models and utility functions rather than redefining duplicate structures.
 - **Zero-comment rule**: Rationale and workarounds are referenced via shortcodes (`@pcp:`), leaving source code clean and idiomatic.
 
@@ -41,9 +41,9 @@ Verdict is one of: **approve**, **approve-with-amendments**, or **reject**, acco
 
 Use when auditing an entire codebase or running an end-to-end verification phase via `procedures/e2e-gap-audit.md`:
 
-1. **Rule verification**: Query `ai-docs/constitution.yaml` and inspect whether all security, quality, and hygiene invariants hold across source files.
+1. **Rule verification**: Query `.pcp/` and inspect whether all security, quality, and hygiene invariants hold across source files.
 2. **ADR drift check**: Compare active ADRs against current implementation to find obsolete patterns or undocumented workarounds.
-3. **Orphan & gap detection**: Find unimplemented specs in `ai-docs/specs/`, unreferenced helper files, or dead configuration branches.
+3. **Orphan & gap detection**: Find unfulfilled criteria in `.plans/`, unreferenced helper files, or dead configuration branches.
 4. **Emit remediation plan**: Write findings to `.plans/GAPS.md` and format a prioritized roadmap of corrective phases for the `steps` orchestrator.
 
 ## Done when

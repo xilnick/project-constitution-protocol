@@ -10,4 +10,6 @@
   - Phase 2 tier selected: Tier 1 (Standard). Created `plugins/steps/procedures/e2e-gap-audit.md`.
   - Wired into `gap/SKILL.md` and `steps/SKILL.md`. Re-rendered manifests (`node plugins/steps/tools/render.mjs`).
   - Phase 3: Executed end-to-end GAP verification audit. Generated `.plans/GAPS.md` with `approve` verdict.
-  - Verification rerun: `npm test` exit 0 (86 subtests, 15 guard tests, 0 failures), `render:check` exit 0.
+  - Phase 4: Dynamic mid-flight planning (`dynamic-planning.md`) and purged synthetic `ai-docs` references across `plugins/steps/` procedures, skills, roles, and docs.
+  - Grounded all planning strictly on `.plans/` and architectural governance on `.pcp/`.
+  - Re-rendered manifests (`node plugins/steps/tools/render.mjs`), verified all gates (`npm test`, `tests/install-smoke.sh`).
