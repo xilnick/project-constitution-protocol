@@ -39,7 +39,7 @@ Verdict is one of: **approve**, **approve-with-amendments**, or **reject**, acco
 
 ## Global repository audit
 
-Use when auditing an entire codebase or running a dedicated consistency phase:
+Use when auditing an entire codebase or running an end-to-end verification phase via `procedures/e2e-gap-audit.md`:
 
 1. **Rule verification**: Query `ai-docs/constitution.yaml` and inspect whether all security, quality, and hygiene invariants hold across source files.
 2. **ADR drift check**: Compare active ADRs against current implementation to find obsolete patterns or undocumented workarounds.

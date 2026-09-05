@@ -24,9 +24,9 @@ back here. That is the ladder working, not a corner cut.
 
 1. Scouting (optional): for complex phases, 1–3 scouts run in parallel across codebase (`explore`/`repo-scout`),
    docs (`research`), or coupling, each returning a digest (≤ 3k tokens).
-2. One planner writes `.plans/phase-N/PLAN.md` (`steps-planner` or `steps-architect-pro`). The planner
-   defines `depends_on`, disjoint `owns` paths, and worktree needs. Each work item names its files,
-   its gate, and its prerequisite items.
+2. One planner writes `.plans/phase-N/PLAN.md` (`steps-planner` or `steps-architect-pro`), following
+   the step-planning procedure (`procedures/step-planning.md`). Each work item names its files, its
+   gate, and its prerequisite items.
 3. The planner re-reads its plan: items name files and gates, dependencies have no cycles, and file
    ownership is declared. A plan failing self-check goes back to step 2 before reaching review.
 

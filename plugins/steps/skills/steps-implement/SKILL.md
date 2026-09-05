@@ -14,10 +14,10 @@ them. A phase that batches its gates to the end learns everything at the end.
 
 ## How to run it
 
-One `steps-implementer` executes items in order within its declared `owns` boundary. In parallel
-waves, peer implementers edit disjoint zones in the tree or in `.worktrees/<phase-id>`. With no plan,
-the phase verification command is the whole item list — make the change, run it, report. The
-implementer never reviews itself or commits; the orchestrator handles review, gates, and integration.
+One `steps-implementer` executes items in order via `procedures/step-planning.md`. In parallel waves,
+implementers edit disjoint `owns` zones or `.worktrees/<phase-id>`. With no plan, the verification
+command is the whole item list — make the change, run it, report. The implementer never reviews itself
+or commits; the orchestrator handles review, gates, and integration.
 
 The implementer re-reads its own diff once before reporting: the change does what the plan asked,
 nothing more, nothing less, and no gate was weakened to make it green. That self-check is the first

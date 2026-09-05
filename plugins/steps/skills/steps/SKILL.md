@@ -88,8 +88,8 @@ the simplest working optimum: fewest lines, standard features before custom code
 
 Planning runs in one of two modes:
 - **JIT (Incremental)**: Plan phase N ➔ `gap` review ➔ implement ➔ `gap` impl review ➔ next phase.
-- **Batch Ahead**: Phase 0 drafts every phase plan upfront ➔ each plan gets a `gap` review ➔ cross-phase
-  consistency check builds a dependency DAG ➔ independent phases execute concurrently in parallel waves.
+- **Batch Ahead**: Plan each phase ➔ local `gap` ➔ synthesis & DAG ➔ global E2E `gap`
+  ➔ optional user alignment if open trade-offs ➔ parallel waves execute concurrently.
 
 Around the stages, the work that is yours alone:
 
@@ -239,8 +239,8 @@ creation time, status (`active` / `paused` / `done`), goal, and current phase.
   what is done, and why you paused. Update `INDEX.md`.
 - **Resume.** Move the chosen iteration's files back into `.plans/`, read `STATUS.md` and
   `ORCHESTRATOR-LOG.md`, and continue from the recorded phase. Do not re-plan phases already done.
-- **Finish.** When every phase is done and committed, move the iteration to
-  `.plans/archive/<id>/`, or delete it — the user's call. Update `INDEX.md` either way.
+- **Finish.** Run the end-to-end GAP audit (`procedures/e2e-gap-audit.md`) to write `.plans/GAPS.md`.
+  When verified and committed, move to `.plans/archive/<id>/` or delete; update `INDEX.md`.
 
 A paused or archived iteration is never overwritten by a new one: the timestamp keeps each folder
 unique, and `INDEX.md` is the source of truth for what is unchanged, half-done, or finished.
