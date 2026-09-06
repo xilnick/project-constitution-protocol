@@ -74,12 +74,16 @@ An optional, high-leverage alignment point triggered **after** the GAP review:
   2. A material divergence between the user's initial prompt and what the technical GAP analysis discovered.
   3. Non-trivial architectural compromises (e.g. deprecations, breaking changes, scope adjustments).
 - **Execution & Re-GAP Loop**:
-  1. Present the user with a concise summary of the plan, highlighting the specific trade-off and recommendation.
-  2. Collect user alignment.
-  3. **Plan Amendment**: Update `PHASES.md` and relevant `phase-N/PLAN.md` files to reflect the agreed decision.
-  4. **Final Re-GAP Check**: Re-run the global GAP pass on the amended plan to guarantee that user-requested adjustments introduced no new omissions or architectural drift.
-  5. Only after a clean re-GAP sign-off does the orchestrator dispatch implementation waves.
-- **Auto-Bypass**: If the GAP review finds no open user-level ambiguities, proceed directly to implementation without asking for intermediate confirmation.
+  1. Present the user with a concise summary of the plan, stating the protocol baseline defaults:
+     - **Scope**: Full execution of all phases across the roadmap.
+     - **Concurrency**: Maximum parallelism across independent waves.
+     - **Commits**: Commits on every verified phase (or per verified item gate).
+  2. Ask for alignment:
+     > *"Default plan: Full execution of all phases with maximum parallelism and commits per phase. Reply 'OK' to proceed with defaults, or specify overrides."*
+  3. **OK Confirmation**: An "OK" reply confirms the baseline — execute all phases continuously without intermediate pauses between completed phases.
+  4. **Plan Amendment**: If the user requests overrides (e.g. partial scope, branch isolation), update `PHASES.md` and relevant `phase-N/PLAN.md` files.
+  5. **Final Re-GAP Check**: If amended, re-run the global GAP pass to guarantee the adjustments introduced no new omissions or architectural drift before dispatching implementation waves.
+- **Auto-Bypass**: If the GAP review finds no open user-level ambiguities, proceed directly to implementation under the baseline defaults.
 
 ---
 

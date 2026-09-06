@@ -56,18 +56,15 @@ Present the table and ASCII/Mermaid DAG for **Review, Link & Prioritize**:
 2. **Disjoint ownership**: Candidate parallel phases must not share `owns` paths; factor shared
    dependencies into a prerequisite micro-phase.
 3. **Wave assignment**: Phases with dependencies met form `Wave 0`; dependents form `Wave 1`, `Wave 2`...
-4. **User alignment**: Allow user to adjust links, priorities, or splits before launch.
+4. **Execution baseline**: The protocol defaults are:
+   - **Scope**: Full execution of all planned phases across the entire roadmap.
+   - **Concurrency**: Maximum parallelism across independent waves with disjoint `owns` paths.
+   - **Commits**: Immediate commit on every verified phase (or per verified item gate).
 
-Then ask the three questions, in one message, once, and apply the answers to every remaining phase
-rather than asking again:
+State the baseline defaults when asking for confirmation:
+> *"Default plan: Full execution of all phases with maximum parallelism and commits per phase. Reply 'OK' to proceed with defaults, or specify overrides."*
 
-1. **Commit per phase, or work on a branch?** If a branch, which name.
-2. **How much of the roadmap in this pass?** All of it, through phase N, or a budget.
-3. **Planning mode: JIT or Batch Ahead?** JIT plans and reviews each wave as you reach it. Batch Ahead
-   runs Phase 0 to draft all phase plans upfront, checks each plan with `gap`, locks cross-phase
-   dependencies into the DAG, and executes non-overlapping phases in parallel waves.
-
-Do not begin phase execution until all three are answered.
+An "OK" reply confirms the baseline: execute all phases continuously without pausing between waves.
 
 ## The phase loop
 
@@ -273,10 +270,9 @@ unique, and `INDEX.md` is the source of truth for what is unchanged, half-done, 
 Stop and ask the user only when proceeding under any assumption would be unsafe, or would make the
 work useless if the assumption is wrong. Everything else is a judgment call you make and state.
 
-Decisions genuinely worth one question: whether to commit per phase or work in a branch, and how
-much of the roadmap to run in this pass. Ask those once, at the start, and apply the answer to
-every remaining phase rather than asking again. Once scope is set, execute continuously across
-phases; never pause between completed phases to ask for permission.
+Execution follows the protocol baseline: full roadmap execution in maximum parallel waves with
+per-phase commits. Once confirmed (user replies "OK" or accepts), execute continuously across
+phases; never pause between completed phases to ask for permission. Only pause if blocked or a gate fails.
 
 Report a phase as done when the gates you ran yourself are green and the phase's stated acceptance
 criterion is met — not when the implementer says so. If part of a phase is blocked, finish
