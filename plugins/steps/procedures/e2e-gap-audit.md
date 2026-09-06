@@ -39,7 +39,7 @@ graph TD
 
 ### Pre-Flight Principle: Shift-Left Intent Clarification
 Clarification with the user follows a strict boundary rule:
-- **Codebase & Knowledge Questions (Self-Service)**: Any question regarding how the codebase functions, existing dependencies, architecture, or data models must be answered autonomously via code intelligence (`tokensave`, `asl-intel`), AST inspection, and `.pcp/`. Never ask the user questions the codebase already answers.
+- **Codebase & Knowledge Questions (Self-Service)**: Any question regarding how the codebase functions, existing dependencies, architecture, or data models must be answered autonomously via code intelligence (`asl-intel`), AST inspection, and `.pcp/`. Never ask the user questions the codebase already answers.
 - **Intent & Desired Outcome Ambiguities (Shift-Left)**: If the incoming prompt has genuine ambiguity regarding business intent, target behavior, or conflicting desired outcomes, ask immediately at intake. Resolving fundamental intent upfront avoids wasting planning cycles on the wrong problem.
 
 ---

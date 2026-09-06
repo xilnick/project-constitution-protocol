@@ -447,9 +447,9 @@ export const SKILL_INVENTORY = [
     requiredHeadings: ["The mechanic that decides everything","Where the wins actually are","Splitting","When not to","Boundary"],
   },
   {
-    relPath: "plugins/toolbelt/skills/tokensave/SKILL.md",
-    expectedName: "tokensave",
-    requiredHeadings: ["The habit","When the graph is lying to you","Living with the installer","Boundary"],
+    relPath: "plugins/toolbelt/skills/asl-intel/SKILL.md",
+    expectedName: "asl-intel",
+    requiredHeadings: ["The habit","Code intelligence commands","What the graph structurally cannot know","Boundary"],
   },
   {
     relPath: "plugins/toolbelt/skills/search-tools/SKILL.md",
@@ -493,10 +493,10 @@ export const SKILL_INVENTORY = [
     mirrors: "plugins/toolbelt/skills/parallel/SKILL.md",
   },
   {
-    relPath: "plugins/toolbelt/harnesses/antigravity/skills/tokensave/SKILL.md",
-    expectedName: "tokensave",
-    requiredHeadings: ["The habit","When the graph is lying to you","Living with the installer","Boundary"],
-    mirrors: "plugins/toolbelt/skills/tokensave/SKILL.md",
+    relPath: "plugins/toolbelt/harnesses/antigravity/skills/asl-intel/SKILL.md",
+    expectedName: "asl-intel",
+    requiredHeadings: ["The habit","Code intelligence commands","What the graph structurally cannot know","Boundary"],
+    mirrors: "plugins/toolbelt/skills/asl-intel/SKILL.md",
   },
   {
     relPath: "plugins/toolbelt/harnesses/antigravity/skills/search-tools/SKILL.md",

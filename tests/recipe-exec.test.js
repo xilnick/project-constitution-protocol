@@ -960,7 +960,7 @@ add('E9', 'AGENTS.md points at the tool skills instead of restating them', () =>
   const text = fs.readFileSync(repoPath('AGENTS.md'), 'utf8');
   const restated = ['progressive disclosure', 'rtk proxy', 'staleness cooldown'].filter((p) => text.toLowerCase().includes(p));
   if (restated.length) throw new Error(`AGENTS.md restates ${JSON.stringify(restated)}`);
-  for (const pointer of ['parallel', 'tokensave', 'search-tools']) {
+  for (const pointer of ['parallel', 'asl-intel', 'search-tools']) {
     if (!text.includes(pointer)) throw new Error(`AGENTS.md does not name the ${pointer} skill`);
   }
 });

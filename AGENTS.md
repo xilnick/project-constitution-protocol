@@ -29,7 +29,7 @@ This repository is a Claude Code **plugin marketplace**, not a single skill. It 
     (`@pcp:c-6307`).
 - `plugins/toolbelt/` — the habits that decide what an agent costs.
   - `.claude-plugin/plugin.json`
-  - `skills/parallel/`, `skills/tokensave/`, `skills/search-tools/`
+  - `skills/parallel/`, `skills/asl-intel/`, `skills/search-tools/`
 - `ai-docs/` — the queried constitution: `constitution.yaml`, `decisions/`, `specs/`. Its
   `constitution.execution` block declares the tier ladder, the stages each tier runs, and the
   escalation triggers.
@@ -68,8 +68,8 @@ by default: implement runs always, the rest earn their place.
 
 ## Strict Tool Routing
 
-The habits themselves live in the `toolbelt` skills — `parallel` for fan-out, `tokensave` for the
-code graph and its staleness, `search-tools` for text, structure and structured data. They are not
+The habits themselves live in the `toolbelt` skills — `parallel` for fan-out, `asl intel` for the
+code graph and native ASN queries, `search-tools` for text, structure and structured data. They are not
 restated here. What is local to this repository:
 
 - The verification command is `npm test` (`@pcp:d-b9e6`); `MODEL_ROUTING.md` holds the resolution

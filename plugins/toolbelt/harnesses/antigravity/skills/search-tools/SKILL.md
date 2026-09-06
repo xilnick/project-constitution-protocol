@@ -12,7 +12,7 @@ understand, and picking by what your question actually is costs nothing.
 
 | The question is about | Ask | Because |
 |---|---|---|
-| a symbol, its callers, its blast radius | the code graph (`tokensave`) | it already knows the edges; text search only guesses at them |
+| a symbol, its callers, its blast radius | the code graph (`asl intel`) | it already knows the edges; text search only guesses at them |
 | a shape — a call pattern, an idiom, a signature across a language | `ast-grep` | it matches syntax, so it does not fire inside strings or comments |
 | a literal string — a message, a key, a path, prose | `rg` | there is no structure to exploit and it is the fastest thing there is |
 | one value inside YAML or JSON | `yq` / `jq` | a query returns the slice; reading the file returns the file |
@@ -55,5 +55,5 @@ rtk proxy npm test
 
 ## Boundary
 
-Graph queries and index staleness live in the `tokensave` skill; constitution and ADR queries have
+Graph queries with `asl intel` live in the `asl-intel` skill; constitution and ADR queries have
 their own recipes in `constitution-query`. This skill does not restate either.

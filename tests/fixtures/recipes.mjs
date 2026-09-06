@@ -25,9 +25,9 @@ export const SPEC_SECTION = 'security_invariants';
 // ---------------------------------------------------------------------------
 
 export const DOC_TOOLS = ['yq', 'git', 'sh', 'node'];
-export const LIVE_TOOLS = ['tokensave', 'rtk', 'jq', 'ast-grep'];
-export const ALLOWED_HEADS = ['yq', 'jq', 'tokensave', 'node', 'ast-grep'];
-export const COMMAND_SPAN_CLIS = ['yq', 'jq', 'tokensave', 'rtk', 'npm', 'node'];
+export const LIVE_TOOLS = ['asl', 'tokensave', 'rtk', 'jq', 'ast-grep'];
+export const ALLOWED_HEADS = ['yq', 'jq', 'asl', 'tokensave', 'node', 'ast-grep'];
+export const COMMAND_SPAN_CLIS = ['yq', 'jq', 'asl', 'tokensave', 'rtk', 'npm', 'node'];
 export const RTK_VERBS = ['proxy'];
 export const RTK_VERBS_FLOOR = ['proxy', 'run', 'git', 'npm', 'grep'];
 // The tokensave surface the skills document; a verb used in prose that is not here is undeclared.
@@ -169,7 +169,7 @@ export const LIVE_CHECKS = [
   'D:cq-requirement.3', 'D:cq-deferred.2',
   'X2', 'X3', 'X4', 'X5', 'X12',
   'X14', 'X15', 'X16', 'X17', 'X18', 'X20', 'X22',
-  'D:ts-branch-list.1', 'D:st-structural.1', 'D:st-slices.3',
+  'D:asl-intel-outline.1', 'D:st-structural.1', 'D:st-slices.3',
 ];
 
 export const DOC_CHECK_COUNT = 78;
@@ -183,7 +183,7 @@ export const RECIPE_FILES = [
   { key: 'constitution-query', path: 'plugins/pcp/skills/constitution-query/SKILL.md' },
   { key: 'code-intelligence', path: 'plugins/pcp/skills/code-intelligence/SKILL.md' },
   { key: 'adr-manager', path: 'plugins/pcp/skills/adr-manager/SKILL.md' },
-  { key: 'tb-tokensave', path: 'plugins/toolbelt/skills/tokensave/SKILL.md' },
+  { key: 'tb-asl-intel', path: 'plugins/toolbelt/skills/asl-intel/SKILL.md' },
   { key: 'tb-search', path: 'plugins/toolbelt/skills/search-tools/SKILL.md' },
   { key: 'AGENTS', path: 'AGENTS.md' },
   { key: 'ai-docs-README', path: 'ai-docs/README.md' },
@@ -374,11 +374,10 @@ export const RUNNABLE_RECIPES = [
   },
 
   {
-    id: 'ts-branch-list', file: 'tb-tokensave', fenceIndex: 0, unit: false,
+    id: 'asl-intel-outline', file: 'tb-asl-intel', fenceIndex: 0, unit: false,
     commands: [{
-      text: 'tokensave tool branch_list',
-      // The tracked set and its staleness are the two things the skill tells you to read first.
-      assert: [{ jsonEq: ['current_branch', 'main'] }],
+      text: 'asl intel outline plugins/pcp/skills/pcp/scripts/pcp.js',
+      assert: [{ contains: ':module-outline' }],
     }],
   },
   {
@@ -431,14 +430,14 @@ export const RUNNABLE_RECIPES = [
 
 export const UNSAFE_BLOCKS = [
   {
-    id: 'ts-repair', file: 'tb-tokensave', fenceIndex: 1, info: 'bash',
-    reason: 'copies and rewrites branch index databases',
-    heads: ['tokensave', 'git'], verbs: ['branch', 'sync', 'doctor', 'rev-parse'],
+    id: 'asl-intel-query', file: 'tb-asl-intel', fenceIndex: 1, info: 'bash',
+    reason: 'queries symbol definitions and call hierarchy in workspace',
+    heads: ['asl'], verbs: ['intel'],
   },
   {
-    id: 'ts-install', file: 'tb-tokensave', fenceIndex: 2, info: 'bash',
-    reason: "rewrites the user's agent configuration and permissions",
-    heads: ['tokensave'], verbs: ['install'],
+    id: 'asl-doc-slice', file: 'tb-asl-intel', fenceIndex: 2, info: 'bash',
+    reason: 'slices and outlines documentation files',
+    heads: ['asl'], verbs: ['doc'],
   },
   {
     id: 'st-proxy', file: 'tb-search', fenceIndex: 2, info: 'bash',
@@ -469,12 +468,12 @@ export const COMMAND_SPANS = [
   { check: 'X6', file: 'AGENTS', text: 'npm test', occurrence: 1, kind: 'npm-script', cli: 'npm', verb: 'test' },
   { check: 'X6b', file: 'AGENTS', text: 'npm test', occurrence: 2, kind: 'npm-script', cli: 'npm', verb: 'test' },
   { check: 'X21', file: 'AGENTS', text: 'npm run render', kind: 'npm-script', cli: 'npm', verb: 'render' },
-  { check: 'X22', file: 'AGENTS', text: 'tokensave', kind: 'binary', cli: 'tokensave' },
-  { check: 'X14', file: 'tb-tokensave', text: 'tokensave tool status', kind: 'verb-tool', cli: 'tokensave', verb: 'tool', tool: 'status' },
-  { check: 'X15', file: 'tb-tokensave', text: 'tokensave status', kind: 'verb', cli: 'tokensave', verb: 'status' },
-  { check: 'X16', file: 'tb-tokensave', text: 'tokensave install', kind: 'verb', cli: 'tokensave', verb: 'install' },
-  { check: 'X17', file: 'tb-search', text: 'tokensave', occurrence: 1, kind: 'binary', cli: 'tokensave' },
-  { check: 'X18', file: 'tb-search', text: 'tokensave', occurrence: 2, kind: 'binary', cli: 'tokensave' },
+  { check: 'X22', file: 'AGENTS', text: 'asl intel', kind: 'verb', cli: 'asl', verb: 'intel' },
+  { check: 'X14', file: 'tb-asl-intel', text: 'asl intel', occurrence: 1, kind: 'verb', cli: 'asl', verb: 'intel' },
+  { check: 'X15', file: 'tb-asl-intel', text: 'asl intel', occurrence: 2, kind: 'verb', cli: 'asl', verb: 'intel' },
+  { check: 'X16', file: 'tb-asl-intel', text: 'asl doc', kind: 'verb', cli: 'asl', verb: 'doc' },
+  { check: 'X17', file: 'tb-search', text: 'asl intel', occurrence: 1, kind: 'verb', cli: 'asl', verb: 'intel' },
+  { check: 'X18', file: 'tb-search', text: 'asl intel', occurrence: 2, kind: 'verb', cli: 'asl', verb: 'intel' },
   { check: 'X19', file: 'tb-search', text: 'yq', kind: 'binary', cli: 'yq' },
   { check: 'X20', file: 'tb-search', text: 'jq', kind: 'binary', cli: 'jq' },
   { check: 'X11', file: 'ai-docs-README', text: 'yq', kind: 'binary', cli: 'yq' },

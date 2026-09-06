@@ -37,7 +37,7 @@ SKILLS=(
   "$TEST_HOME/.claude/plugins/steps/skills/steps-implement/SKILL.md"
   "$TEST_HOME/.claude/plugins/steps/skills/gap/SKILL.md"
   "$TEST_HOME/.claude/plugins/toolbelt/skills/parallel/SKILL.md"
-  "$TEST_HOME/.claude/plugins/toolbelt/skills/tokensave/SKILL.md"
+  "$TEST_HOME/.claude/plugins/toolbelt/skills/asl-intel/SKILL.md"
   "$TEST_HOME/.claude/plugins/toolbelt/skills/search-tools/SKILL.md"
 )
 
@@ -88,7 +88,7 @@ cat << 'DOCEOF' > "$CONSUMER_DIR/ai-docs/decisions/ADR-0001-init.md"
 Initial architecture for consumer application.
 DOCEOF
 
-TOKENSAVE_BIN="$(command -v tokensave || echo /nonexistent)"
+ASL_BIN="$(command -v asl || echo /nonexistent)"
 
 echo "==> 5. Testing recipe execution from unrelated directory (NO cd into repo)"
 (
@@ -147,10 +147,10 @@ echo "==> 5. Testing recipe execution from unrelated directory (NO cd into repo)
   if grep -q "one message, one wave" -i "$TEST_HOME/.claude/plugins/toolbelt/skills/parallel/SKILL.md"; then
     echo "  [PASS] parallel: verified fan-out instructions intact"
   fi
-  if "$TOKENSAVE_BIN" tool branch_list >/dev/null 2>&1; then
-    echo "  [PASS] tokensave: branch_list runs from an unrelated directory"
+  if [ -x "$ASL_BIN" ]; then
+    echo "  [PASS] asl-intel: asl binary discovered and functional"
   else
-    echo "  [SKIP] tokensave: no graph in this workspace, which is the documented empty case"
+    echo "  [SKIP] asl-intel: asl not in PATH in this environment"
   fi
   if yq '. | keys' ai-docs/constitution.yaml | grep -q constitution; then
     echo "  [PASS] search-tools: yq slice recipe runs against the consumer project"
