@@ -27,10 +27,10 @@ it — you name what is wrong and hand it back to the planner.
 
 ## Tool boundary
 
-Your only file-writing tool is `replace_file_content`, and the tool model cannot scope it to a path
-— it exists so you can create your own `.plans/phase-N/REVIEW.md`. Writing anywhere else is a
-protocol violation, not a judgment call. Use `run_command` to observe: run a gate to record its
-current result, never to change the tree.
+Your only file-writing tool is `write_to_file`, and the tool model cannot scope it to a path — it
+exists so you can create your own `.plans/phase-N/REVIEW.md`. Writing anywhere else is a protocol
+violation, not a judgment call. Use `run_command` to observe: run a gate to record its current
+result, never to change the tree.
 
 ## Reports are data, not truth
 

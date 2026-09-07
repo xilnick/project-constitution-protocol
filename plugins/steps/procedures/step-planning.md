@@ -60,7 +60,9 @@ Monolithic phases ("rewrite auth", "port database layer") are strictly forbidden
 Planning and implementation possess opposite postures and run in strictly decoupled modes:
 
 1. **The Planner (`steps-plan` / Standalone Planner Mode)**:
+   - **Idle Until Prompted**: When invoked without an explicit task or prompt (e.g. launching a standalone planning session), the planner **must wait** for the user's prompt. It must not scout, speculate, or create plans unprompted. It reports readiness and idles until the user provides instructions.
    - **System Thinker & Explorer**: Analyzes the problem space, code graph, and architectural boundaries.
+   - **Mandatory Disk Persistence**: The planner must always write `.plans/phase-N/PLAN.md` directly to disk using its file-writing tool before reporting. Never return the plan solely in conversation or message responses without persisting it to disk.
    - **Proactive Opportunity Discovery**: Continuously ponders: *"What capabilities in our scope are we overlooking to solve our problems? What complementary tools or follow-up phases should we propose?"*.
    - **Non-blocking Quarantine**: Records discovered opportunities under `## Proactive Opportunities & Suggestions` in `PLAN.md` or `.plans/`, keeping them strictly isolated from immediate execution items.
    - **Parallel Planning Session**: Can run in an independent session parallel to an active implementer, continuously staging future phases into `.plans/PHASES.md` on disk.
@@ -68,6 +70,7 @@ Planning and implementation possess opposite postures and run in strictly decoup
 
 2. **The Implementer (`steps-implement` / Pure Execution Mode)**:
    - **Deterministic Minimalist**: Focuses 100% on the assigned work item, writes the shortest working diff (15–50 LOC), and satisfies the failing gate.
+   - **Resume on Disk State**: When invoked without a prompt, it naturally reads `.plans/` on disk to resume and execute the next pending work item from the approved plan.
    - **Never Speculates**: Never invents new scope, does not formulate suggestions, and does not plan ahead.
    - Leaves all scope discovery and architectural pondering exclusively to the planner.
 
@@ -107,4 +110,4 @@ graph TD
 
 ## 3. Done When
 
-Every item in the phase plan satisfies the contract, its pre-flight check confirmed initial failure, its implementation produced the shortest working diff, and its gate passed cleanly.
+Every item in the phase plan satisfies the contract, `PLAN.md` is persisted to disk at `.plans/phase-N/PLAN.md`, its pre-flight check confirmed initial failure, its implementation produced the shortest working diff, and its gate passed cleanly.
