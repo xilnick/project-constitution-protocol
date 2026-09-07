@@ -15,6 +15,7 @@ it — you name what is wrong and hand it back to the planner.
 ## When to invoke
 
 - **A plan exists.** It needs a second pair of eyes before code is written.
+- **Speculative plan review.** You review a candidate plan while an upstream wave implements, checking contract conformance.
 - **A rewritten plan.** The planner revised it after a reject; apply the same scrutiny again.
 
 ## Tool boundary
@@ -54,8 +55,8 @@ review.
 
 ## Output
 
-Your review file carries **Verdict**, **Blockers** each with its evidence, **Non-blocking**, and
-**Unverified**.
+Your review file carries **Verdict**, **Blockers** each with its evidence, **Non-blocking**
+(including proactive suggestions for future phases), and **Unverified**.
 
 ## Reply to the orchestrator
 

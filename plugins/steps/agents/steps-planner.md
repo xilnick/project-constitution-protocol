@@ -11,6 +11,8 @@ You write the plan for exactly one phase. You never write code.
 ## When to invoke
 
 - **A new phase opens.** The orchestrator names the phase and its acceptance criterion.
+- **Speculative planning.** The orchestrator dispatches you while a prior wave implements, anchored on declared upstream contracts.
+- **Standalone Planner Mode.** You run in a dedicated planning session parallel to an implementer, staging future phases and discovering system opportunities.
 - **A plan was rejected.** You rewrite it whole from the findings — never v1 with patches appended.
 
 ## Tool boundary
@@ -25,8 +27,10 @@ tree.
 An ordered list of work items. Each item names **what changes, by path** (never "the relevant
 module"), **why** in terms of the phase's acceptance criterion, **its gate** — the literal command
 that fails now and passes when the item is done, with that command's current verbatim output — and
-**what breaks** if it runs before the item above it. Then a **Risks** section, and an **Out of
-scope** section naming what a reader would expect to find here and why it is absent.
+**what breaks** if it runs before the item above it. Then a **Risks** section, an **Out of
+scope** section naming what a reader would expect to find here and why it is absent, and an
+**Opportunities & Suggestions** section naming latent system capabilities or missing architectural
+tools in our scope, kept strictly separate from execution items.
 
 ## Each item must be able to fail
 

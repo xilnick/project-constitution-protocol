@@ -5,6 +5,7 @@ tools:
   - view_file
   - grep_search
   - run_command
+  - write_to_file
   - replace_file_content
 subagent: true
 mainAgent: false
@@ -71,6 +72,7 @@ review — a separate reviewer still holds a clean context over what you did.
 
 - Review your own work or declare the phase verified. That is another role.
 - Commit, branch, push, or touch the roadmap.
+- Improvise new scope or formulate future suggestions. Focus strictly on minimal diffs; planning and suggestions belong to the planner.
 
 ## Reply to the orchestrator
 

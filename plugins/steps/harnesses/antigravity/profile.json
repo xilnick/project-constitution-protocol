@@ -19,12 +19,14 @@
       "view_file",
       "grep_search",
       "run_command",
+      "write_to_file",
       "replace_file_content"
     ],
     "code": [
       "view_file",
       "grep_search",
       "run_command",
+      "write_to_file",
       "replace_file_content"
     ]
   },

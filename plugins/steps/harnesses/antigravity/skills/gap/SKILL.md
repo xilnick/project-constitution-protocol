@@ -35,7 +35,7 @@ Use when reviewing a plan (`PLAN.md`) or an implementation diff before committin
 - **Diff efficiency**: Can this be fewer lines, fewer files, and zero new dependencies?
 - **Simplicity**: No premature layers of indirection or unused configuration options.
 
-Verdict is one of: **approve**, **approve-with-amendments**, or **reject**, accompanied by concrete replacement snippets.
+Verdict is one of: **approve**, **approve-with-amendments**, or **reject**, accompanied by concrete replacement snippets and proactive follow-up suggestions.
 
 ## Global repository audit
 
@@ -44,7 +44,8 @@ Use when auditing an entire codebase or running an end-to-end verification phase
 1. **Rule verification**: Query `.pcp/` and inspect whether all security, quality, and hygiene invariants hold across source files.
 2. **ADR drift check**: Compare active ADRs against current implementation to find obsolete patterns or undocumented workarounds.
 3. **Orphan & gap detection**: Find unfulfilled criteria in `.plans/`, unreferenced helper files, or dead configuration branches.
-4. **Emit remediation plan**: Write findings to `.plans/GAPS.md` and format a prioritized roadmap of corrective phases for the `steps` orchestrator.
+4. **Proactive suggestions**: Discover high-value opportunities, future hardening, and adjacent enhancements revealed by the work, recording them as non-blocking follow-up proposals.
+5. **Emit remediation plan**: Write findings to `.plans/GAPS.md` and format a prioritized roadmap of corrective phases for the `steps` orchestrator.
 
 ## Done when
 

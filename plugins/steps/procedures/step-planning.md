@@ -55,6 +55,24 @@ Monolithic phases ("rewrite auth", "port database layer") are strictly forbidden
 
 ---
 
+## 1.2. Separation of Concerns: Planner vs. Implementer Modes
+
+Planning and implementation possess opposite postures and run in strictly decoupled modes:
+
+1. **The Planner (`steps-plan` / Standalone Planner Mode)**:
+   - **System Thinker & Explorer**: Analyzes the problem space, code graph, and architectural boundaries.
+   - **Proactive Opportunity Discovery**: Continuously ponders: *"What capabilities in our scope are we overlooking to solve our problems? What complementary tools or follow-up phases should we propose?"*.
+   - **Non-blocking Quarantine**: Records discovered opportunities under `## Proactive Opportunities & Suggestions` in `PLAN.md` or `.plans/`, keeping them strictly isolated from immediate execution items.
+   - **Parallel Planning Session**: Can run in an independent session parallel to an active implementer, continuously staging future phases into `.plans/PHASES.md` on disk.
+   - **Never writes application code.**
+
+2. **The Implementer (`steps-implement` / Pure Execution Mode)**:
+   - **Deterministic Minimalist**: Focuses 100% on the assigned work item, writes the shortest working diff (15–50 LOC), and satisfies the failing gate.
+   - **Never Speculates**: Never invents new scope, does not formulate suggestions, and does not plan ahead.
+   - Leaves all scope discovery and architectural pondering exclusively to the planner.
+
+---
+
 ## 2. Implementer Pre-Flight & Execution Loop
 
 When `steps-implementer` takes an item from `PLAN.md`:

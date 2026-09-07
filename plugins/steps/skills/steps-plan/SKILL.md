@@ -16,19 +16,16 @@ one starts.
 
 ## When you need it
 
-When the change is bigger than one verification gate can adjudicate. If a single command can show
-the work right or wrong, skip this stage: implement, then review, and let a failing gate escalate you
-back here. That is the ladder working, not a corner cut.
+Always plan before writing code on non-trivial work (Tier 0 is strictly for typos). Run standalone in
+a dedicated planning session parallel to an active implementer session, staging upcoming phases
+into `.plans/` and uncovering latent system opportunities.
 
 ## How to run it
 
-1. Scouting (optional): for complex phases, 1–3 scouts run in parallel across codebase (`explore`/`repo-scout`),
-   docs (`research`), or coupling, each returning a digest (≤ 3k tokens).
-2. One planner writes `.plans/phase-N/PLAN.md` (`steps-planner` or `steps-architect-pro`), following
-   the step-planning procedure (`procedures/step-planning.md`). Each work item names its files, its
-   gate, and its prerequisite items.
-3. The planner re-reads its plan: items name files and gates, dependencies have no cycles, and file
-   ownership is declared. A plan failing self-check goes back to step 2 before reaching review.
+1. Scouting (optional): 1–3 scouts run in parallel across codebase (`repo-scout`), docs, or coupling (digest ≤ 3k tokens).
+2. Authoring: one planner writes `.plans/phase-N/PLAN.md` per `procedures/step-planning.md` with atomic items and failing gates. In speculative mode (`procedures/speculative-planning.md`), anchor on upstream contracts.
+3. Proactive discovery: uncover latent capabilities and missing system opportunities, noting them as suggestions for future phases without burdening the implementer.
+4. Synthesis: candidate plans undergo cross-phase synthesis (`procedures/plan-synthesis.md`) before review.
 
 Both agents carry their own rules; this skill does not restate them.
 

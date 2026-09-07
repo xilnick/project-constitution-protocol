@@ -5,6 +5,7 @@ tools:
   - view_file
   - grep_search
   - run_command
+  - write_to_file
   - replace_file_content
 subagent: true
 mainAgent: false
@@ -79,7 +80,8 @@ the one no review found.
 ## Output
 
 Your review file carries **Verdict**, **Blockers** each with evidence and its class enumeration,
-**Non-blocking**, **Gates run** with verbatim results, and **Unverified**.
+**Non-blocking** (including follow-up opportunities revealed by implementation), **Gates run** with
+verbatim results, and **Unverified**.
 
 ## Reply to the orchestrator
 

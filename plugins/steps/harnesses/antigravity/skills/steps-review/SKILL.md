@@ -22,8 +22,8 @@ single item carries a declared expected result that a gate can check on its own.
 
 1. One reviewer at each review point, dispatched in a **fresh context**. `steps-plan-reviewer` checks
    `PLAN.md` before implementation; `steps-impl-reviewer` checks the implementation after it, running
-   the gates itself rather than trusting the implementer's green. A single reviewer evaluates design,
-   gates, omissions, and anti-overengineering (`gap` skill) together.
+   the gates itself rather than trusting the implementer's green. A reviewer evaluates design, gates,
+   and GAP together; in speculative mode, it verifies plans against upstream contracts.
 2. Findings go back to the author, not to a third party. Plan blockers return to `steps-planner`,
    which rewrites the plan whole; implementation blockers return to `steps-implementer`, which fixes
    the class of the defect and re-runs the gates.

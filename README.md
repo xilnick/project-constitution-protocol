@@ -56,12 +56,12 @@ plugins/
     agents/ harnesses/             rendered output — never edited by hand
   toolbelt/
     .claude-plugin/plugin.json
-    skills/parallel|tokensave|search-tools/
+    skills/parallel|asl-intel|search-tools/
 ai-docs/                           constitution.yaml, decisions/, specs/
 tests/                             the suites (see Development)
 ```
 
-Neither plugin ships a `commands/` directory: the skills are the entrypoints, and `/steps` invokes
+None of the plugins ships a `commands/` directory: the skills are the entrypoints, and `/steps` invokes
 the steps skill itself.
 
 ## Development

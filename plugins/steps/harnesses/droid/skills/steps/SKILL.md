@@ -61,7 +61,7 @@ Present the table and ASCII/Mermaid DAG for **Review, Link & Prioritize**:
    - **Concurrency**: Maximum parallelism across independent waves with disjoint `owns` paths.
    - **Commits**: Immediate commit on every verified phase (or per verified item gate).
 
-State the baseline defaults when asking for confirmation:
+State the baseline defaults when asking for confirmation (mention proactive ideas if surfaced):
 > *"Default plan: Full execution of all phases with maximum parallelism and commits per phase. Reply 'OK' to proceed with defaults, or specify overrides."*
 
 An "OK" reply confirms the baseline: execute all phases continuously without pausing between waves.
@@ -78,15 +78,16 @@ own rules and its own agents; you load the ones the phase needs.
 | Implement | `steps-implement` | code | never |
 
 Which stages a phase runs is declared, not improvised: `constitution.execution.tiers` names the
-stage set per tier, and `MODEL_ROUTING.md` is its prose. Implement appears in every tier — that is
-what makes skipping the others safe rather than optimistic. Reviews use the `gap` skill to catch
-omissions (missing edge cases, unhandled errors) and over-engineering (speculative bloat), finding
-the simplest working optimum: fewest lines, standard features before custom code, zero bloat.
+stage set per tier, and `MODEL_ROUTING.md` is its prose. Multi-phase roadmaps default to **Batch Ahead**
+or **Pipelined** planning: plan before writing code; Tier 0 is strictly for typos. Reviews use `gap` to
+catch omissions and bloat, finding the simplest working optimum.
 
-Planning runs in one of two modes:
+Planning runs in three modes:
 - **JIT (Incremental)**: Plan phase N ➔ `gap` review ➔ implement ➔ `gap` impl review ➔ next phase.
-- **Batch Ahead**: Plan each phase ➔ local `gap` ➔ synthesis & DAG ➔ global E2E `gap`
-  ➔ optional user alignment if open trade-offs ➔ parallel waves execute concurrently.
+- **Pipelined (Speculative)**: Wave K implementation overlaps with Wave K+1 speculative
+  planning and plan-review via `procedures/speculative-planning.md`.
+- **Batch Ahead**: Parallel scout ➔ parallel plan ➔ synthesis & DAG (`procedures/plan-synthesis.md`)
+  ➔ `gap` review ➔ optional user alignment ➔ parallel waves execute concurrently.
 
 Around the stages, the work that is yours alone:
 
@@ -196,8 +197,8 @@ In DAG planning, phases with disjoint file ownership run concurrently in paralle
    gate run inside the worktree. Fast-forward merge onto main (`git merge --ff-only <id>`); on
    conflict abort (`git rebase --abort`) and halt. Cleanup with `git worktree remove --force .worktrees/<id>`.
 
-Do not parallelise when one phase's output feeds the next, or when shared files have not been
-extracted into a prior wave.
+Do not run code in parallel when one phase feeds the next; pipeline speculative planning
+instead (`procedures/speculative-planning.md`).
 
 ## Writing a brief
 
@@ -260,7 +261,8 @@ creation time, status (`active` / `paused` / `done`), goal, and current phase.
 - **Resume.** Move the chosen iteration's files back into `.plans/`, read `STATUS.md` and
   `ORCHESTRATOR-LOG.md`, and continue from the recorded phase. Do not re-plan phases already done.
 - **Finish.** Run the end-to-end GAP audit (`procedures/e2e-gap-audit.md`) to write `.plans/GAPS.md`.
-  When verified and committed, move to `.plans/archive/<id>/` or delete; update `INDEX.md`.
+  Surface proactive suggestions for next iterations. When verified and committed, move to
+  `.plans/archive/<id>/` or delete; update `INDEX.md`.
 
 A paused or archived iteration is never overwritten by a new one: the timestamp keeps each folder
 unique, and `INDEX.md` is the source of truth for what is unchanged, half-done, or finished.
@@ -271,8 +273,9 @@ Stop and ask the user only when proceeding under any assumption would be unsafe,
 work useless if the assumption is wrong. Everything else is a judgment call you make and state.
 
 Execution follows the protocol baseline: full roadmap execution in maximum parallel waves with
-per-phase commits. Once confirmed (user replies "OK" or accepts), execute continuously across
-phases; never pause between completed phases to ask for permission. Only pause if blocked or a gate fails.
+per-phase commits. Once confirmed (user replies "OK"), execute continuously across waves,
+re-reading `PHASES.md` on disk to absorb additions until all phases are done; never pause between
+waves for permission. Only pause if blocked or a gate fails.
 
 Report a phase as done when the gates you ran yourself are green and the phase's stated acceptance
 criterion is met — not when the implementer says so. If part of a phase is blocked, finish

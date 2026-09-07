@@ -46,6 +46,7 @@ should escalate to. You still fix nothing.
 ## Output
 
 Your review file carries **Verdict**, **Blockers** each with evidence and its class enumeration,
-**Non-blocking**, **Gates run** with verbatim results, and **Unverified**.
+**Non-blocking** (including follow-up opportunities revealed by implementation), **Gates run** with
+verbatim results, and **Unverified**.
 
 {{> reply}}

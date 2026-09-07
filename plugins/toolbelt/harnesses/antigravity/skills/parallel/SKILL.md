@@ -23,7 +23,11 @@ searches, graph queries and agent dispatches almost always can.
   reviewer asked for everything, and they run at once. Grading a plan or implementation is the
   exception: `steps-review` grades with one clean-context reviewer, never a lens per reviewer.
 - **Zones.** Repairs in non-overlapping directories are independent even though they are all edits.
+- **Parallel Reconnaissance & Planning.** Multi-phase scouting digests and candidate plans run concurrently before cross-phase synthesis.
 - **Multi-Phase Waves.** In Batch Ahead planning, phases with non-overlapping file ownership run concurrently.
+- **Pipelining / Speculative Overlap.** While one agent or wave executes implementation, dispatch
+  downstream planning, scouting, or contract verification in the same wave. When the upstream
+  wave finishes, downstream work is already planned and verified, eliminating turnaround latency.
 - **Aggregation.** When an answer needs computation over many files rather than a look at a few, one
   script that prints its result beats a dozen tool calls; write it, run it, keep the output small.
 

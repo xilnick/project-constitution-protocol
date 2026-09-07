@@ -65,6 +65,7 @@ The orchestrator dispatches a dedicated planning subagent (`steps-planner` or `s
   2. The current repository state and architectural decisions in `.pcp/`.
   3. The active `.plans/PHASES.md` DAG.
 - The planner writes the candidate `.plans/phase-<id>/PLAN.md` adhering strictly to [`procedures/step-planning.md`](step-planning.md).
+- If the new requirement introduces multiple phases or shared primitives, follow [`procedures/plan-synthesis.md`](plan-synthesis.md) to factor foundations into Wave 0 before review.
 
 ### Step 3: Local GAP Validation
 A clean-context reviewer evaluates the candidate plan:
@@ -81,6 +82,7 @@ When the candidate plan is approved:
    - If Phase X is completely independent of all active and pending phases: scheduled immediately in current or next parallel wave.
 3. Kahn's topological sort runs to ensure no cycles are introduced.
 4. `.plans/PHASES.md` and `ORCHESTRATOR-LOG.md` are updated.
+5. **Live Wave Ingestion**: Updating `.plans/PHASES.md` on disk immediately extends the orchestrator's active execution loop. The orchestrator re-reads the disk state on wave completion, picking up Phase X for speculative planning or execution without requiring an orchestrator restart.
 
 ### Step 5: Cross-Cutting E2E Verification & Consistency Check
 Before dispatching any spliced or updated phase, the orchestrator/reviewer executes a bidirectional consistency pass:
@@ -91,7 +93,7 @@ Before dispatching any spliced or updated phase, the orchestrator/reviewer execu
    - Do downstream phases have clean contracts aligned with the new slice?
    - Verify zero dangling dependencies, zero duplicate schemas/types, and zero ownership collisions.
 3. **Cross-Cutting GAP Validation**:
-   - Run a focused E2E GAP check (`.plans/GAPS.md`) to guarantee whole-system coherence.
+   - Run a focused E2E GAP check (`.plans/GAPS.md`) following [`procedures/e2e-gap-audit.md`](e2e-gap-audit.md) to guarantee whole-system coherence.
 
 ---
 

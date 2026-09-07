@@ -1,14 +1,15 @@
 # Project Agent Instructions
 
 Activate the `pcp` skill and follow its instructions.
+Activate the `parallel` skill and follow its instructions.
 
 ## Project Conventions
 
-This repository is a Claude Code **plugin marketplace**, not a single skill. It ships two plugins.
+This repository is a Claude Code **plugin marketplace**, not a single skill. It ships three plugins.
 
 ### Layout
 
-- `.claude-plugin/marketplace.json` — marketplace manifest, named `pcp`, listing both plugins.
+- `.claude-plugin/marketplace.json` — marketplace manifest, named `pcp`, listing all three plugins.
 - `plugins/pcp/` — the Project Constitution Protocol plugin.
   - `.claude-plugin/plugin.json`
   - `skills/pcp/` — `SKILL.md`, `procedures/`, `scripts/pcp.js`, `examples/`
@@ -46,7 +47,7 @@ suite's `skillDir` constant both point there; move the skill and both must move 
 Each rule below is enforced here; the reasoning behind it is one `pcp read` away, never restated.
 
 - `plugins/steps/skills/steps/SKILL.md` is canonical for the steps protocol; the agent briefs are the
-  mechanism it describes and must not restate it at length (`@pcp:d-83c2`). Neither plugin ships a
+  mechanism it describes and must not restate it at length (`@pcp:d-83c2`). None of the plugins ships a
   `commands/` directory — the skills are the entrypoints, `/steps` invokes the steps skill itself,
   and the repo-root `.claude/commands/pcp.md` is the one alias.
 - Agent frontmatter follows the shape used by the official `feature-dev` plugin: `name`,
@@ -78,3 +79,4 @@ restated here. What is local to this repository:
   (`@pcp:c-6307`).
 - Governance queries go through `constitution-query`; `ai-docs/constitution.yaml` is the source, and
   `.pcp/` is the pcp CLI's machine-local sandbox rather than governance.
+- Independent operations, multi-area discovery, and batch queries run in parallel waves via `parallel`.

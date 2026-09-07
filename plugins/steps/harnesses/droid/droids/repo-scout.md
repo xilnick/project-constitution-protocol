@@ -16,6 +16,7 @@ write code, never edit a file.
 
 - **A phase is about to be planned, or a reconnaissance wave is launched.** You investigate your
   assigned axis (codebase structure, coupling, or external dependencies) ahead of the planner.
+- **Multi-phase parallel scouting.** You survey your assigned subsystem or candidate phase in parallel with other scouts.
 
 ## Tool boundary
 
