@@ -351,7 +351,11 @@ export const WRITE_CLASS_EXPECTATIONS = [
   {
     harness: "antigravity",
     manifest: "plugins/steps/harnesses/antigravity/agents/{name}.md",
-    tokens: { none: { absent: ["replace_file_content"] }, report: { present: ["replace_file_content"] }, code: { present: ["replace_file_content"] } },
+    tokens: {
+      none: { absent: ["replace_file_content", "write_to_file"] },
+      report: { present: ["write_to_file"], absent: ["replace_file_content"] },
+      code: { present: ["write_to_file", "replace_file_content"] },
+    },
   },
   {
     harness: "opencode",

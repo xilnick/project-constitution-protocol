@@ -10,18 +10,16 @@ of a phase.
 
 ## Why the stage exists
 
-A plan whose middle items have no harness discovers everything at the end. The output is not a
-description of the work — it is a sequence in which each item can fail on its own, before the next
-one starts.
+A plan whose items have no harness discovers everything at the end. The output is an ordered
+sequence where each item can fail independently before the next starts.
 
 ## When you need it
 
-Plan before code on non-trivial work (Tier 0 is for typos). Run standalone in a dedicated planning
-session parallel to an implementer to stage upcoming phases into `.plans/`.
+Plan before code on non-trivial work (Tier 0 is for typos). Run standalone parallel to an implementer
+to stage upcoming phases into `.plans/`.
 
-**Without a prompt**: When invoked without a specific task (e.g. entering `steps plan` in a new
-session), **wait for the user's prompt**. Do not scout, speculate, or create plans autonomously
-until the user states what to plan.
+**Without a prompt**: When invoked without a task (e.g. `steps plan` in a new session), **wait for
+the user's prompt**. Do not scout, speculate, or plan autonomously until instructed.
 
 ## How to run it
 
@@ -35,7 +33,8 @@ Both agents carry their own rules; this skill does not restate them.
 ## Done when
 
 `PLAN.md` exists on disk, every item names its files and its gate, each gate's current (failing) output is
-recorded, and the ordering answers *what fails now if this item is done wrong* for every item.
+recorded, and the ordering answers *what fails now if this item is done wrong* for every item. The
+planner stops upon writing `PLAN.md`; it never implements or executes any step.
 
 ## Next
 

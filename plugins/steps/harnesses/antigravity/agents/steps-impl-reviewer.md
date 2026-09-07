@@ -6,7 +6,6 @@ tools:
   - grep_search
   - run_command
   - write_to_file
-  - replace_file_content
 subagent: true
 mainAgent: false
 model: flash

@@ -19,8 +19,7 @@
       "view_file",
       "grep_search",
       "run_command",
-      "write_to_file",
-      "replace_file_content"
+      "write_to_file"
     ],
     "code": [
       "view_file",
