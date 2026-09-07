@@ -148,15 +148,14 @@ session model:
 
 ### Antigravity (`harnesses/antigravity/`)
 
-| Role | `model` |
-|---|---|
-| `repo-scout` | `flash` |
-| `steps-planner`, `steps-implementer` | `flash` |
-| `steps-plan-reviewer`, `steps-impl-reviewer` | `flash` |
-| `steps-architect-pro` | `flash` |
+The orchestrator session runs at `medium` reasoning (`gemini-3.8-flash-medium` or `agy --effort medium`). Subagents bind to `flash` with calibrated `reasoningEffort`:
 
-Antigravity's `model` is a tier, not a model id: `inherit`, `flash`, or `pro`. The thinking level
-(low/medium/high) is session-level — `agy --effort`, or the `/model` variant
-`gemini-3.8-flash-low` / `-medium` / `-high` — not a subagent field, so every role binds to `flash`
-and inherits the session effort. The harness renders as a plugin bundle
-(`harnesses/antigravity/`); see `harnesses/README.md` for the install command.
+| Role | `model` | `reasoningEffort` |
+|---|---|---|
+| `repo-scout` | `flash` | `low` |
+| `steps-planner` | `flash` | `high` |
+| `steps-plan-reviewer`, `steps-impl-reviewer` | `flash` | `high` |
+| `steps-implementer` | `flash` | `medium` |
+| `steps-architect-pro` | `flash` | `high` |
+
+Antigravity's `model` is a tier (`flash`), and each role's `reasoningEffort` (`low`, `medium`, `high`) configures the thinking budget. The harness renders as a plugin bundle (`harnesses/antigravity/`); see `harnesses/README.md` for the install command.

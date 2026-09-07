@@ -130,12 +130,12 @@ export const HARNESS_BINDINGS = [
     heading: 'Antigravity (`harnesses/antigravity/`)',
     manifest: 'plugins/steps/harnesses/antigravity/agents/%s.md',
     roles: {
-      'repo-scout': { model: 'flash', effort: null },
-      'steps-planner': { model: 'flash', effort: null },
-      'steps-plan-reviewer': { model: 'flash', effort: null },
-      'steps-impl-reviewer': { model: 'flash', effort: null },
-      'steps-implementer': { model: 'flash', effort: null },
-      'steps-architect-pro': { model: 'flash', effort: null },
+      'repo-scout': { model: 'flash', effort: 'low' },
+      'steps-planner': { model: 'flash', effort: 'high' },
+      'steps-plan-reviewer': { model: 'flash', effort: 'high' },
+      'steps-impl-reviewer': { model: 'flash', effort: 'high' },
+      'steps-implementer': { model: 'flash', effort: 'medium' },
+      'steps-architect-pro': { model: 'flash', effort: 'high' },
     },
   },
 ];

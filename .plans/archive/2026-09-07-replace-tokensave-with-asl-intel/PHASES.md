@@ -24,12 +24,12 @@
    - **Depends on**: `[sync-test-harness-and-recipes]`
    - **Owns**: `plugins/toolbelt/harnesses/`, `tests/install-smoke.sh`
    - **Gate**: `node plugins/steps/tools/render.mjs --check && bash tests/install-smoke.sh`
-   - **Status**: `running`
+   - **Status**: `done`
 
 ## DAG
 
 ```mermaid
 graph TD
     Phase1["Phase 1: replace-toolbelt-tokensave-with-asl-intel (done)"] --> Phase2["Phase 2: sync-test-harness-and-recipes (done)"]
-    Phase2 --> Phase3["Phase 3: sync-environments-and-verify (running)"]
+    Phase2 --> Phase3["Phase 3: sync-environments-and-verify (done)"]
 ```

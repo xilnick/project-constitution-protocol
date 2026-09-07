@@ -8,6 +8,7 @@ tools:
 subagent: true
 mainAgent: false
 model: flash
+reasoningEffort: low
 commandExecutionPolicy: eager
 ---
 

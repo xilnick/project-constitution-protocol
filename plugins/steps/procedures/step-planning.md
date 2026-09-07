@@ -35,6 +35,26 @@ When the planner (`steps-planner` or `steps-architect-pro`) writes an item in `P
 
 ---
 
+## 1.1. Task & Phase Complexity Sizing (The Atomic Chunk Standard)
+
+To guarantee flawless execution, zero hallucination, and rigorous code verification without context saturation, every phase and work item must strictly respect the **Atomic Complexity Ceiling**:
+
+| Dimension | Micro-Phase Ceiling | Work Item Ceiling |
+|---|---|---|
+| **Files Touched (`owns`)** | 1–3 files (max 5 for mechanical renaming) | Exactly 1–2 target files |
+| **Working Diff** | 50–200 lines of code | 15–50 lines per step |
+| **Behavioral Delta** | Exactly 1 verifiable invariant | Exactly 1 sub-capability |
+| **Verification** | 1 deterministic command (exit 0) | 1 reproducible failing gate |
+
+### Decomposition Rule for Migrations, Transfers & Large Tasks:
+Monolithic phases ("rewrite auth", "port database layer") are strictly forbidden. Any large transfer or refactor must be decomposed into sequential, verifiable micro-slices:
+1. **Slice 1 (Scaffold & Contracts)**: Interfaces, type schemas, and a failing contract test. (Zero business logic).
+2. **Slice 2..N (Atomic Unit Transfer)**: Port 1–2 discrete functions/methods at a time, each with its dedicated passing unit test.
+3. **Slice N+1 (Call-Site Cutover)**: Redirect consumers to the new implementation.
+4. **Slice N+2 (Decommission & Cleanup)**: Prune dead legacy files, remove deprecated exports, verify zero orphans.
+
+---
+
 ## 2. Implementer Pre-Flight & Execution Loop
 
 When `steps-implementer` takes an item from `PLAN.md`:

@@ -82,13 +82,19 @@ When the candidate plan is approved:
 3. Kahn's topological sort runs to ensure no cycles are introduced.
 4. `.plans/PHASES.md` and `ORCHESTRATOR-LOG.md` are updated.
 
-### Step 5: Quick E2E Consistency Check
-Before dispatching the new phase:
-- Verify that splicing Phase X did not leave downstream phases with dangling dependencies or duplicate models.
-- If inconsistencies are detected, run a fast re-planning cycle before that wave launches.
+### Step 5: Cross-Cutting E2E Verification & Consistency Check
+Before dispatching any spliced or updated phase, the orchestrator/reviewer executes a bidirectional consistency pass:
+1. **Backward Check (Past Phases 1..N-1)**:
+   - Does the new requirement contradict or regress code already implemented and committed in earlier phases?
+   - If backward incompatibilities arise, immediately schedule an atomic adaptation micro-phase rather than modifying past phases ad-hoc.
+2. **Forward Check (Future Phases N+1..End)**:
+   - Do downstream phases have clean contracts aligned with the new slice?
+   - Verify zero dangling dependencies, zero duplicate schemas/types, and zero ownership collisions.
+3. **Cross-Cutting GAP Validation**:
+   - Run a focused E2E GAP check (`.plans/GAPS.md`) to guarantee whole-system coherence.
 
 ---
 
 ## 4. Done When
 
-The new phase plan satisfies the step-planning contract, passed its local GAP review, is cleanly spliced into `.plans/PHASES.md` without ownership collisions or cyclic dependencies, and is queued into the wave schedule.
+The new phase plan satisfies the step-planning contract, passed its local GAP review, successfully passed the bidirectional cross-cutting E2E check, is cleanly spliced into `.plans/PHASES.md` without ownership collisions or cyclic dependencies, and is queued into the wave schedule.
