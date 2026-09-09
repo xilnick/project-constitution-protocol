@@ -26,7 +26,12 @@ const ASN_RULES = {
   :strict   (:forbid [:stub :todo :mock :swallow :co-author] :require [:bounds :errors])
   :critic   (:self false :stance :adversary)
   :receipt  (:format :asn :asserts (> 0) :claims false))
-(:rule :git :co-author false)
+(:rule :git
+  :co-author false
+  :branch    (:base :target :verify true)
+  :merge     (:verify [:base :diff :log]
+              :strict (:require [:intended-only :safe-merge]
+                       :forbid  [:unrelated-commits :wrong-base])))
 <!-- GROUND_TRUTH_END -->`,
 };
 
