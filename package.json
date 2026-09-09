@@ -14,7 +14,8 @@
     "test:mutation": "node tests/mutation-harness.mjs",
     "test:recipes": "node tests/recipe-exec.test.js",
     "test:smoke": "bash tests/install-smoke.sh",
-    "install:skills": "node scripts/install-skills.mjs"
+    "install:rules": "node scripts/install-rules.mjs",
+    "install:skills": "node scripts/install-rules.mjs"
   },
   "keywords": [
     "pcp",

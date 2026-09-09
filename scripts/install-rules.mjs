@@ -39,20 +39,6 @@ function checkAsl() {
   }
 }
 
-function copyDirRecursive(src, dest) {
-  if (!fs.existsSync(src)) return;
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    const s = path.join(src, entry.name);
-    const d = path.join(dest, entry.name);
-    if (entry.isDirectory()) {
-      copyDirRecursive(s, d);
-    } else {
-      fs.copyFileSync(s, d);
-    }
-  }
-}
-
 function injectRule(filePath, tag, block) {
   if (!fs.existsSync(filePath)) {
     fs.writeFileSync(filePath, `${block}\n`, 'utf8');
@@ -75,40 +61,15 @@ function injectRule(filePath, tag, block) {
 function run() {
   const aslStatus = checkAsl();
 
-  // 1. Install repository skills: parallel & ground-truth
-  const skills = [
-    { name: 'parallel', src: path.join(REPO_ROOT, 'plugins/toolbelt/skills/parallel') },
-    { name: 'ground-truth', src: path.join(REPO_ROOT, '.agents/skills/ground-truth') },
-  ];
-
-  const targetDirs = [
-    path.join(REPO_ROOT, '.agents/skills'),
-    path.join(HOME, '.gemini/config/skills'),
-    path.join(HOME, '.claude/skills'),
-  ];
-
-  const installedSkills = [];
-  for (const target of targetDirs) {
-    if (fs.existsSync(path.dirname(target))) {
-      fs.mkdirSync(target, { recursive: true });
-      for (const sk of skills) {
-        const dest = path.join(target, sk.name);
-        copyDirRecursive(sk.src, dest);
-        installedSkills.push(`${sk.name} -> ${dest}`);
-      }
-    }
-  }
-
-  // 2. Inject rules into agent instruction files
-  const agentFiles = [
+  const targetFiles = [
     path.join(REPO_ROOT, 'AGENTS.md'),
     path.join(HOME, '.gemini/config/AGENTS.md'),
     path.join(HOME, '.claude/CLAUDE.md'),
   ];
 
   const updatedFiles = [];
-  for (const file of agentFiles) {
-    if (fs.existsSync(file)) {
+  for (const file of targetFiles) {
+    if (fs.existsSync(file) || file.startsWith(REPO_ROOT)) {
       injectRule(file, 'ASL_TOOLBELT', ASN_RULES.asl);
       injectRule(file, 'PARALLEL', ASN_RULES.parallel);
       injectRule(file, 'GROUND_TRUTH', ASN_RULES.groundTruth);
@@ -116,14 +77,12 @@ function run() {
     }
   }
 
-  // 3. Emit physical execution receipt in ASN
   const receipt = `(:receipt
-  :action :install-skills
+  :action :install-rules
   :exit 0
   :asl (:installed ${aslStatus.installed} :binary "${aslStatus.bin || 'none'}")
-  :skills-installed [:parallel :ground-truth]
-  :destinations ${JSON.stringify(targetDirs.filter((d) => fs.existsSync(path.dirname(d))))}
-  :agent-rules-updated ${JSON.stringify(updatedFiles)}
+  :rules-injected [:asl-toolbelt :parallel :ground-truth]
+  :targets-updated ${JSON.stringify(updatedFiles)}
 )`;
 
   console.log(receipt);
