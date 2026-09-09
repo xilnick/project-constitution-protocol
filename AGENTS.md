@@ -1,7 +1,20 @@
 # Project Agent Instructions
 
-Activate the `parallel` skill and follow its instructions.
-Activate the `ground-truth` skill and follow its instructions: enforce mandatory pre-mutation gate falsification, zero-stub completeness, and physical execution receipts (:receipt :exit 0 :asserts-evaluated N (> 0)).
+<!-- ASL_TOOLBELT_START -->
+(:rule :asl-toolbelt :priority :asl :binary "asl" :path true)
+<!-- ASL_TOOLBELT_END -->
+
+<!-- PARALLEL_START -->
+(:rule :parallel :engine :concurrency :dispatch :one-message-one-wave :scope [:discovery :reconnaissance :adversarial-review :independent-edits])
+<!-- PARALLEL_END -->
+
+<!-- GROUND_TRUTH_START -->
+(:rule :ground-truth
+  :falsify-first        (:baseline-must-fail true :post-mutation-exit 0)
+  :zero-slack           (:forbid [:stub :todo :mock :empty-catch] :require [:boundary-states :error-paths])
+  :separation-of-duties (:author-eval false :reviewer-stance :adversarial)
+  :physical-receipt     (:format :asn :exit 0 :asserts-evaluated (> 0) :verbal-claims false))
+<!-- GROUND_TRUTH_END -->
 
 ## Project Conventions
 

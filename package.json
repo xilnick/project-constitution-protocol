@@ -13,7 +13,8 @@
     "test": "node --test tests/pcp_skill.test.js tests/constitution_skills.test.js && node tests/lib/repo-guard.mjs --selftest && node tests/recipe-exec.test.js --hermetic && node plugins/steps/tools/render.mjs --check",
     "test:mutation": "node tests/mutation-harness.mjs",
     "test:recipes": "node tests/recipe-exec.test.js",
-    "test:smoke": "bash tests/install-smoke.sh"
+    "test:smoke": "bash tests/install-smoke.sh",
+    "install:skills": "node scripts/install-skills.mjs"
   },
   "keywords": [
     "pcp",
