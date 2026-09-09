@@ -11,9 +11,10 @@
 <!-- GROUND_TRUTH_START -->
 (:rule :ground-truth
   :falsify  (:must-fail true :exit 0)
-  :strict   (:forbid [:stub :todo :mock :swallow] :require [:bounds :errors])
+  :strict   (:forbid [:stub :todo :mock :swallow :co-author] :require [:bounds :errors])
   :critic   (:self false :stance :adversary)
   :receipt  (:format :asn :asserts (> 0) :claims false))
+(:rule :git :co-author false)
 <!-- GROUND_TRUTH_END -->
 
 ## Project Conventions

@@ -23,9 +23,10 @@ const ASN_RULES = {
   groundTruth: `<!-- GROUND_TRUTH_START -->
 (:rule :ground-truth
   :falsify  (:must-fail true :exit 0)
-  :strict   (:forbid [:stub :todo :mock :swallow] :require [:bounds :errors])
+  :strict   (:forbid [:stub :todo :mock :swallow :co-author] :require [:bounds :errors])
   :critic   (:self false :stance :adversary)
   :receipt  (:format :asn :asserts (> 0) :claims false))
+(:rule :git :co-author false)
 <!-- GROUND_TRUTH_END -->`,
 };
 
@@ -74,6 +75,22 @@ function run() {
       injectRule(file, 'PARALLEL', ASN_RULES.parallel);
       injectRule(file, 'GROUND_TRUTH', ASN_RULES.groundTruth);
       updatedFiles.push(file);
+    }
+  }
+
+  const specificRules = [
+    { file: path.join(HOME, '.gemini/config/rules/ground-truth.md'), tag: 'GROUND_TRUTH', block: ASN_RULES.groundTruth },
+    { file: path.join(HOME, '.claude/rules/ground-truth.md'), tag: 'GROUND_TRUTH', block: ASN_RULES.groundTruth },
+    { file: path.join(HOME, '.gemini/config/rules/parallel.md'), tag: 'PARALLEL', block: ASN_RULES.parallel },
+    { file: path.join(HOME, '.claude/rules/parallel.md'), tag: 'PARALLEL', block: ASN_RULES.parallel },
+    { file: path.join(HOME, '.gemini/config/rules/asl-toolbelt.md'), tag: 'ASL_TOOLBELT', block: ASN_RULES.asl },
+  ];
+
+  for (const { file, tag, block } of specificRules) {
+    if (fs.existsSync(file)) {
+      if (injectRule(file, tag, block)) {
+        updatedFiles.push(file);
+      }
     }
   }
 
