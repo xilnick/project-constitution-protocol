@@ -1,7 +1,7 @@
 # Project Agent Instructions
 
-Activate the `pcp` skill and follow its instructions.
 Activate the `parallel` skill and follow its instructions.
+Activate the `ground-truth` skill and follow its instructions: enforce mandatory pre-mutation gate falsification, zero-stub completeness, and physical execution receipts (:receipt :exit 0 :asserts-evaluated N (> 0)).
 
 ## Project Conventions
 
