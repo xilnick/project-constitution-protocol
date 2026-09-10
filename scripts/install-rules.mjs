@@ -26,13 +26,17 @@ const ASN_RULES = {
   :strict   (:forbid [:stub :todo :mock :swallow :co-author] :require [:bounds :errors])
   :critic   (:self false :stance :adversary)
   :receipt  (:format :asn :asserts (> 0) :claims false))
+<!-- GROUND_TRUTH_END -->`,
+
+  git: `<!-- GIT_START -->
 (:rule :git
   :co-author false
+  :commit    (:concise true)
   :branch    (:base :target :verify true)
   :merge     (:verify [:base :diff :log]
               :strict (:require [:intended-only :safe-merge]
                        :forbid  [:unrelated-commits :wrong-base])))
-<!-- GROUND_TRUTH_END -->`,
+<!-- GIT_END -->`,
 };
 
 function checkAsl() {
@@ -60,6 +64,13 @@ function injectRule(filePath, tag, block) {
     }
     return false;
   }
+  const lastEndMatch = [...content.matchAll(/<!-- [A-Z_]+_END -->/g)].pop();
+  if (lastEndMatch) {
+    const insertIdx = lastEndMatch.index + lastEndMatch[0].length;
+    const updated = content.slice(0, insertIdx) + '\n\n' + block + content.slice(insertIdx);
+    fs.writeFileSync(filePath, updated, 'utf8');
+    return true;
+  }
   fs.writeFileSync(filePath, `${block}\n\n${content}`, 'utf8');
   return true;
 }
@@ -79,6 +90,7 @@ function run() {
       injectRule(file, 'ASL_TOOLBELT', ASN_RULES.asl);
       injectRule(file, 'PARALLEL', ASN_RULES.parallel);
       injectRule(file, 'GROUND_TRUTH', ASN_RULES.groundTruth);
+      injectRule(file, 'GIT', ASN_RULES.git);
       updatedFiles.push(file);
     }
   }
@@ -89,10 +101,14 @@ function run() {
     { file: path.join(HOME, '.gemini/config/rules/parallel.md'), tag: 'PARALLEL', block: ASN_RULES.parallel },
     { file: path.join(HOME, '.claude/rules/parallel.md'), tag: 'PARALLEL', block: ASN_RULES.parallel },
     { file: path.join(HOME, '.gemini/config/rules/asl-toolbelt.md'), tag: 'ASL_TOOLBELT', block: ASN_RULES.asl },
+    { file: path.join(HOME, '.claude/rules/asl.md'), tag: 'ASL_TOOLBELT', block: ASN_RULES.asl },
+    { file: path.join(HOME, '.gemini/config/rules/git.md'), tag: 'GIT', block: ASN_RULES.git },
+    { file: path.join(HOME, '.claude/rules/git.md'), tag: 'GIT', block: ASN_RULES.git },
   ];
 
   for (const { file, tag, block } of specificRules) {
-    if (fs.existsSync(file)) {
+    const dir = path.dirname(file);
+    if (fs.existsSync(dir)) {
       if (injectRule(file, tag, block)) {
         updatedFiles.push(file);
       }
@@ -103,7 +119,7 @@ function run() {
   :action :install-rules
   :exit 0
   :asl (:installed ${aslStatus.installed} :binary "${aslStatus.bin || 'none'}")
-  :rules-injected [:asl-toolbelt :parallel :ground-truth]
+  :rules-injected [:asl-toolbelt :parallel :ground-truth :git]
   :targets-updated ${JSON.stringify(updatedFiles)}
 )`;
 
